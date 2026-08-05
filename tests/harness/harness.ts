@@ -1,3 +1,6 @@
+import { collapsePost } from '@/content/collapse';
+import type { ScoreBreakdown } from '@/core/scoring/types';
+
 type HarnessPost = {
   id: string;
   authorHandle: string;
@@ -28,4 +31,20 @@ const reset = () => {
   for (const post of document.querySelectorAll('[data-harness-appended="true"]')) post.remove();
 };
 
-window.__slopfilterHarness = { appendPost, reset };
+const collapseFirstPost = (reasons: string[]) => {
+  const container = timeline();
+  const post =
+    container?.querySelector('article[data-harness-appended="true"]') ??
+    container?.querySelector('article[data-testid="tweet"]');
+  if (!(post instanceof HTMLElement)) throw new Error('post not found');
+
+  const breakdown: ScoreBreakdown = {
+    compositeScore: 1,
+    hidden: true,
+    contributions: [],
+    reasons,
+  };
+  collapsePost(post, breakdown);
+};
+
+window.__slopfilterHarness = { appendPost, collapseFirstPost, reset };
