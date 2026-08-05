@@ -8,3 +8,4 @@ blob-report/
 .DS_Store
 *.log
 .models-cache/
+tests/fixtures/dom/x/raw/

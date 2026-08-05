@@ -1,0 +1,92 @@
+{
+  "contractVersion": "1.1.0",
+  "entries": [
+    {
+      "id": "primary-column",
+      "description": "The main feed column that wraps the timeline.",
+      "selectors": ["[data-testid=\"primaryColumn\"]"],
+      "required": true
+    },
+    {
+      "id": "timeline-container",
+      "description": "The scrollable timeline region whose children are post cells. MutationObserver attaches here.",
+      "selectors": [
+        "[aria-label=\"Timeline: Your Home Timeline\"]",
+        "[data-testid=\"primaryColumn\"] section"
+      ],
+      "required": true
+    },
+    {
+      "id": "post-article",
+      "description": "A single rendered post. One element per post in the timeline.",
+      "selectors": ["article[data-testid=\"tweet\"]", "article[role=\"article\"]"],
+      "required": true
+    },
+    {
+      "id": "post-text",
+      "description": "The visible text content of a post.",
+      "selectors": ["[data-testid=\"tweetText\"]"],
+      "required": true
+    },
+    {
+      "id": "author-handle",
+      "description": "The author's account handle within the post header.",
+      "selectors": ["[data-testid=\"User-Name\"] div[dir=\"ltr\"]"],
+      "required": true
+    },
+    {
+      "id": "author-display-name",
+      "description": "The author's display name within the post header.",
+      "selectors": ["[data-testid=\"User-Name\"] div[dir=\"ltr\"]"],
+      "required": false
+    },
+    {
+      "id": "post-permalink",
+      "description": "A link containing the post's status permalink.",
+      "selectors": ["a[href*=\"/status/\"]"],
+      "required": true
+    },
+    {
+      "id": "post-timestamp",
+      "description": "The post timestamp with its machine-readable datetime.",
+      "selectors": ["time[datetime]"],
+      "required": false
+    },
+    {
+      "id": "post-images",
+      "description": "Image media attached to the post.",
+      "selectors": ["[data-testid=\"tweetPhoto\"] img"],
+      "required": false
+    },
+    {
+      "id": "post-video",
+      "description": "Video media attached to the post.",
+      "selectors": ["video"],
+      "required": false
+    },
+    {
+      "id": "engagement-replies",
+      "description": "The reply count control.",
+      "selectors": ["[data-testid=\"reply\"]"],
+      "required": false
+    },
+    {
+      "id": "engagement-reposts",
+      "description": "The repost count control.",
+      "selectors": ["[data-testid=\"retweet\"]"],
+      "required": false
+    },
+    {
+      "id": "engagement-likes",
+      "description": "The like count control.",
+      "selectors": ["[data-testid=\"like\"]"],
+      "required": false
+    },
+    {
+      "id": "engagement-views",
+      "description": "The post analytics control containing the view count.",
+      "selectors": ["[aria-label*=\"views. View post analytics\"]"],
+      "required": false
+    }
+  ]
+}

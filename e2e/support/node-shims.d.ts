@@ -8,3 +8,7 @@ declare module 'node:fs/promises' {
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void>;
 }
+
+declare module 'node:fs' {
+  export function readFileSync(path: string, encoding: 'utf8'): string;
+}
