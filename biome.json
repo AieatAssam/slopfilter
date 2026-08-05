@@ -8,7 +8,9 @@
       "!test-results/**",
       "!playwright-report/**",
       "!package-lock.json",
-      "!tests/fixtures/dom/**"
+      "!tests/fixtures/dom/**",
+      "!drift-report.json",
+      "!drift-dom.html"
     ]
   },
   "formatter": {
