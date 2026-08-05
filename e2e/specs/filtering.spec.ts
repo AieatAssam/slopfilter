@@ -11,6 +11,7 @@ test('collapses high-frequency posts with an evidence-based reason', async ({ pa
 
   const placeholders = page.getByTestId('slopfilter-placeholder');
   await expect(placeholders.first()).toBeVisible();
+  await expect(placeholders.first()).toHaveClass(/slopfilter-theme-x/);
   await expect(placeholders.first()).toContainText(/posts \d+\+ times per day/);
   await expect(placeholders.first()).not.toContainText(/\b(ai|generated|synthetic|authored)\b/i);
   await expect(page.locator('article[data-testid="tweet"]')).toHaveCount(10);
@@ -19,6 +20,13 @@ test('collapses high-frequency posts with an evidence-based reason', async ({ pa
   await page.getByRole('button', { name: 'Show anyway' }).first().click();
   await expect(placeholders).toHaveCount(beforeRestore - 1);
   await expect(page.locator('article[data-testid="tweet"]').first()).toBeVisible();
+});
+
+test('keeps a high-view post with meaningful likes and reposts visible', async ({ page }) => {
+  await page.goto('/?fixture=engagement-popular');
+
+  await expect(page.getByText('Popular post with meaningful engagement.')).toBeVisible();
+  await expect(page.getByTestId('slopfilter-placeholder')).toHaveCount(0);
 });
 
 test('leaves an ordinary author visible and filters nothing when paused', async ({

@@ -10,6 +10,7 @@ import {
 const thresholds: BehaviouralThresholds = {
   postsPerDayThreshold: 40,
   engagementRatioThreshold: 0.01,
+  meaningfulEngagementFloor: 50,
 };
 
 const post = (overrides: Partial<Post> = {}): Post => ({
@@ -73,7 +74,29 @@ describe('scoreBehavioural', () => {
     const result = scoreBehavioural(post(), activity(), thresholds);
 
     expect(result.score).toBe(1);
-    expect(result.reason).toContain('high views, very little engagement');
+    expect(result.reason).toContain('high views with weak absolute engagement');
+  });
+
+  test('does not treat meaningful likes as weak engagement', () => {
+    const result = scoreBehavioural(
+      post({ engagement: { replies: 0, reposts: 0, likes: 51, views: 1_000_000 } }),
+      activity(),
+      thresholds,
+    );
+
+    expect(result.score).toBe(0);
+    expect(result.reason).toBeNull();
+  });
+
+  test('gives reposts more weight than likes when checking social proof', () => {
+    const result = scoreBehavioural(
+      post({ engagement: { replies: 0, reposts: 10, likes: 0, views: 1_000_000 } }),
+      activity(),
+      thresholds,
+    );
+
+    expect(result.score).toBe(0);
+    expect(result.reason).toBeNull();
   });
 
   test('clamps the returned score to the inclusive range 0 to 1', () => {

@@ -23,6 +23,32 @@ const applyFixtureVariant = () => {
     section.replaceChildren(...posts);
     return;
   }
+  if (fixture === 'engagement-popular') {
+    const section = document.querySelector('main[data-testid="primaryColumn"] section');
+    if (!section) throw new Error('timeline section not found');
+    section.innerHTML = `
+      <article data-testid="tweet">
+        <div data-testid="User-Name">
+          <div dir="ltr">Popular account</div>
+          <div dir="ltr"><a href="/popular/status/popular-0">@popular</a></div>
+        </div>
+        <div data-testid="tweetText">Earlier popular post.</div>
+        <time datetime="2026-08-05T09:00:00.000Z"></time>
+      </article>
+      <article data-testid="tweet">
+        <div data-testid="User-Name">
+          <div dir="ltr">Popular account</div>
+          <div dir="ltr"><a href="/popular/status/popular-1">@popular</a></div>
+        </div>
+        <div data-testid="tweetText">Popular post with meaningful engagement.</div>
+        <time datetime="2026-08-05T10:00:00.000Z"></time>
+        <button data-testid="like" aria-label="500 Likes. Like"></button>
+        <button data-testid="retweet" aria-label="10 reposts. Repost"></button>
+        <a href="/popular/status/popular-1/analytics" aria-label="1000000 views. View post analytics"></a>
+      </article>
+    `;
+    return;
+  }
   if (fixture !== 'broken') return;
   const section = document.querySelector('main[data-testid="primaryColumn"] section');
   if (!section?.parentNode) throw new Error('timeline section not found');

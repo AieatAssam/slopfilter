@@ -32,16 +32,24 @@ describe('collapsePost', () => {
     expect(post.nextElementSibling?.getAttribute('data-testid')).toBe('slopfilter-placeholder');
   });
 
+  test('applies the selected site theme', () => {
+    const post = setup();
+
+    collapsePost(post, breakdown(['observable evidence']), 'x');
+
+    expect(post.nextElementSibling?.classList.contains('slopfilter-theme-x')).toBe(true);
+  });
+
   test('renders the breakdown reasons verbatim', () => {
     const post = setup();
 
     collapsePost(
       post,
-      breakdown(['posts 40+ times per day', 'high views, very little engagement']),
+      breakdown(['posts 40+ times per day', 'high views with weak absolute engagement']),
     );
 
     expect(post.nextElementSibling?.textContent).toContain(
-      'Hidden: posts 40+ times per day · high views, very little engagement',
+      'Hidden: posts 40+ times per day · high views with weak absolute engagement',
     );
   });
 

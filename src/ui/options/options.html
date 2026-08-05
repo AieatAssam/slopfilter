@@ -6,7 +6,36 @@
     <title>SlopFilter options</title>
   </head>
   <body>
-    <p>SlopFilter options</p>
+    <h1>SlopFilter</h1>
+    <form>
+      <label for="hide-threshold">Hide threshold</label>
+      <input id="hide-threshold" name="hide-threshold" type="range" min="0" max="1" step="0.01" />
+      <output id="hide-threshold-value" for="hide-threshold"></output>
+      <fieldset>
+        <legend>Layer settings</legend>
+        <label for="weight-behavioural">Weight: behavioural</label>
+        <input id="weight-behavioural" type="number" min="0" max="1" step="0.05" />
+        <label for="enable-behavioural">Enable behavioural</label>
+        <input id="enable-behavioural" type="checkbox" />
+        <label for="weight-provenance">Weight: provenance</label>
+        <input id="weight-provenance" type="number" min="0" max="1" step="0.05" />
+        <label for="enable-provenance">Enable provenance</label>
+        <input id="enable-provenance" type="checkbox" />
+        <label for="weight-content-type">Weight: content-type</label>
+        <input id="weight-content-type" type="number" min="0" max="1" step="0.05" />
+        <label for="enable-content-type">Enable content-type</label>
+        <input id="enable-content-type" type="checkbox" />
+        <label for="weight-image-forensics">Weight: image-forensics</label>
+        <input id="weight-image-forensics" type="number" min="0" max="1" step="0.05" />
+        <label for="enable-image-forensics">Enable image-forensics</label>
+        <input id="enable-image-forensics" type="checkbox" />
+        <label for="weight-taste">Weight: taste</label>
+        <input id="weight-taste" type="number" min="0" max="1" step="0.05" />
+        <label for="enable-taste">Enable taste</label>
+        <input id="enable-taste" type="checkbox" />
+      </fieldset>
+    </form>
+    <p data-testid="slopfilter-settings-status" aria-live="polite"></p>
     <script type="module" src="./options.js"></script>
   </body>
 </html>

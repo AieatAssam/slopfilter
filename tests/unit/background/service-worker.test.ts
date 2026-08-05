@@ -53,7 +53,17 @@ describe('handleMessage', () => {
       202,
     );
 
-    expect(getSelfTestState(101).ok).toBe(true);
-    expect(getSelfTestState(202).ok).toBe(false);
+    expect(getSelfTestState(101)?.ok).toBe(true);
+    expect(getSelfTestState(202)?.ok).toBe(false);
+  });
+
+  test("does not inherit another tab's failure", () => {
+    handleMessage({
+      type: 'selftest-result',
+      ok: false,
+      failedSelectorIds: ['timeline-container'],
+    });
+
+    expect(getSelfTestState(303)).toBeNull();
   });
 });

@@ -23,7 +23,7 @@ test('collapses a post with its reason label and restores it on Show anyway', as
   });
   await expect(page.getByText(text)).toBeVisible();
 
-  const reasons = ['posts 40+ times per day', 'high views, very little engagement'];
+  const reasons = ['posts 40+ times per day', 'high views with weak absolute engagement'];
   const [frequencyReason, engagementReason] = reasons;
   if (!frequencyReason || !engagementReason) throw new Error('test reasons missing');
   await page.evaluate((value) => window.__slopfilterHarness.collapseFirstPost(value), reasons);

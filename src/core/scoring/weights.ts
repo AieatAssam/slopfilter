@@ -10,6 +10,7 @@ export interface VetoRule {
 export const DEFAULT_THRESHOLDS: BehaviouralThresholds = {
   postsPerDayThreshold: 40,
   engagementRatioThreshold: 0.01,
+  meaningfulEngagementFloor: 50,
 };
 
 export const DEFAULT_SCORING_CONFIG: ScoringConfig = {

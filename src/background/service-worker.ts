@@ -28,14 +28,14 @@ export function handleMessage(message: unknown, tabId?: number): void {
   });
 }
 
-export const getSelfTestState = (tabId?: number): SelfTestState =>
-  (tabId === undefined ? undefined : selfTestsByTab.get(tabId)) ?? lastSelfTest;
+export const getSelfTestState = (tabId?: number): SelfTestState | null =>
+  tabId === undefined ? lastSelfTest : (selfTestsByTab.get(tabId) ?? null);
 
 if (typeof chrome !== 'undefined') {
   chrome.runtime.onInstalled.addListener(() => logger.debug('service worker installed'));
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (isExtensionMessage(message) && message.type === 'get-selftest-state') {
-      sendResponse(getSelfTestState(message.tabId ?? sender.tab?.id));
+      sendResponse(getSelfTestState(message.tabId));
       return true;
     }
     handleMessage(message, sender.tab?.id);

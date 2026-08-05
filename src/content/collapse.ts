@@ -1,16 +1,21 @@
 import type { ScoreBreakdown } from '@/core/scoring/types';
 import { attachBreakdown } from './breakdown';
+import { type ContentTheme, themeClass } from './themes';
 
 const placeholderTestId = 'slopfilter-placeholder';
 
-export function collapsePost(element: HTMLElement, breakdown: ScoreBreakdown): void {
+export function collapsePost(
+  element: HTMLElement,
+  breakdown: ScoreBreakdown,
+  theme: ContentTheme = 'generic',
+): void {
   if (element.dataset.slopfilterCollapsed === 'true') return;
 
   element.dataset.slopfilterCollapsed = 'true';
   element.style.display = 'none';
 
   const placeholder = document.createElement('div');
-  placeholder.className = 'slopfilter-placeholder';
+  placeholder.className = `slopfilter-placeholder ${themeClass(theme)}`;
   placeholder.dataset.testid = placeholderTestId;
 
   const reason = document.createElement('span');

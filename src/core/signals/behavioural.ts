@@ -10,6 +10,7 @@ export interface AuthorActivity {
 export interface BehaviouralThresholds {
   postsPerDayThreshold: number;
   engagementRatioThreshold: number;
+  meaningfulEngagementFloor: number;
 }
 
 const validTimestamp = (post: Post): number | null => {
@@ -56,6 +57,11 @@ const engagementRatio = (post: Post): number | null => {
   return interactions / views;
 };
 
+const engagementStrength = (post: Post): number =>
+  (post.engagement.likes ?? 0) +
+  (post.engagement.reposts ?? 0) * 5 +
+  (post.engagement.replies ?? 0) * 3;
+
 const clamped = (value: number): number => Math.max(0, Math.min(1, value));
 
 export function scoreBehavioural(
@@ -80,9 +86,15 @@ export function scoreBehavioural(
 
   const ratio = engagementRatio(post);
   const engagementThreshold = Math.max(0, thresholds.engagementRatioThreshold);
-  if (ratio !== null && ratio < engagementThreshold && engagementThreshold > 0) {
+  const meaningfulEngagementFloor = Math.max(0, thresholds.meaningfulEngagementFloor);
+  if (
+    ratio !== null &&
+    ratio < engagementThreshold &&
+    engagementThreshold > 0 &&
+    engagementStrength(post) < meaningfulEngagementFloor
+  ) {
     scores.push(clamped((engagementThreshold - ratio) / engagementThreshold));
-    reasons.push('high views, very little engagement');
+    reasons.push('high views with weak absolute engagement');
   }
 
   if (scores.length === 0) return { layerId: 'behavioural', ok: true, score: 0, reason: null };
