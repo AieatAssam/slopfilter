@@ -19,7 +19,13 @@ const renderStatus = (response: unknown) => {
 };
 
 const loadStatus = () => {
-  chrome.runtime.sendMessage({ type: 'get-selftest-state' }, renderStatus);
+  chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+    const tabId = tabs[0]?.id;
+    chrome.runtime.sendMessage(
+      tabId === undefined ? { type: 'get-selftest-state' } : { type: 'get-selftest-state', tabId },
+      renderStatus,
+    );
+  });
 };
 
 if (document.readyState === 'loading') {

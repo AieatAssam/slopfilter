@@ -8,12 +8,14 @@ let lastSelfTest: SelfTestState = {
   ok: true,
   failedSelectorIds: [],
 };
+const selfTestsByTab = new Map<number, SelfTestState>();
 
-export function handleMessage(message: unknown): void {
+export function handleMessage(message: unknown, tabId?: number): void {
   if (!isExtensionMessage(message) || message.type !== 'selftest-result') return;
   if (typeof message.ok !== 'boolean' || !Array.isArray(message.failedSelectorIds)) return;
 
   lastSelfTest = message;
+  if (tabId !== undefined) selfTestsByTab.set(tabId, message);
   if (message.ok) {
     chrome.action.setBadgeText({ text: '' });
     chrome.action.setTitle({ title: 'SlopFilter' });
@@ -26,14 +28,17 @@ export function handleMessage(message: unknown): void {
   });
 }
 
+export const getSelfTestState = (tabId?: number): SelfTestState =>
+  (tabId === undefined ? undefined : selfTestsByTab.get(tabId)) ?? lastSelfTest;
+
 if (typeof chrome !== 'undefined') {
   chrome.runtime.onInstalled.addListener(() => logger.debug('service worker installed'));
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (isExtensionMessage(message) && message.type === 'get-selftest-state') {
-      sendResponse(lastSelfTest);
+      sendResponse(getSelfTestState(message.tabId ?? sender.tab?.id));
       return true;
     }
-    handleMessage(message);
+    handleMessage(message, sender.tab?.id);
     return false;
   });
 }

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "below-all",
+    "post": {
+      "id": "below-all",
+      "permalink": null,
+      "text": "ordinary post",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
+      "engagement": { "replies": 1, "reposts": 2, "likes": 7, "views": 1000 },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": { "postsPerDay": 20, "observedPostCount": 2, "observationWindowHours": 1 },
+    "expectedScore": 0,
+    "expectedHidden": false,
+    "expectedReasonIds": [],
+    "derivation": "20 <= 40 and 10/1000 = 0.01 is not below 0.01, so no signal component contributes."
+  },
+  {
+    "id": "frequency-only",
+    "post": {
+      "id": "frequency-only",
+      "permalink": null,
+      "text": "frequent post",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
+      "engagement": { "replies": null, "reposts": null, "likes": null, "views": null },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": { "postsPerDay": 80, "observedPostCount": 4, "observationWindowHours": 0.9 },
+    "expectedScore": 1,
+    "expectedHidden": true,
+    "expectedReasonIds": ["frequency"],
+    "derivation": "80 > 40; 0.6 + ((80 - 40) / 40 * 0.4) = 1.0."
+  },
+  {
+    "id": "engagement-only",
+    "post": {
+      "id": "engagement-only",
+      "permalink": null,
+      "text": "quiet post",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
+      "engagement": { "replies": 0, "reposts": 0, "likes": 0, "views": 1000 },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": { "postsPerDay": 20, "observedPostCount": 2, "observationWindowHours": 1 },
+    "expectedScore": 1,
+    "expectedHidden": true,
+    "expectedReasonIds": ["engagement"],
+    "derivation": "20 <= 40; 0/1000 = 0, so (0.01 - 0) / 0.01 = 1.0."
+  },
+  {
+    "id": "both",
+    "post": {
+      "id": "both",
+      "permalink": null,
+      "text": "frequent quiet post",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
+      "engagement": { "replies": 0, "reposts": 0, "likes": 0, "views": 1000 },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": { "postsPerDay": 80, "observedPostCount": 4, "observationWindowHours": 0.9 },
+    "expectedScore": 1,
+    "expectedHidden": true,
+    "expectedReasonIds": ["frequency", "engagement"],
+    "derivation": "Both components equal 1.0, so their average is 1.0."
+  },
+  {
+    "id": "missing-activity",
+    "post": {
+      "id": "missing-activity",
+      "permalink": null,
+      "text": "unknown activity",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
+      "engagement": { "replies": 1, "reposts": 2, "likes": 7, "views": 1000 },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": null,
+    "expectedScore": 0,
+    "expectedHidden": false,
+    "expectedReasonIds": [],
+    "derivation": "A null AuthorActivity fails open to score 0 and does not emit a reason."
+  },
+  {
+    "id": "exact-hide-threshold",
+    "post": {
+      "id": "exact-hide-threshold",
+      "permalink": null,
+      "text": "borderline engagement",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
+      "engagement": { "replies": 0, "reposts": 0, "likes": 4, "views": 1000 },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": { "postsPerDay": 20, "observedPostCount": 2, "observationWindowHours": 1 },
+    "expectedScore": 0.6,
+    "expectedHidden": true,
+    "expectedReasonIds": ["engagement"],
+    "derivation": "20 <= 40; 4/1000 = 0.004, so (0.01 - 0.004) / 0.01 = 0.6 and 0.6 >= 0.6 hides."
+  }
+]

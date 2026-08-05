@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { handleMessage } from '@/background/service-worker';
+import { getSelfTestState, handleMessage } from '@/background/service-worker';
 
 const action = {
   setBadgeBackgroundColor: vi.fn(),
@@ -44,5 +44,16 @@ describe('handleMessage', () => {
 
     expect(action.setBadgeText).not.toHaveBeenCalled();
     expect(action.setTitle).not.toHaveBeenCalled();
+  });
+
+  test('keeps self-test state separate for each tab', () => {
+    handleMessage({ type: 'selftest-result', ok: true, failedSelectorIds: [] }, 101);
+    handleMessage(
+      { type: 'selftest-result', ok: false, failedSelectorIds: ['timeline-container'] },
+      202,
+    );
+
+    expect(getSelfTestState(101).ok).toBe(true);
+    expect(getSelfTestState(202).ok).toBe(false);
   });
 });

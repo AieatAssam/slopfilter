@@ -2,7 +2,7 @@ import type { Post } from '@/core/post';
 
 export type ExtensionMessage =
   | { type: 'selftest-result'; ok: boolean; failedSelectorIds: readonly string[] }
-  | { type: 'get-selftest-state' }
+  | { type: 'get-selftest-state'; tabId?: number }
   | { type: 'score-batch-request'; requestId: string; posts: readonly Post[] }
   | {
       type: 'score-batch-response';

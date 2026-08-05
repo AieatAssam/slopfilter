@@ -2,7 +2,28 @@ import { collapsePost } from '@/content/collapse';
 import type { ScoreBreakdown } from '@/core/scoring/types';
 
 const applyFixtureVariant = () => {
-  if (new URLSearchParams(location.search).get('fixture') !== 'broken') return;
+  const fixture = new URLSearchParams(location.search).get('fixture');
+  if (fixture === 'high-frequency') {
+    const section = document.querySelector('main[data-testid="primaryColumn"] section');
+    if (!section) throw new Error('timeline section not found');
+    const posts = Array.from({ length: 10 }, (_, index) => {
+      const article = document.createElement('article');
+      article.dataset.postId = `high-frequency-${index}`;
+      article.dataset.testid = 'tweet';
+      article.innerHTML = `
+        <div data-testid="User-Name">
+          <div dir="ltr">Account 01</div>
+          <div dir="ltr"><a href="/account01/status/high-frequency-${index}">@account01</a></div>
+        </div>
+        <div data-testid="tweetText">High-frequency post ${index + 1}.</div>
+        <time datetime="${new Date(Date.parse('2026-08-05T10:00:00.000Z') - index * 1_800_000).toISOString()}"></time>
+      `;
+      return article;
+    });
+    section.replaceChildren(...posts);
+    return;
+  }
+  if (fixture !== 'broken') return;
   const section = document.querySelector('main[data-testid="primaryColumn"] section');
   if (!section?.parentNode) throw new Error('timeline section not found');
   section.removeAttribute('aria-label');

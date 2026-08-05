@@ -2,6 +2,9 @@ import { describe, expect, test } from 'vitest';
 import type { Post } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoringConfig, SignalResult } from '@/core/scoring/types';
+import { DEFAULT_SCORING_CONFIG, DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
+import { scoreBehavioural } from '@/core/signals/behavioural';
+import scoringFixtures from '../../../fixtures/posts/posts-scoring.json';
 
 const post: Post = {
   id: 'post-1',
@@ -72,5 +75,17 @@ describe('scorePost', () => {
     expect(result.compositeScore).toBeCloseTo(0.6286, 4);
     expect(result.hidden).toBe(true);
     expect(result.reasons).toEqual(['frequency evidence', 'provenance evidence']);
+  });
+
+  test.each(scoringFixtures)('scores fixture $id to its recorded value', (fixture) => {
+    const signal = scoreBehavioural(fixture.post, fixture.authorActivity, DEFAULT_THRESHOLDS);
+    const result = scorePost(fixture.post, [signal], DEFAULT_SCORING_CONFIG);
+
+    expect(result.compositeScore).toBeCloseTo(fixture.expectedScore, 4);
+    expect(result.hidden).toBe(fixture.expectedHidden);
+    for (const reasonId of fixture.expectedReasonIds) {
+      expect(result.reasons.join(' ')).toContain(reasonId === 'frequency' ? 'posts' : 'engagement');
+    }
+    expect(fixture.derivation).toBeTruthy();
   });
 });
