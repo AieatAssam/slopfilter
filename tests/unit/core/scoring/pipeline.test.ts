@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Post } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoringConfig, SignalResult } from '@/core/scoring/types';
-import { DEFAULT_SCORING_CONFIG, DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
+import { DEFAULT_SCORING_CONFIG, DEFAULT_THRESHOLDS, VETO_RULES } from '@/core/scoring/weights';
 import { scoreBehavioural } from '@/core/signals/behavioural';
 import scoringFixtures from '../../../fixtures/posts/posts-scoring.json';
 
@@ -39,6 +39,7 @@ describe('scorePost', () => {
   test('never hides a post with no signal results', () => {
     expect(scorePost(post, [], { ...config, hideThreshold: 0 })).toEqual({
       compositeScore: 0,
+      threshold: 0,
       hidden: false,
       contributions: [],
       reasons: [],
@@ -59,6 +60,7 @@ describe('scorePost', () => {
     };
     expect(scorePost(post, [errored], { ...config, hideThreshold: 0 })).toEqual({
       compositeScore: 0,
+      threshold: 0,
       hidden: false,
       contributions: [],
       reasons: [],
@@ -75,6 +77,31 @@ describe('scorePost', () => {
     expect(result.compositeScore).toBeCloseTo(0.6286, 4);
     expect(result.hidden).toBe(true);
     expect(result.reasons).toEqual(['frequency evidence', 'provenance evidence']);
+  });
+
+  test('keeps the composite within the inclusive range for maximum inputs', () => {
+    const results = (
+      ['behavioural', 'provenance', 'content-type', 'image-forensics', 'taste'] as const
+    ).map((layerId) => ({ layerId, ok: true, score: 1, reason: `${layerId} evidence` }));
+    const result = scorePost(post, results, config);
+
+    expect(result.compositeScore).toBe(1);
+    expect(result.compositeScore).toBeGreaterThanOrEqual(0);
+    expect(result.compositeScore).toBeLessThanOrEqual(1);
+  });
+
+  test('uses an injected threshold without changing the composite score', () => {
+    const results = [behavioural(0.7)];
+    const hidden = scorePost(post, results, { ...config, hideThreshold: 0.6 });
+    const visible = scorePost(post, results, { ...config, hideThreshold: 0.8 });
+
+    expect(hidden.compositeScore).toBe(visible.compositeScore);
+    expect(hidden.hidden).toBe(true);
+    expect(visible.hidden).toBe(false);
+  });
+
+  test('ships no inferred veto rules until they are explicitly approved', () => {
+    expect(VETO_RULES).toHaveLength(0);
   });
 
   test.each(scoringFixtures)('scores fixture $id to its recorded value', (fixture) => {

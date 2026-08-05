@@ -1,4 +1,5 @@
 import type { ScoreBreakdown } from '@/core/scoring/types';
+import { attachBreakdown } from './breakdown';
 
 const placeholderTestId = 'slopfilter-placeholder';
 
@@ -15,6 +16,8 @@ export function collapsePost(element: HTMLElement, breakdown: ScoreBreakdown): v
   const reason = document.createElement('span');
   reason.className = 'slopfilter-reason';
   reason.textContent = `Hidden: ${breakdown.reasons.join(' · ')}`;
+
+  attachBreakdown(placeholder, breakdown);
 
   const showAnyway = document.createElement('button');
   showAnyway.className = 'slopfilter-show-anyway';

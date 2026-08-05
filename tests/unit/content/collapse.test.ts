@@ -4,6 +4,7 @@ import type { ScoreBreakdown } from '@/core/scoring/types';
 
 const breakdown = (reasons: string[]): ScoreBreakdown => ({
   compositeScore: 1,
+  threshold: 0.6,
   hidden: true,
   contributions: [],
   reasons,
@@ -47,7 +48,7 @@ describe('collapsePost', () => {
   test('show anyway restores the original post', () => {
     const post = setup();
     collapsePost(post, breakdown(['observable evidence']));
-    const button = post.nextElementSibling?.querySelector('button');
+    const button = post.nextElementSibling?.querySelector('.slopfilter-show-anyway');
     if (!(button instanceof HTMLButtonElement)) throw new Error('show anyway button missing');
 
     button.click();

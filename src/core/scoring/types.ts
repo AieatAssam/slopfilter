@@ -14,6 +14,7 @@ export interface ScoringConfig {
 
 export interface ScoreBreakdown {
   compositeScore: number;
+  threshold: number;
   hidden: boolean;
   contributions: readonly {
     layerId: LayerId;

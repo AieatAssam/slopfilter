@@ -75,6 +75,7 @@ const collapseFirstPost = (reasons: string[]) => {
 
   const breakdown: ScoreBreakdown = {
     compositeScore: 1,
+    threshold: 0.6,
     hidden: true,
     contributions: [],
     reasons,
