@@ -1,6 +1,7 @@
 import type { PlatformAdapter, SelectorCheckResult } from '@/adapters/types';
 import type { Post, PostAuthor, PostEngagement } from '@/core/post';
 import { getEntry, resolveSelector, type SelectorEntry, selectorContract } from './selectors';
+import { runSelfTest } from './selftest';
 
 const firstMatch = (root: ParentNode, entry: SelectorEntry): Element | null =>
   resolveSelector(root, entry);
@@ -98,7 +99,8 @@ export const xAdapter: PlatformAdapter = {
     }
   },
 
-  selfTest(_root): SelectorCheckResult {
-    return { ok: true, failedSelectorIds: [] };
+  selfTest(root): SelectorCheckResult {
+    const result = runSelfTest(root);
+    return { ok: result.ok, failedSelectorIds: result.failedSelectorIds };
   },
 };

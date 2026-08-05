@@ -1,6 +1,17 @@
 import { collapsePost } from '@/content/collapse';
 import type { ScoreBreakdown } from '@/core/scoring/types';
 
+const applyFixtureVariant = () => {
+  if (new URLSearchParams(location.search).get('fixture') !== 'broken') return;
+  const section = document.querySelector('main[data-testid="primaryColumn"] section');
+  if (!section?.parentNode) throw new Error('timeline section not found');
+  section.removeAttribute('aria-label');
+  while (section.firstChild) section.parentNode.insertBefore(section.firstChild, section);
+  section.remove();
+};
+
+applyFixtureVariant();
+
 type HarnessPost = {
   id: string;
   authorHandle: string;
@@ -19,7 +30,10 @@ const appendPost = (post: HarnessPost) => {
   article.dataset.testid = 'tweet';
   article.dataset.harnessAppended = 'true';
   article.innerHTML = `
-    <div data-testid="User-Name"><a href="/${post.id}">${post.authorHandle}</a></div>
+    <div data-testid="User-Name">
+      <div dir="ltr">Account</div>
+      <div dir="ltr"><a href="/${post.authorHandle.slice(1)}/status/${post.id}">${post.authorHandle}</a></div>
+    </div>
     <div data-testid="tweetText"></div>
     <time datetime="${post.postedAt}"></time>
   `;
