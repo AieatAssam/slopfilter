@@ -1,0 +1,32 @@
+{
+  "name": "slopfilter",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build:main": "vite build",
+    "build:content": "vite build --config vite.content.config.ts",
+    "build": "SLOPFILTER_BUILD_TARGET=production npm run build:main && SLOPFILTER_BUILD_TARGET=production npm run build:content && node scripts/build-manifest.mjs",
+    "build:test": "SLOPFILTER_BUILD_TARGET=test npm run build:main && SLOPFILTER_BUILD_TARGET=test npm run build:content && node scripts/build-manifest.mjs",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "bench:scoring": "vitest bench --run",
+    "bench:pageload": "playwright test --config playwright.bench.config.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.7",
+    "@types/chrome": "0.2.5",
+    "@vitest/coverage-v8": "4.1.10",
+    "jsdom": "30.0.1",
+    "typescript": "7.0.2",
+    "vite": "8.2.0",
+    "vitest": "4.1.10"
+  }
+}
