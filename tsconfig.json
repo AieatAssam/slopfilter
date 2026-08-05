@@ -18,5 +18,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "tests", "e2e", "bench", "scripts", "*.config.ts"]
+  "files": ["e2e/support/harness.d.ts", "e2e/support/node-shims.d.ts"],
+  "include": ["src", "tests", "e2e", "e2e/support/harness.d.ts", "bench", "scripts", "*.config.ts"]
 }
