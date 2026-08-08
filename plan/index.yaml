@@ -10,7 +10,7 @@ state:
   verified_on: 2026-08-08
   gates_green: lint, typecheck, test:unit (157), build, build:test, test:e2e (29) all exit 0
   shipped: SF-001..SF-207, all 30 tickets. Code is in the repository; do not rebuild it.
-  open_work: SF-208..SF-216, none blocked.
+  open_work: SF-208..SF-217, none blocked.
   known_defect: "Measured 2026-08-08: scorePost computes a weighted mean, so quiet layers dilute loud
     ones. behavioural 1.0 alone scores 1.000 and hides; with two model layers at 0 it scores 0.500,
     with four 0.400, and a 0.95 content-type result scores 0.237, all under the 0.6 threshold.
@@ -266,6 +266,10 @@ open_tickets:
     file: plan/tickets/SF-216.yaml
     depends_on: [SF-215]
     summary: "Read author account age, post count, and exact engagement from X's own HomeTimeline response (payload verified 2026-08-08, 35 of 35 authors)"
+  - id: SF-217
+    file: plan/tickets/SF-217.yaml
+    depends_on: [SF-216]
+    summary: Score recently created accounts that post at high volume as a graded behavioural sub-signal
 
 # Standing rules for any injected UI, not only the open tickets above.
 ui_rules:
