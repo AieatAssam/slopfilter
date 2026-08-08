@@ -1,8 +1,71 @@
 import { collapsePost } from '@/content/collapse';
 import type { ScoreBreakdown } from '@/core/scoring/types';
 
-const applyFixtureVariant = () => {
+const GOLDEN_FIXTURE_URL = '/fixtures/dom/x/timeline-baseline.html';
+
+const mountGolden = async () => {
+  const response = await fetch(GOLDEN_FIXTURE_URL);
+  if (!response.ok) throw new Error(`golden fixture fetch failed: ${response.status}`);
+  const html = await response.text();
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  document.body.replaceChildren(...Array.from(parsed.body.childNodes));
+  // Captured X articles carry no id attribute, so stamp one per article for layoutVariantIds.
+  const mounted = document.body.querySelectorAll<HTMLElement>('article[data-testid="tweet"]');
+  mounted.forEach((article, index) => {
+    if (!article.id) article.id = `sf-golden-post-${index}`;
+  });
+};
+
+const layoutVariantIds = (): string[] => {
+  const articles = Array.from(
+    document.body.querySelectorAll<HTMLElement>('article[data-testid="tweet"]'),
+  );
+  const hasPhoto = (article: HTMLElement) =>
+    Boolean(article.querySelector('[data-testid="tweetPhoto"]'));
+  const byHeight = (a: HTMLElement, b: HTMLElement) => a.offsetHeight - b.offsetHeight;
+  const shortText = articles.filter((article) => !hasPhoto(article)).sort(byHeight)[0];
+  const firstPhoto = articles.filter(hasPhoto).sort(byHeight)[0];
+  const tall = articles
+    .filter((article) => article !== shortText && article !== firstPhoto)
+    .sort(byHeight)
+    .at(-1);
+  const chosen = [shortText, firstPhoto, tall].filter((article): article is HTMLElement =>
+    Boolean(article),
+  );
+  return Array.from(new Set(chosen.map((article) => article.id)));
+};
+
+const THEMES: Record<'default' | 'dim' | 'lights-out', { background: string; text: string }> = {
+  default: { background: 'rgb(255, 255, 255)', text: 'rgb(15, 20, 25)' },
+  dim: { background: 'rgb(21, 32, 43)', text: 'rgb(247, 249, 249)' },
+  'lights-out': { background: 'rgb(0, 0, 0)', text: 'rgb(231, 233, 234)' },
+};
+
+const setTheme = (theme: 'default' | 'dim' | 'lights-out') => {
+  const value = THEMES[theme];
+  document.body.style.backgroundColor = value.background;
+  const timelineEl = document.querySelector('[aria-label="Timeline: Your Home Timeline"]');
+  if (timelineEl instanceof HTMLElement) timelineEl.style.color = value.text;
+};
+
+const setAccent = (color: string) => {
+  let probe = document.querySelector<HTMLElement>('[data-testid="tweetButtonInline"]');
+  if (!probe) {
+    probe = document.createElement('div');
+    probe.dataset.testid = 'tweetButtonInline';
+    const primary = document.querySelector('[data-testid="primaryColumn"]');
+    if (!primary) throw new Error('primary column not found');
+    primary.appendChild(probe);
+  }
+  probe.style.backgroundColor = color;
+};
+
+const applyFixtureVariant = async () => {
   const fixture = new URLSearchParams(location.search).get('fixture');
+  if (fixture === 'golden') {
+    await mountGolden();
+    return;
+  }
   if (fixture === 'high-frequency') {
     const section = document.querySelector('main[data-testid="primaryColumn"] section');
     if (!section) throw new Error('timeline section not found');
@@ -84,8 +147,6 @@ type HarnessPost = {
 
 const STORED_POSTS_KEY = 'slopfilter-harness-posts';
 
-applyFixtureVariant();
-
 const timeline = () => document.querySelector('[aria-label="Timeline: Your Home Timeline"]');
 
 const createPostElement = (post: HarnessPost): HTMLElement => {
@@ -144,6 +205,16 @@ const collapseFirstPost = (reasons: string[]) => {
   collapsePost(post, breakdown);
 };
 
-window.__slopfilterHarness = { appendPost, collapseFirstPost, reset };
+window.__slopfilterHarness = {
+  appendPost,
+  collapseFirstPost,
+  reset,
+  mountGolden,
+  layoutVariantIds,
+  setTheme,
+  setAccent,
+};
+
+await applyFixtureVariant();
 
 restoreAppendedPosts();

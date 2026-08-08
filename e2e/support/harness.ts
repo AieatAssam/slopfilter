@@ -18,3 +18,18 @@ export const appendPost = async (page: Page, post: HarnessPost) => {
 export const resetHarness = async (page: Page) => {
   await page.evaluate(() => window.__slopfilterHarness?.reset());
 };
+
+export const mountGolden = async (page: Page) => {
+  await page.evaluate(() => window.__slopfilterHarness.mountGolden());
+};
+
+export const layoutVariantIds = (page: Page): Promise<string[]> =>
+  page.evaluate(() => window.__slopfilterHarness.layoutVariantIds());
+
+export type HarnessTheme = 'default' | 'dim' | 'lights-out';
+
+export const setTheme = (page: Page, theme: HarnessTheme) =>
+  page.evaluate((value) => window.__slopfilterHarness.setTheme(value), theme);
+
+export const setAccent = (page: Page, color: string) =>
+  page.evaluate((value) => window.__slopfilterHarness.setAccent(value), color);

@@ -10,6 +10,10 @@ declare global {
       }): void;
       collapseFirstPost(reasons: string[]): void;
       reset(): void;
+      mountGolden(): Promise<void>;
+      layoutVariantIds(): string[];
+      setTheme(theme: 'default' | 'dim' | 'lights-out'): void;
+      setAccent(color: string): void;
     };
   }
 }

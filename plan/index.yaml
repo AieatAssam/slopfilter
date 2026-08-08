@@ -162,6 +162,8 @@ decisions:
     HD-003: GitHub owner/name the drift monitor files issues against.
     HD-005: Owner sign-off on the shipped default thresholds in src/core/scoring/weights.ts.
 done:
+  - id: SF-208
+    did: Serve golden X markup, X's three themes, and a switchable accent from the E2E harness
   - id: SF-001
     did: Scaffold the Manifest V3 extension with npm, TypeScript, and Vite
     provisional: HD-002
@@ -230,10 +232,6 @@ done:
   - id: SF-207
     did: Add the onboarding flow, the privacy page, and the store-listing copy
 open_tickets:
-  - id: SF-208
-    file: plan/tickets/SF-208.yaml
-    depends_on: []
-    summary: Serve golden X markup, X's three themes, and a switchable accent from the E2E harness
   - id: SF-209
     file: plan/tickets/SF-209.yaml
     depends_on: [SF-208]
