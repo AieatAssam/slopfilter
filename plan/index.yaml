@@ -1,0 +1,261 @@
+plan_id: slopfilter-x-extension
+prd: docs/prd/slopfilter_prd.md
+goal: Ship a Manifest V3 Chrome extension that collapses low-quality posts in the X/Twitter Home
+  timeline using five layered, locally computed signals, with a versioned selector contract, an
+  in-extension self-test that pauses filtering on markup drift, a scheduled CI drift monitor, and
+  CI-enforced performance budgets. Runtime network access is limited to one-time model downloads and
+  adapter-provided image-thumbnail fetches for C2PA inspection. No servers, no accounts, no
+  authorship claims.
+state:
+  verified_on: 2026-08-08
+  gates_green: lint, typecheck, test:unit (157), build, build:test, test:e2e (29) all exit 0
+  shipped: SF-001..SF-207, all 30 tickets. Code is in the repository; do not rebuild it.
+  open_work: SF-208..SF-212 only.
+protocol:
+  - Read this file plus the one plan/tickets/<id>.yaml you are working. Nothing else.
+  - "Work open tickets in depends_on order. done[] is a ledger of shipped work: read the code, never
+    redo it."
+  - A ticket is finished when every verify[].run in its file exits 0 and every gates[] entry exits 0.
+  - "Then delete the ticket file and append its id and a one-line did: to done[] in this file."
+  - E2E needs `npm run build:test` first. A production build omits the harness host permission and
+    every content-script spec fails.
+  - "On failure: retry once, then stop and report ticket id, command, exit code, output."
+  - Never weaken an assertion, raise a timeout, skip a test, add a sleep, relax a strictness flag,
+    or install an unlisted package to make a check pass.
+  - If a file, symbol, selector, model id, or threshold is not named literally here, stop and report
+    rather than infer it.
+  - "provisional: on a done entry means the behaviour is deliberate and pending an owner decision.
+    Do not change it."
+constraints:
+  - Manifest V3. No remote code, no eval, no new Function.
+  - "host_permissions: x.com, twitter.com, pbs.twimg.com. localhost:5174 only in
+    SLOPFILTER_BUILD_TARGET=test builds, never in a production build (gate GV-08)."
+  - No runtime network call except the pinned model download and adapter-provided thumbnail fetches
+    for C2PA. No analytics, telemetry, or accounts.
+  - No string anywhere may claim, imply, or hedge that a post was written by AI. Reason labels state
+    observable evidence only.
+  - Fail open. Self-test failure, model failure, or a thrown signal shows every post unfiltered.
+    Never hide what could not be scored.
+  - "src/core/ is pure: no chrome.*, no DOM, no IndexedDB, no global mutable state. Enforced by
+    Biome overrides."
+  - Platform DOM knowledge lives only in src/adapters/x/ and its selectors.json contract.
+  - "Budgets: page-load delta <50ms, scoring <100ms per 10-post batch, memory <300MB, first-run
+    download <100MB. A breach is reported, never absorbed by raising the budget."
+  - "Dependencies are pinned exact, latest published, and only those already in package.json. Never
+    add eslint, typescript-eslint, prettier, or eslint-config-prettier: Biome replaces all four."
+  - tsconfig.json must have no baseUrl and every paths target must start with ./ (TypeScript 7 hard
+    errors TS5102 and TS5090).
+  - "Unit test path mirrors source path: src/a/b.ts -> tests/unit/a/b.test.ts."
+  - "E2E: local harness at http://localhost:5174 only, never live x.com. Locators getByRole, then
+    getByLabel, then getByTestId; never CSS, XPath, or positional. Run-unique data via uniqueRunId,
+    cleanup via resetHarness. No sleep or arbitrary polling."
+  - Validation one-liners use `node --input-type=module -e` with ESM syntax.
+gates:
+  - id: GV-01
+    run: npm ci
+    expect: Exit code 0
+  - id: GV-02
+    run: npm run lint
+    expect: Exit code 0
+  - id: GV-03
+    run: npm run typecheck
+    expect: Exit code 0, tsc reports no errors
+  - id: GV-04
+    run: npm run test:unit
+    expect: Exit code 0, zero failing Vitest tests, zero skipped tests
+  - id: GV-05
+    run: npm run build
+    expect: Exit code 0
+  - id: GV-07
+    run: npm audit --audit-level=high
+    expect: Exit code 0, zero high or critical severity advisories
+  - id: GV-09
+    run: npm ls >/dev/null
+    expect: Exit code 0 with no unmet-peer-dependency or invalid-dependency line printed
+  - id: GV-10
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      d=JSON.parse(fs.readFileSync('package.json','utf8')).devDependencies;for(const b of
+      ['eslint','typescript-eslint','prettier','eslint-config-prettier'])if(d[b])throw new Error(b+'
+      must not be installed; Biome replaces it');if(!d['@biomejs/biome'])throw new
+      Error('@biomejs/biome is required');console.log('ok')"
+    expect: Prints ok and exits 0
+  - id: GV-11
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      t=fs.readFileSync('tsconfig.json','utf8');if(/\bbaseUrl\b/.test(t))throw new Error('TypeScript
+      7 removed baseUrl; remove it from tsconfig.json');const
+      c=JSON.parse(t.replace(/\/\*[\s\S]*?\*\//g,''));for(const [k,v] of
+      Object.entries(c.compilerOptions.paths||{}))for(const target of
+      v)if(!target.startsWith('./'))throw new Error('paths target '+target+' for '+k+' must start
+      with ./ under TypeScript 7');console.log('ok')"
+    expect: Prints ok and exits 0
+  - id: GV-08
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      m=JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));const
+      h=JSON.stringify(m.host_permissions||[]);if(h.includes('localhost'))throw new Error('localhost
+      host permission leaked into build');console.log('ok')"
+    expect: Prints ok and exits 0
+  - id: GV-06
+    run: npm run build:test && npm run test:e2e
+    expect: Exit code 0, zero failing Playwright tests
+toolchain:
+  pins:
+    typescript: 7.0.2
+    "@biomejs/biome": 2.5.7
+    vite: 8.2.0
+    "@types/chrome": 0.2.5
+    "@huggingface/transformers": 4.2.0
+    "@contentauth/c2pa-web": 0.13.2
+    vitest: 4.1.10
+    jsdom: 30.0.1
+    "@vitest/coverage-v8": 4.1.10
+    "@playwright/test": 1.62.1
+  gotchas:
+    - TypeScript 7 removed baseUrl (TS5102) and rejects non-relative paths targets (TS5090).
+    - Vitest 4 removed test.environmentMatchGlobs; per-environment config uses test.projects.
+    - "Content scripts are classic scripts: the content bundle is a separate IIFE build
+      (vite.content.config.ts), run after build:main which sets emptyOutDir."
+    - public/content/styles.css is copied verbatim by publicDir, never imported from TypeScript, or
+      Vite renames it and the manifest path breaks.
+    - CSP for extension pages is "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'" and must
+      not widen further.
+decisions:
+  answered:
+    HD-001: Product name is SlopFilter.
+    HD-002: MIT licence; copyright-holder line in LICENSE still needs owner confirmation.
+    HD-004: Posting rate is estimated from consecutive timestamps visible in the timeline. No profile
+      fetches, no X API.
+    HD-014: Plain TypeScript and direct DOM APIs for all extension UI. No framework.
+    HD-015: Golden fixtures are captured and committed under tests/fixtures/dom/x/. No further live
+      capture is authorised.
+  provisional:
+    HD-006: Drift workflow targets the committed fixture until SLOPFILTER_DRIFT_TARGET names an
+      owner-approved live target.
+    HD-007: Classifier and embedder pair pinned to immutable revisions; classifier licensing unconfirmed.
+    HD-008: Three PRD content labels, equal treatment, 0.80 confidence cutoff.
+    HD-009: No hard-veto rules are enabled until the evidence rules are approved.
+    HD-010: onnx-community/CommunityForensics-DeepfakeDet-ViT-ONNX @
+      f9fc6516b37cd7d1bec3b94847b3682ce97249f0, q4f16, 384px, max 4 thumbnails per post.
+    HD-011: "@contentauth/c2pa-web 0.13.2 with local worker and WASM assets; X strips credentials, layer
+      retained for other media."
+    HD-012: One shared offscreen document with a dedicated worker, not one model copy per tab.
+    HD-013: Runtime downloads from huggingface.co and its CDN; WASM backend, WebGPU disabled after
+      benchmarking.
+  open:
+    HD-003: GitHub owner/name the drift monitor files issues against.
+    HD-005: Owner sign-off on the shipped default thresholds in src/core/scoring/weights.ts.
+done:
+  - id: SF-001
+    did: Scaffold the Manifest V3 extension with npm, TypeScript, and Vite
+    provisional: HD-002
+  - id: SF-002
+    did: Add Biome and Vitest with the core-purity import boundary
+  - id: SF-003
+    did: Add the Playwright E2E harness with an extension-loading fixture and a local feed page
+  - id: SF-004
+    did: Define the normalized Post model, the PlatformAdapter contract, and the message schema
+  - id: SF-005
+    did: Create the versioned selector contract and its typed loader
+  - id: SF-006
+    did: Capture, sanitise, and commit the golden X timeline DOM fixtures
+  - id: SF-007
+    did: Implement the X Home timeline adapter against golden DOM fixtures
+  - id: SF-008
+    did: Implement the pure scoring pipeline and the Layer 1 behavioural signal
+  - id: SF-009
+    did: Render collapsed posts with an evidence-based reason label and a show-anyway control
+  - id: SF-010
+    did: Add the in-extension selector self-test, the paused badge, and the popup explanation
+  - id: SF-011
+    did: Add the CI workflow running lint, typecheck, unit tests, build, audit, and E2E
+  - id: SF-012
+    did: Add the scheduled DOM drift monitor that files an issue when the selector contract breaks
+    provisional: HD-006
+  - id: SF-013
+    did: Add the page-load delta benchmark enforcing the 50ms budget
+  - id: SF-014
+    did: Wire the content script end to end so real posts are observed, scored, and collapsed
+  - id: SF-101
+    did: Build the inference host running Transformers.js with a WASM default and WebGPU detection
+    provisional: HD-007,HD-012,HD-013
+  - id: SF-102
+    did: Add the Layer 3 content-type classifier signal
+    provisional: HD-008
+  - id: SF-103
+    did: Add the IndexedDB downvote embedding store with a 1000-entry cap
+  - id: SF-104
+    did: Add the Layer 5 taste model scoring against downvote-cluster centroids
+  - id: SF-105
+    did: Add the thumbs-down and wrong-call feedback controls
+  - id: SF-106
+    did: Add weighted multi-layer scoring with hard-veto rules and a tunable threshold
+    provisional: HD-009
+  - id: SF-107
+    did: Add the per-post score breakdown panel
+  - id: SF-108
+    did: Add the settings store and the options page for threshold, weights, and layer toggles
+  - id: SF-109
+    did: Add the scoring-latency and memory benchmarks enforcing the 100ms and 300MB budgets
+  - id: SF-201
+    did: Add the Layer 2 provenance signal reading C2PA content credentials
+    provisional: HD-011
+  - id: SF-202
+    did: Add the Layer 4 image forensics signal on thumbnails
+    provisional: HD-010
+  - id: SF-203
+    did: Add per-account mute, trust, and images-only controls
+  - id: SF-204
+    did: Add the local-only weekly stats panel
+  - id: SF-205
+    did: Add settings export and import
+  - id: SF-206
+    did: Add the model download progress UX and offline behaviour
+  - id: SF-207
+    did: Add the onboarding flow, the privacy page, and the store-listing copy
+open_tickets:
+  - id: SF-208
+    file: plan/tickets/SF-208.yaml
+    depends_on: []
+    summary: Serve golden X markup, X's three themes, and a switchable accent from the E2E harness
+  - id: SF-209
+    file: plan/tickets/SF-209.yaml
+    depends_on: [SF-208]
+    summary: Derive injected-UI colour and type tokens from X's computed styles instead of hardcoding them
+  - id: SF-210
+    file: plan/tickets/SF-210.yaml
+    depends_on: [SF-208]
+    summary: Anchor injected controls so their position is identical on every post regardless of post layout
+  - id: SF-211
+    file: plan/tickets/SF-211.yaml
+    depends_on: [SF-210]
+    summary: Make per-post controls quiet until wanted, without losing keyboard or screen-reader access
+  - id: SF-212
+    file: plan/tickets/SF-212.yaml
+    depends_on: [SF-209, SF-210]
+    summary: Make the placeholder read as an X timeline cell and the account menu behave as a real popover
+
+# Standing rules for any injected UI, not only the open tickets above.
+ui_rules:
+  - "Read the platform, never guess it. Colours, accent, and type come from getComputedStyle on
+    probes resolved through selectors.json, with literal fallbacks. X's theme is set in X's
+    settings, not the OS, so prefers-color-scheme is never the theme source. X's accent is
+    user-selectable, so no accent literal may appear in a rule."
+  - "Type is always `font: inherit`. The extension declares no font-family."
+  - "Position is a function of the article's box, never of its content. Controls hang off the
+    extension's own zero-size .slopfilter-anchor as the article's first child, absolutely
+    positioned, consuming no layout space and never changing article height."
+  - "The only inline style the extension writes to an X-owned node is the collapse display toggle.
+    Everything else is a rule in public/content/styles.css."
+  - "Every CSS rule is scoped under a .slopfilter- class. No bare element selectors, no X class
+    names, no z-index above 1, no fixed or sticky positioning."
+  - "Quiet by default: per-post controls rest at opacity 0 and reveal on hover, :focus-within, or an
+    open menu. Never display:none or visibility:hidden - both break keyboard access and the existing
+    Playwright locators. Always opaque on coarse pointers."
+  - "The collapsed placeholder is always visible, sits in the post's flow position, and wears X's
+    cell geometry: cell padding, one bottom border, no card border, no radius, no margin."
+  - "Prefer a native platform feature over hand-written UI logic: popover for menus, :has() for
+    scoping, color-mix for derived tones."
+  - "Accessibility is not negotiable: every control keeps a non-empty accessible name, a 32px hit
+    target, a visible focus ring, keyboard reachability, and 4.5:1 text contrast against the sampled
+    surface."
+  - "Every styling claim is asserted as a computed style or a bounding box in an E2E spec against
+    the golden harness route. A styling change with no such assertion is not done."

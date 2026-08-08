@@ -1,10 +1,12 @@
 # SlopFilter
 
-SlopFilter is a Chrome extension foundation for collapsing low-quality posts in your X timeline using local, on-device signals. Nothing leaves your browser.
+> **🚧 Work in progress.** Under active construction and not ready for use. Interfaces, defaults, and packaging will change without notice.
+
+SlopFilter is a Chrome extension foundation for collapsing low-quality posts in your X timeline using local, on-device signals. It reads visible X image thumbnails for optional C2PA checks; it does not request full-resolution media.
 
 ## Privacy
 
-No data leaves the browser. The only network call is the one-time model download; all filtering, settings, and statistics stay on the device.
+Filtering, settings, and statistics stay on the device. Runtime network access is limited to one-time model downloads and visible X thumbnail reads for optional C2PA checks.
 
 ## Development
 
@@ -13,7 +15,10 @@ No data leaves the browser. The only network call is the one-time model download
 - `npm run lint` — check formatting and lint rules.
 - `npm run typecheck` — run the strict TypeScript check.
 - `npm run test:unit` — run unit tests.
+- `npm run build:test` — build the harness-enabled extension; required before E2E.
 - `npm run test:e2e` — run the Playwright end-to-end suite.
+
+Implementation state, constraints, and open work live in [`plan/index.yaml`](plan/index.yaml).
 
 ## Loading the extension
 

@@ -11,3 +11,4 @@ blob-report/
 tests/fixtures/dom/x/raw/
 drift-report.json
 drift-dom.html
+.plan-archive/

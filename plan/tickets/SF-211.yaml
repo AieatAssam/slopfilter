@@ -1,0 +1,40 @@
+id: SF-211
+summary: Make per-post controls quiet until wanted, without losing keyboard or screen-reader access
+depends_on:
+  - SF-210
+why: Every visible post permanently carries a three-button row, which is louder than X's own
+  hover-revealed affordances and costs more attention than the filtering saves.
+rules:
+  - Hide with opacity and a transition, never display:none or visibility:hidden. Playwright treats
+    an opacity-0 element as visible, so existing specs keep passing, and the controls stay in the
+    accessibility tree and the tab order.
+  - Reveal on article:hover, on :focus-within, and while the account menu is open, so keyboard-only
+    users get the same access as pointer users.
+  - Controls stay fully opaque on touch and coarse pointers, where hover does not exist.
+  - Respect prefers-reduced-motion by dropping the transition, not the reveal.
+  - Revealed control text keeps at least 4.5:1 contrast against the sampled surface.
+  - The collapsed-post placeholder is always visible. Only per-post controls on visible posts are
+    quiet.
+changes:
+  - path: public/content/styles.css
+    do: '.slopfilter-feedback { opacity: 0; transition: opacity 120ms ease } revealed by article:hover
+      .slopfilter-feedback, .slopfilter-anchor:focus-within .slopfilter-feedback, and
+      .slopfilter-feedback:has([aria-expanded="true"]); @media (hover: none), (pointer: coarse)
+      keeps opacity 1; @media (prefers-reduced-motion: reduce) drops the transition. Reduce the
+      resting cluster to icon-sized buttons with a minimum 32px hit target.'
+  - path: src/content/feedback.ts
+    do: If a button visible text is replaced by an icon or glyph, move the current label to aria-label
+      unchanged, so getByRole name lookups in existing specs still resolve.
+  - path: e2e/specs/styling-reveal.spec.ts
+    do: Create, covering the first four verify entries.
+verify:
+  - assert: At rest the cluster's computed opacity is 0, and 1 after hovering its article.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-reveal.spec.ts
+  - assert: Tabbing to the first control reveals the cluster with no pointer interaction.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-reveal.spec.ts
+  - assert: Every control keeps a non-empty accessible name and is reachable by keyboard.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-reveal.spec.ts
+  - assert: The cluster stays revealed while the account menu is open, even after the pointer leaves.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-reveal.spec.ts
+  - assert: All feedback, account-control, and breakdown specs still pass unchanged.
+    run: npm run build:test && npm run test:e2e

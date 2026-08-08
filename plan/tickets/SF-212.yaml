@@ -1,0 +1,64 @@
+id: SF-212
+summary: Make the placeholder read as an X timeline cell and the account menu behave as a real popover
+depends_on:
+  - SF-209
+  - SF-210
+why: The placeholder is a bordered, rounded, margined card pasted onto the timeline, and the account
+  menu is an in-flow div that inherits any clipping or stacking its ancestors impose. Both should
+  adopt X cell chrome and the platform popover.
+rules:
+  - "The placeholder occupies the collapsed post position in flow with X cell geometry: horizontal
+    padding matching the neighbouring cell, one bottom border in the sampled border colour, no outer
+    border, no border-radius, no vertical margin."
+  - The placeholder stays one line at the default viewport, and its text is the ScoreBreakdown
+    reasons verbatim as SF-009 requires. Never truncate a reason with an ellipsis before wrapping.
+  - Use the native popover attribute with showPopover and hidePopover for the account menu, so no
+    positioning or dismiss logic is hand-written. Keep the existing role, aria-haspopup, and
+    aria-expanded wiring.
+  - No injected CSS rule may select a bare element type or an X class name. Every rule stays scoped
+    under a .slopfilter- class or a :has() on the extension anchor.
+  - "Injected CSS must not grow: it is 5296 bytes today and SF-209 deletes the hardcoded palette, so
+    5296 is the ceiling, not a target."
+changes:
+  - path: public/content/styles.css
+    do: "Restyle .slopfilter-placeholder to cell chrome: padding 12px 16px, border 0, border-block-end
+      1px solid var(--slopfilter-border, rgb(239, 243, 244)), border-radius 0, margin 0, transparent
+      background, colour var(--slopfilter-text-muted, rgb(83, 100, 113)). Restyle
+      .slopfilter-account-menu for popover: position absolute, margin 0, inset auto, sampled
+      surface, 12px radius, X elevation shadow."
+  - path: src/content/feedback.ts
+    do: Give the account menu a popover attribute and a unique id, set popovertarget on its trigger,
+      replace the hidden toggle with showPopover and hidePopover, and keep aria-expanded in sync
+      from the popover toggle event.
+  - path: src/content/collapse.ts
+    do: No behaviour change. Confirm the placeholder still renders reasons verbatim and stays a sibling
+      of the hidden article.
+  - path: tests/unit/content/feedback.test.ts
+    do: Assert the menu carries popover, that the trigger popovertarget matches its id, and that
+      aria-expanded tracks the toggle event.
+  - path: e2e/specs/styling-cell.spec.ts
+    do: Create, covering the first three verify entries.
+verify:
+  - assert: The placeholder's computed padding-inline and border-block-end-color equal a neighbouring X
+      cell's, and its border-radius and margin are 0.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-cell.spec.ts
+  - assert: The placeholder renders on one line at a 1280px viewport, within 8 pixels of a neighbouring
+      single-line cell in height.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-cell.spec.ts
+  - assert: The account menu opens above surrounding content, closes on Escape and on outside click with
+      no custom handler, and returns focus to its trigger.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-cell.spec.ts
+  - assert: No CSS rule selects a bare element type or an X class name.
+    run: "node --input-type=module -e \"import fs from 'node:fs';const
+      c=fs.readFileSync('public/content/styles.css','utf8');for(const m of
+      c.matchAll(/^([^@{}][^{]*)\\{/gm)){const sel=m[1].trim();if(/\\.r-|\\.css-/.test(sel))throw
+      new Error('X class in selector: '+sel);for(const part of
+      sel.split(','))if(!/\\.slopfilter-/.test(part))throw new Error('unscoped selector:
+      '+part.trim());}console.log('ok')\""
+  - assert: Injected CSS is no larger than its 5296-byte pre-SF-209 size.
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      n=fs.statSync('public/content/styles.css').size;if(n>5296)throw new Error('styles.css grew to
+      '+n+' bytes');console.log('ok')"
+  - assert: The full suite is green.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build:test && npm run
+      test:e2e

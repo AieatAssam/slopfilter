@@ -1,0 +1,49 @@
+id: SF-208
+summary: Serve golden X markup, X's three themes, and a switchable accent from the E2E harness
+depends_on: []
+why: The harness serves three hand-written articles with no X class names, one layout and one
+  implicit theme, so nothing about how injected UI looks inside real X markup can be asserted.
+  SF-209 through SF-212 need this substrate.
+rules:
+  - No new capture from live x.com. Use tests/fixtures/dom/x/timeline-baseline.html only.
+  - The golden fixture carries X's r-* class names and inline colours but no stylesheet, because X
+    injects its CSS at runtime. Assert only on values the harness sets or the extension derives.
+  - Themes are simulated the way X sets them, by inline background-color on body and inline color on
+    the timeline container. No stylesheet.
+  - The default harness route and every existing spec stay unchanged.
+  - "timeline-baseline.html was checked on 2026-08-08 and contains primaryColumn, the Timeline: Your
+    Home Timeline label, and 11 posts, so selfTest passes on the golden route. If a step strips any
+    of those, filtering pauses and every downstream styling ticket fails looking like a styling
+    bug."
+changes:
+  - path: tests/harness/harness.ts
+    do: "Add fixture variant 'golden': fetch /fixtures/dom/x/timeline-baseline.html, parse with
+      DOMParser, replaceChildren on document.body with the parsed body children so class names
+      survive. Add layoutVariantIds() returning ids of three articles with different layout (short
+      text and no tweetPhoto; one with tweetPhoto; the tallest remaining). Add
+      setTheme('default'|'dim'|'lights-out') writing body background-color rgb(255, 255, 255) |
+      rgb(21, 32, 43) | rgb(0, 0, 0) and timeline-container color rgb(15, 20, 25) | rgb(247, 249,
+      249) | rgb(231, 233, 234). Add setAccent(color) writing inline background-color on a
+      tweetButtonInline element, creating it inside the primary column if the fixture has none."
+  - path: vite.harness.config.ts
+    do: Serve tests/fixtures over HTTP for the harness dev server only. Do not inline 262 KB into the
+      bundle.
+  - path: e2e/support/harness.ts
+    do: Add mountGolden, setTheme, setAccent, layoutVariantIds helpers so specs never inline a harness
+      cast.
+  - path: e2e/support/harness.d.ts
+    do: Declare the four new harness members.
+  - path: e2e/specs/harness-golden.spec.ts
+    do: Create, covering the first four verify entries.
+verify:
+  - assert: The golden route mounts at least 9 tweet articles, each keeping its original class attribute.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/harness-golden.spec.ts
+  - assert: layoutVariantIds returns at least 3 ids whose articles have pairwise different offsetHeight.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/harness-golden.spec.ts
+  - assert: Each theme name sets the body background-color it declares, read back via getComputedStyle.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/harness-golden.spec.ts
+  - assert: setAccent('rgb(120, 86, 255)') is readable as the accent probe's computed background-color.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/harness-golden.spec.ts
+  - assert: No pre-existing spec regressed.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build:test && npm run
+      test:e2e

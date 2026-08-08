@@ -1,0 +1,58 @@
+id: SF-210
+summary: Anchor injected controls so their position is identical on every post regardless of post layout
+depends_on:
+  - SF-208
+why: "attachFeedbackControls appends a flow-level row as the article's last child, so controls land
+  wherever that post's content ends: after the action bar on a text post, below the media on an
+  image post, elsewhere again on a quote post, and they reflow the article. Position must be a
+  function of the article box, not of its contents."
+rules:
+  - Never write an inline style to an X-owned node. The collapse display toggle stays the only one.
+    Positioning context comes from a rule in the extension stylesheet.
+  - The anchor is the extension's own zero-width, zero-height first child, so it can never change
+    the article's intrinsic height or the virtualised list's height cache.
+  - The control cluster's box stays inside the article's box and must never overlap a neighbouring
+    post.
+  - No fixed or sticky positioning and no z-index above 1, so injected UI can never sit over X's
+    dialogs, menus, or compose box.
+  - Keep every existing class name, data-testid, accessible name, and DOM order that current tests
+    address. This ticket moves controls, it does not change them.
+  - The collapsed-post placeholder stays a flow element in the post position. Only the per-post
+    control cluster is anchored.
+  - X re-renders article children, which can wipe the anchor. attachFeedbackControls must re-create
+    it when it is missing, so the guard is on the anchor being present in the article, not on the
+    article having been processed once.
+changes:
+  - path: src/content/feedback.ts
+    do: Get or create a div.slopfilter-anchor with data-testid slopfilter-anchor as the article's first
+      child, reusing an existing one, and append the .slopfilter-feedback row into it instead of
+      into the article. Set no style property from TypeScript.
+  - path: public/content/styles.css
+    do: "Add article:has(> .slopfilter-anchor) { position: relative } to grant a positioning context
+      without touching X inline styles; .slopfilter-anchor { position: absolute; inset: 0;
+      pointer-events: none } so the anchor is the article-sized containing block and containment is
+      structural rather than a shrink-to-fit accident; and .slopfilter-feedback { position:
+      absolute; inset-block-start: 8px; inset-inline-end: 8px; z-index: 1; flex-wrap: nowrap;
+      pointer-events: auto }."
+  - path: tests/unit/content/feedback.test.ts
+    do: Assert one anchor per article, that it is the first child, that repeat attach calls add neither
+      a second anchor nor a second row, and that no style property is assigned to the article.
+  - path: e2e/specs/styling-position.spec.ts
+    do: Create. Mount golden, read layoutVariantIds, record offsetHeight before injection, then assert
+      the first three verify entries from boundingBox rects with a 2-pixel tolerance. Never assert
+      absolute coordinates.
+verify:
+  - assert: Across three articles with different layout, the cluster's offset from its article's
+      top-right corner is identical within 2 CSS pixels.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-position.spec.ts
+  - assert: Each cluster's bounding box is fully contained by its own article's bounding box.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-position.spec.ts
+  - assert: Article offsetHeight is unchanged by injection.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/styling-position.spec.ts
+  - assert: Anchor creation is idempotent, and an anchor removed by a simulated re-render is re-created
+      on the next attach.
+    run: npm run test:unit -- tests/unit/content/feedback.test.ts
+  - assert: No positioning is written from TypeScript.
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      s=['src/content/feedback.ts','src/content/breakdown.ts'].map(f=>fs.readFileSync(f,'utf8')).join('');if(/\.style\.(position|top|right|left|bottom|zIndex)\s*=/.test(s))throw
+      new Error('position belongs in the stylesheet, not TypeScript');console.log('ok')"
