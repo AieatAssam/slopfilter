@@ -10,7 +10,11 @@ state:
   verified_on: 2026-08-08
   gates_green: lint, typecheck, test:unit (157), build, build:test, test:e2e (29) all exit 0
   shipped: SF-001..SF-207, all 30 tickets. Code is in the repository; do not rebuild it.
-  open_work: SF-208..SF-212 only.
+  open_work: SF-208..SF-214 only.
+  known_defect: "Measured 2026-08-08: scorePost computes a weighted mean, so quiet layers dilute loud
+    ones. behavioural 1.0 alone scores 1.000 and hides; with two model layers at 0 it scores 0.500,
+    with four 0.400, and a 0.95 content-type result scores 0.237, all under the 0.6 threshold.
+    Detection therefore degrades when models load. SF-214 fixes it; SF-213 makes it visible."
 protocol:
   - Read this file plus the one plan/tickets/<id>.yaml you are working. Nothing else.
   - "Work open tickets in depends_on order. done[] is a ledger of shipped work: read the code, never
@@ -232,6 +236,14 @@ open_tickets:
     file: plan/tickets/SF-212.yaml
     depends_on: [SF-209, SF-210]
     summary: Make the placeholder read as an X timeline cell and the account menu behave as a real popover
+  - id: SF-213
+    file: plan/tickets/SF-213.yaml
+    depends_on: []
+    summary: Add a per-post inspector modal exposing every signal, its raw value, and why it did not fire
+  - id: SF-214
+    file: plan/tickets/SF-214.yaml
+    depends_on: [SF-213]
+    summary: Fix the scoring combination so a single strong layer can hide a post, per PRD section 4
 
 # Standing rules for any injected UI, not only the open tickets above.
 ui_rules:
