@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.2.0",
+  "contractVersion": "1.3.0",
   "entries": [
     {
       "id": "primary-column",
@@ -92,6 +92,27 @@
       "id": "engagement-views",
       "description": "The post analytics control containing the view count.",
       "selectors": ["[aria-label*=\"views. View post analytics\"]"],
+      "required": false
+    },
+    {
+      "id": "theme-surface",
+      "description": "The page background that carries X's selected theme surface colour.",
+      "selectors": ["body"],
+      "required": false
+    },
+    {
+      "id": "theme-accent",
+      "description": "A compose control whose background is X's user-selected accent colour.",
+      "selectors": [
+        "[data-testid=\"tweetButtonInline\"]",
+        "[data-testid=\"SideNav_NewTweet_Button\"]"
+      ],
+      "required": false
+    },
+    {
+      "id": "theme-separator",
+      "description": "A timeline cell edge whose background approximates X's separator colour.",
+      "selectors": ["[data-testid=\"cellInnerDiv\"] > div", "article[data-testid=\"tweet\"]"],
       "required": false
     }
   ]

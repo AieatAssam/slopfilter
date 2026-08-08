@@ -16,7 +16,7 @@ import {
   onSettingsChanged,
   type Settings,
 } from '@/storage/settings';
-import { themeForPlatform } from './themes';
+import { applyThemeTokens, observeTheme, themeForPlatform } from './themes';
 
 const seenPosts = new Map<string, Post>();
 const SELF_TEST_TIMEOUT_MS = 3_000;
@@ -28,6 +28,7 @@ let timelineContainer: Element | null = null;
 let selfTestObserver: MutationObserver | null = null;
 let selfTestTimer: number | null = null;
 let requestSequence = 0;
+let _themeDisconnect: (() => void) | null = null;
 
 const requestModelSignals = async (posts: readonly Post[]) => {
   if (posts.length === 0) return new Map<string, readonly SignalResult[]>();
@@ -240,6 +241,14 @@ const start = async () => {
   } catch {
     settings = DEFAULT_SETTINGS;
   }
+  applyThemeTokens(document);
+  _themeDisconnect = observeTheme(document, () => {
+    try {
+      applyThemeTokens(document);
+    } catch {
+      // Fail open: a theme sample failure must not pause filtering.
+    }
+  });
   onSettingsChanged(() => {
     void loadSettings()
       .then((nextSettings) => {

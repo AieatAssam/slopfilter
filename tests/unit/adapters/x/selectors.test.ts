@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  getEntry,
   resolveSelector,
   type SelectorEntry,
   selectorContract,
@@ -9,7 +10,15 @@ import {
 describe('selector contract', () => {
   test('accepts the shipped contract', () => {
     expect(validateSelectorContract(selectorContract).ok).toBe(true);
-    expect(selectorContract.entries).toHaveLength(15);
+    expect(selectorContract.entries).toHaveLength(18);
+  });
+
+  test('theme probes exist and are optional', () => {
+    for (const id of ['theme-surface', 'theme-accent', 'theme-separator']) {
+      const entry = getEntry(id);
+      expect(entry.required).toBe(false);
+      expect(entry.selectors.length).toBeGreaterThan(0);
+    }
   });
 
   test('rejects an entry with an empty selectors array', () => {
