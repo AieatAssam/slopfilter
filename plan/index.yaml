@@ -168,6 +168,8 @@ done:
     did: Derive injected-UI colour and type tokens from X's computed styles instead of hardcoding them
   - id: SF-210
     did: Anchor injected controls at each article's top-right with a zero-size anchor child
+  - id: SF-211
+    did: Make per-post control clusters quiet until hover, focus, or an open menu
   - id: SF-001
     did: Scaffold the Manifest V3 extension with npm, TypeScript, and Vite
     provisional: HD-002
@@ -236,10 +238,6 @@ done:
   - id: SF-207
     did: Add the onboarding flow, the privacy page, and the store-listing copy
 open_tickets:
-  - id: SF-211
-    file: plan/tickets/SF-211.yaml
-    depends_on: [SF-210]
-    summary: Make per-post controls quiet until wanted, without losing keyboard or screen-reader access
   - id: SF-212
     file: plan/tickets/SF-212.yaml
     depends_on: [SF-209, SF-210]

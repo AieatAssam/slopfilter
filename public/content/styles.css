@@ -37,9 +37,35 @@
   gap: 0.5rem;
   inset-block-start: 8px;
   inset-inline-end: 8px;
+  opacity: 0;
   pointer-events: auto;
   position: absolute;
+  transition: opacity 120ms ease;
   z-index: 1;
+}
+
+.slopfilter-feedback button {
+  min-width: 32px;
+  padding: 0.25rem 0.375rem;
+  text-align: center;
+}
+
+article:hover .slopfilter-feedback,
+.slopfilter-anchor:focus-within .slopfilter-feedback,
+.slopfilter-feedback:has([aria-expanded="true"]) {
+  opacity: 1;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .slopfilter-feedback {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slopfilter-feedback {
+    transition: none;
+  }
 }
 
 article:has(> .slopfilter-anchor) {
