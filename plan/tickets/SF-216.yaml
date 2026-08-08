@@ -1,9 +1,9 @@
 id: SF-216
 summary: Read account age and post count from X's own timeline response instead of inferring them
 status: blocked
-blocked_on: PAYLOAD-CHECK below, plus owner confirmation that a same-origin read of an
-  already-fetched response is compatible with the privacy claim. Do not start until both are
-  recorded here.
+blocked_on: PAYLOAD-CHECK below only. The privacy question is settled - HD-016 records the owner
+  confirming on 2026-08-08 that a same-origin read of an already-fetched response is compatible with
+  the privacy claim.
 depends_on:
   - SF-215
 why: "X's timeline GraphQL response is believed to carry per-user legacy fields including
@@ -11,8 +11,11 @@ why: "X's timeline GraphQL response is believed to carry per-user legacy fields 
   section 4 names and which no amount of DOM scraping can recover. Reading a response the page
   already fetched adds no outbound request, so this is strictly better than SF-215's inference where
   it applies. It is unverified: this repository's fixtures are sanitised DOM with no captured JSON,
-  and an attempt to probe the live payload on 2026-08-08 was blocked because Chrome's View >
-  Developer > Allow JavaScript from Apple Events was disabled."
+  and a probe of the live logged-in timeline on 2026-08-08 could not
+  read it. That probe is itself evidence for the MAIN-world requirement below: patching window.fetch
+  and XMLHttpRequest from an isolated world captured zero timeline responses while the page loaded
+  thousands of pixels of new posts, and no page global such as webpackChunk_twitter_responsive_web
+  was visible from that world."
 payload_check:
   - Run this before anything else. On x.com logged in, open DevTools, Network, filter HomeTimeline,
     scroll the timeline once, and open a response.
