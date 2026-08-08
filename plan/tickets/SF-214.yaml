@@ -24,6 +24,9 @@ rules:
   - Do not compensate by lowering the content-type confidence cutoff or widening the lexical gate in
     this ticket. Those are HD-008 recall questions to settle with data from the SF-213 inspector,
     and changing two things at once makes the calibration unreadable.
+  - "Do not assume behavioural is usually no-data: SF-215 and SF-216 make it reliable. Every
+    calibration row must state each layer's availability explicitly, so the table stays correct
+    once posting rate starts firing."
   - Existing settings persist user weights. Migrate stored weights that still match the old defaults
     to the new defaults; leave user-modified weights untouched and note the change on the options
     page.

@@ -10,7 +10,7 @@ state:
   verified_on: 2026-08-08
   gates_green: lint, typecheck, test:unit (157), build, build:test, test:e2e (29) all exit 0
   shipped: SF-001..SF-207, all 30 tickets. Code is in the repository; do not rebuild it.
-  open_work: SF-208..SF-214 only.
+  open_work: SF-208..SF-216. SF-216 is blocked pending an owner check recorded in its file.
   known_defect: "Measured 2026-08-08: scorePost computes a weighted mean, so quiet layers dilute loud
     ones. behavioural 1.0 alone scores 1.000 and hides; with two model layers at 0 it scores 0.500,
     with four 0.400, and a 0.95 content-type result scores 0.237, all under the 0.6 threshold.
@@ -126,11 +126,21 @@ decisions:
   answered:
     HD-001: Product name is SlopFilter.
     HD-002: MIT licence; copyright-holder line in LICENSE still needs owner confirmation.
-    HD-004: Posting rate is estimated from consecutive timestamps visible in the timeline. No profile
-      fetches, no X API.
     HD-014: Plain TypeScript and direct DOM APIs for all extension UI. No framework.
     HD-015: Golden fixtures are captured and committed under tests/fixtures/dom/x/. No further live
       capture is authorised.
+  reopened:
+    HD-004: "Was answered as: estimate posting rate from consecutive timestamps visible in the
+      timeline, no profile fetches, no X API. Re-opened 2026-08-08 because the in-viewport
+      derivation needs two posts by the same author in one pass, which is rare in For You, so
+      postsPerDay is usually null for exactly the accounts the layer exists to catch. SF-215 stays
+      inside the original answer: it accumulates timeline sightings across sessions and adds no
+      request. SF-216 would additionally read X's own already-fetched timeline response, which adds
+      no request either but needs the owner to confirm it is compatible with the privacy claim. An
+      authenticated profile or API fetch remains rejected: it requires reading the ct0 cookie to
+      forge x-csrf-token, which is credential handling, risks the user's account through unusual
+      request patterns, and would rewrite the privacy claim in six places including the SF-207
+      grep gate."
   provisional:
     HD-006: Drift workflow targets the committed fixture until SLOPFILTER_DRIFT_TARGET names an
       owner-approved live target.
@@ -244,6 +254,15 @@ open_tickets:
     file: plan/tickets/SF-214.yaml
     depends_on: [SF-213]
     summary: Fix the scoring combination so a single strong layer can hide a post, per PRD section 4
+  - id: SF-215
+    file: plan/tickets/SF-215.yaml
+    depends_on: [SF-213]
+    summary: Derive posting rate from a persistent cross-session author observation cache instead of one viewport
+  - id: SF-216
+    file: plan/tickets/SF-216.yaml
+    depends_on: [SF-215]
+    status: blocked
+    summary: "Read account age and post count from X's own timeline response instead of inferring them (blocked: payload check + privacy-claim confirmation)"
 
 # Standing rules for any injected UI, not only the open tickets above.
 ui_rules:
