@@ -33,9 +33,23 @@
 .slopfilter-feedback {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  pointer-events: auto;
+  position: absolute;
+  z-index: 1;
+}
+
+article:has(> .slopfilter-anchor) {
+  position: relative;
+}
+
+.slopfilter-anchor {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
 }
 
 .slopfilter-feedback button {

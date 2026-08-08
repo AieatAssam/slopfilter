@@ -51,7 +51,14 @@ export const attachFeedbackControls = (
   post: Post,
   options: FeedbackOptions,
 ): void => {
-  if (element.querySelector('[data-testid="slopfilter-feedback"]')) return;
+  let anchor = element.querySelector<HTMLDivElement>('[data-testid="slopfilter-anchor"]');
+  if (!anchor) {
+    anchor = document.createElement('div');
+    anchor.className = 'slopfilter-anchor';
+    anchor.dataset.testid = 'slopfilter-anchor';
+    element.prepend(anchor);
+  }
+  if (anchor.querySelector('[data-testid="slopfilter-feedback"]')) return;
   const controls = document.createElement('div');
   controls.className = `slopfilter-feedback ${themeClass(options.theme ?? 'generic')}`;
   controls.dataset.testid = 'slopfilter-feedback';
@@ -110,5 +117,5 @@ export const attachFeedbackControls = (
     });
     controls.append(wrongCall);
   }
-  element.append(controls);
+  anchor.append(controls);
 };

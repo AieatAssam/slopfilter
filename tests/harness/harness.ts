@@ -1,4 +1,6 @@
-import { collapsePost } from '@/content/collapse';
+import { xAdapter } from '@/adapters/x/adapter';
+import { collapsePost, restorePost } from '@/content/collapse';
+import { attachFeedbackControls } from '@/content/feedback';
 import type { ScoreBreakdown } from '@/core/scoring/types';
 
 const GOLDEN_FIXTURE_URL = '/fixtures/dom/x/timeline-baseline.html';
@@ -205,9 +207,32 @@ const collapseFirstPost = (reasons: string[]) => {
   collapsePost(post, breakdown);
 };
 
+const restoreArticle = (articleId: string) => {
+  const article = document.getElementById(articleId);
+  if (!(article instanceof HTMLElement)) throw new Error(`article not found: ${articleId}`);
+  if (article.dataset.slopfilterCollapsed === 'true') restorePost(article);
+};
+
+const insertAnchoredFeedback = (articleId: string) => {
+  const article = document.getElementById(articleId);
+  if (!(article instanceof HTMLElement)) throw new Error(`article not found: ${articleId}`);
+  const post = xAdapter.extractPost(article);
+  if (!post) throw new Error(`post extraction failed: ${articleId}`);
+  const breakdown: ScoreBreakdown = {
+    compositeScore: 0.4,
+    threshold: 0.6,
+    hidden: false,
+    contributions: [],
+    reasons: [],
+  };
+  attachFeedbackControls(article, post, { breakdown });
+};
+
 window.__slopfilterHarness = {
   appendPost,
   collapseFirstPost,
+  restoreArticle,
+  attachFeedback: insertAnchoredFeedback,
   reset,
   mountGolden,
   layoutVariantIds,

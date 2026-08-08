@@ -26,6 +26,14 @@ export const mountGolden = async (page: Page) => {
 export const layoutVariantIds = (page: Page): Promise<string[]> =>
   page.evaluate(() => window.__slopfilterHarness.layoutVariantIds());
 
+export const goldenVariantIds = layoutVariantIds;
+
+export const attachFeedback = (page: Page, articleId: string): Promise<void> =>
+  page.evaluate((value) => window.__slopfilterHarness.attachFeedback(value), articleId);
+
+export const restoreArticle = (page: Page, articleId: string): Promise<void> =>
+  page.evaluate((value) => window.__slopfilterHarness.restoreArticle(value), articleId);
+
 export type HarnessTheme = 'default' | 'dim' | 'lights-out';
 
 export const setTheme = (page: Page, theme: HarnessTheme) =>

@@ -166,6 +166,8 @@ done:
     did: Serve golden X markup, X's three themes, and a switchable accent from the E2E harness
   - id: SF-209
     did: Derive injected-UI colour and type tokens from X's computed styles instead of hardcoding them
+  - id: SF-210
+    did: Anchor injected controls at each article's top-right with a zero-size anchor child
   - id: SF-001
     did: Scaffold the Manifest V3 extension with npm, TypeScript, and Vite
     provisional: HD-002
@@ -234,10 +236,6 @@ done:
   - id: SF-207
     did: Add the onboarding flow, the privacy page, and the store-listing copy
 open_tickets:
-  - id: SF-210
-    file: plan/tickets/SF-210.yaml
-    depends_on: [SF-208]
-    summary: Anchor injected controls so their position is identical on every post regardless of post layout
   - id: SF-211
     file: plan/tickets/SF-211.yaml
     depends_on: [SF-210]

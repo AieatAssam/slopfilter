@@ -9,6 +9,8 @@ declare global {
         imageUrl?: string;
       }): void;
       collapseFirstPost(reasons: string[]): void;
+      restoreArticle(articleId: string): void;
+      attachFeedback(articleId: string): void;
       reset(): void;
       mountGolden(): Promise<void>;
       layoutVariantIds(): string[];

@@ -108,4 +108,48 @@ describe('feedback controls', () => {
 
     expect(element.querySelector('button')?.textContent).toBe('Not interested');
   });
+
+  test('creates one anchor as the first child and keeps it across attaches', () => {
+    const element = document.createElement('div');
+    const attachedChild = document.createElement('div');
+    element.append(attachedChild);
+    document.body.append(element);
+
+    attachFeedbackControls(element, post, { breakdown });
+    attachFeedbackControls(element, { ...post, id: 'post-2' }, { breakdown });
+    attachFeedbackControls(element, { ...post, id: 'post-3' }, { breakdown });
+
+    const anchors = element.querySelectorAll('[data-testid="slopfilter-anchor"]');
+    expect(anchors).toHaveLength(1);
+    expect(element.firstElementChild).toBe(anchors[0]);
+    expect(element.querySelectorAll('[data-testid="slopfilter-feedback"]')).toHaveLength(1);
+    expect(anchors[0]?.contains(attachedChild)).toBe(false);
+    expect(attachedChild).toBe(element.children[1]);
+  });
+
+  test('re-creates an anchor wiped by a simulated re-render', () => {
+    const element = document.createElement('div');
+    document.body.append(element);
+
+    attachFeedbackControls(element, post, { breakdown });
+    const anchor = element.querySelector('[data-testid="slopfilter-anchor"]');
+    anchor?.remove();
+
+    attachFeedbackControls(element, post, { breakdown });
+
+    const anchors = element.querySelectorAll('[data-testid="slopfilter-anchor"]');
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0]?.querySelectorAll('[data-testid="slopfilter-feedback"]')).toHaveLength(1);
+  });
+
+  test('never assigns a style property to the article', () => {
+    const element = document.createElement('div');
+    document.body.append(element);
+
+    attachFeedbackControls(element, post, { breakdown });
+
+    for (const key of ['position', 'top', 'right', 'left', 'bottom', 'zIndex']) {
+      expect(element.style[key as keyof CSSStyleDeclaration]).toBe('');
+    }
+  });
 });
