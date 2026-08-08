@@ -271,6 +271,17 @@ open_tickets:
     depends_on: [SF-216]
     summary: Score recently created accounts that post at high volume as a graded behavioural sub-signal
 
+fixtures:
+  dom: "tests/fixtures/dom/x/*.html - real captured X markup, sanitised. Class names and inline
+    colours are real; X injects its CSS at runtime so the capture carries no stylesheet."
+  payload: "tests/fixtures/payload/x/home-timeline.json - synthetic HomeTimeline response matching the
+    shape verified over CDP on 2026-08-08 and recorded in SF-216 verified_payload. 21 entries: 18
+    organic, 1 promoted, 2 cursors. Regenerate with `node scripts/make-payload-fixture.mjs`; the case
+    table in that script names the signal each row exercises. Extend the table rather than editing the
+    JSON by hand."
+  payload_clock: "Account ages are relative to FIXTURE_NOW 2026-08-08T12:00:00Z. Any signal consuming
+    account age takes `now` as an argument and tests pass FIXTURE_NOW. Never Date.now()."
+
 # Standing rules for any injected UI, not only the open tickets above.
 ui_rules:
   - "Read the platform, never guess it. Colours, accent, and type come from getComputedStyle on

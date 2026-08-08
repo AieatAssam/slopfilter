@@ -1,0 +1,2500 @@
+{
+  "data": {
+    "home": {
+      "home_timeline_urt": {
+        "instructions": [
+          {
+            "type": "TimelineClearCache"
+          },
+          {
+            "type": "TimelineAddEntries",
+            "entries": [
+              {
+                "entryId": "tweet-1900000000000000000",
+                "sortIndex": "1800000000000000000",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000001337",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000001",
+                              "rest_id": "700000001",
+                              "core": {
+                                "name": "Daily Growth Notes",
+                                "screen_name": "account01",
+                                "created_at": "Sun Feb 09 12:00:00 +0000 2025"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000001/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 18400,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 41000,
+                                "media_tweets": 8200
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000001337",
+                          "created_at": "Sat Aug 08 11:48:00 +0000 2026",
+                          "favorite_count": 31,
+                          "full_text": "Reply YES and I will send you the 12 habits that changed my life. Repost so more people see this.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 96,
+                          "retweet_count": 4,
+                          "user_id_str": "700000001",
+                          "id_str": "1900000000000001337",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "412000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000001337"],
+                          "editable_until_msecs": "1786193280000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000001",
+                "sortIndex": "1799999999999999999",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000002674",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000002",
+                              "rest_id": "700000002",
+                              "core": {
+                                "name": "Airdrop Signals",
+                                "screen_name": "account02",
+                                "created_at": "Fri May 01 12:00:00 +0000 2026"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000002/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": true,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 2310,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 9800,
+                                "media_tweets": 1960
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000002674",
+                          "created_at": "Sat Aug 08 11:35:00 +0000 2026",
+                          "favorite_count": 8,
+                          "full_text": "GIVEAWAY: 5000 USDT to one winner. Follow, like, repost and comment your wallet. Crypto airdrop closes tonight.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 411,
+                          "retweet_count": 2,
+                          "user_id_str": "700000002",
+                          "id_str": "1900000000000002674",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": [],
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia001.jpg",
+                                "expanded_url": "https://x.com/account02/status/1900000000000002674/photo/1",
+                                "id_str": "19000000000000026740",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia001.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              }
+                            ]
+                          },
+                          "extended_entities": {
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia001.jpg",
+                                "expanded_url": "https://x.com/account02/status/1900000000000002674/photo/1",
+                                "id_str": "19000000000000026740",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia001.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "views": {
+                          "count": "96400",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000002674"],
+                          "editable_until_msecs": "1786192500000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000002",
+                "sortIndex": "1799999999999999998",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000004011",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000003",
+                              "rest_id": "700000003",
+                              "core": {
+                                "name": "Mindset Daily",
+                                "screen_name": "account03",
+                                "created_at": "Fri Jan 05 12:00:00 +0000 2024"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000003/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 88900,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 30000,
+                                "media_tweets": 6000
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000004011",
+                          "created_at": "Sat Aug 08 11:20:00 +0000 2026",
+                          "favorite_count": 240,
+                          "full_text": "Success is not luck. It is mindset, discipline and the grind nobody sees. Motivation is a choice you make daily.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 12,
+                          "retweet_count": 33,
+                          "user_id_str": "700000003",
+                          "id_str": "1900000000000004011",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "61000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000004011"],
+                          "editable_until_msecs": "1786191600000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "promoted-tweet-1900000000000026740",
+                "sortIndex": "1799999999999999000",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000026740",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000019",
+                              "rest_id": "700000019",
+                              "core": {
+                                "name": "Sponsored Offer",
+                                "screen_name": "account19",
+                                "created_at": "Sun Nov 12 12:00:00 +0000 2023"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000019/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 60000,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 4400,
+                                "media_tweets": 880
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000026740",
+                          "created_at": "Sat Aug 08 11:55:00 +0000 2026",
+                          "favorite_count": 5,
+                          "full_text": "Limited offer on our annual plan. Learn more.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 0,
+                          "retweet_count": 0,
+                          "user_id_str": "700000019",
+                          "id_str": "1900000000000026740",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "900000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000026740"],
+                          "editable_until_msecs": "1786193700000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet",
+                    "promotedMetadata": {
+                      "advertiser_results": {
+                        "result": {
+                          "__typename": "User",
+                          "id": "VXNlcjo700000019",
+                          "rest_id": "700000019",
+                          "core": {
+                            "name": "Sponsored Offer",
+                            "screen_name": "account19",
+                            "created_at": "Sun Nov 12 12:00:00 +0000 2023"
+                          },
+                          "avatar": {
+                            "image_url": "https://pbs.twimg.com/profile_images/700000019/avatar_normal.jpg"
+                          },
+                          "dm_permissions": {
+                            "can_dm": false
+                          },
+                          "location": {
+                            "location": ""
+                          },
+                          "media_permissions": {
+                            "can_media_tag": true
+                          },
+                          "is_blue_verified": false,
+                          "profile_bio": {
+                            "description": "",
+                            "entities": {}
+                          },
+                          "privacy": {
+                            "protected": false
+                          },
+                          "relationship_counts": {
+                            "followers": 60000,
+                            "following": 300
+                          },
+                          "relationship_perspectives": {
+                            "blocked_by": false,
+                            "blocking": false,
+                            "followed_by": false,
+                            "following": false,
+                            "live_following": false,
+                            "muting": false
+                          },
+                          "verification": {
+                            "verified": false
+                          },
+                          "profile_image_shape": "Circle",
+                          "tweet_counts": {
+                            "tweets": 4400,
+                            "media_tweets": 880
+                          }
+                        }
+                      },
+                      "disclosureType": "NoDisclosure",
+                      "experimentValues": [],
+                      "impressionId": "synthetic-impression-1",
+                      "clickTrackingInfo": {
+                        "urlParams": []
+                      }
+                    }
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_promoted",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000003",
+                "sortIndex": "1799999999999999997",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000005348",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000004",
+                              "rest_id": "700000004",
+                              "core": {
+                                "name": "Regional Transit Alerts",
+                                "screen_name": "account04",
+                                "created_at": "Mon Aug 17 12:00:00 +0000 2009"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000004/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 412000,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": true
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 310000,
+                                "media_tweets": 62000
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000005348",
+                          "created_at": "Sat Aug 08 11:52:00 +0000 2026",
+                          "favorite_count": 190,
+                          "full_text": "Northbound line 3 is running 15 minutes behind following an earlier signal fault at Central. Next update at 14:30.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 21,
+                          "retweet_count": 76,
+                          "user_id_str": "700000004",
+                          "id_str": "1900000000000005348",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "88000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000005348"],
+                          "editable_until_msecs": "1786193520000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000004",
+                "sortIndex": "1799999999999999996",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000006685",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000005",
+                              "rest_id": "700000005",
+                              "core": {
+                                "name": "Kite Photography",
+                                "screen_name": "account05",
+                                "created_at": "Sun May 19 12:00:00 +0000 2019"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000005/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 136291,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 36193,
+                                "media_tweets": 7238
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000006685",
+                          "created_at": "Sat Aug 08 10:25:00 +0000 2026",
+                          "favorite_count": 107,
+                          "full_text": "Spent the morning at the estuary waiting for the tide. Three frames worth keeping out of four hundred.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 9,
+                          "retweet_count": 6,
+                          "user_id_str": "700000005",
+                          "id_str": "1900000000000006685",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": [],
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia002.jpg",
+                                "expanded_url": "https://x.com/account05/status/1900000000000006685/photo/1",
+                                "id_str": "19000000000000066850",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia002.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              },
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia003.jpg",
+                                "expanded_url": "https://x.com/account05/status/1900000000000006685/photo/2",
+                                "id_str": "19000000000000066851",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia003.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              }
+                            ]
+                          },
+                          "extended_entities": {
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia002.jpg",
+                                "expanded_url": "https://x.com/account05/status/1900000000000006685/photo/1",
+                                "id_str": "19000000000000066850",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia002.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              },
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia003.jpg",
+                                "expanded_url": "https://x.com/account05/status/1900000000000006685/photo/2",
+                                "id_str": "19000000000000066851",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia003.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "views": {
+                          "count": "5822",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000006685"],
+                          "editable_until_msecs": "1786188300000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000005",
+                "sortIndex": "1799999999999999995",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000008022",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000006",
+                              "rest_id": "700000006",
+                              "core": {
+                                "name": "Trend Recycler",
+                                "screen_name": "account06",
+                                "created_at": "Thu Jul 24 12:00:00 +0000 2025"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000006/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 940,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 22400,
+                                "media_tweets": 4480
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000008022",
+                          "created_at": "Sat Aug 08 11:27:00 +0000 2026",
+                          "favorite_count": 12,
+                          "full_text": "This changes everything for anyone building in public this year.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 0,
+                          "retweet_count": 1,
+                          "user_id_str": "700000006",
+                          "id_str": "1900000000000008022",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "2140000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000008022"],
+                          "editable_until_msecs": "1786192020000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000006",
+                "sortIndex": "1799999999999999994",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000009359",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000007",
+                              "rest_id": "700000007",
+                              "core": {
+                                "name": "Marine Biology Lab",
+                                "screen_name": "account07",
+                                "created_at": "Mon Apr 17 12:00:00 +0000 2017"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000007/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 512000,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": true
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 4100,
+                                "media_tweets": 820
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000009359",
+                          "created_at": "Sat Aug 08 09:00:00 +0000 2026",
+                          "favorite_count": 25958,
+                          "full_text": "Our team recorded the same individual whale on three separate surveys nine years apart. Full write-up in the thread below.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 380,
+                          "retweet_count": 4120,
+                          "user_id_str": "700000007",
+                          "id_str": "1900000000000009359",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "3594208",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000009359"],
+                          "editable_until_msecs": "1786183200000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000007",
+                "sortIndex": "1799999999999999993",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000010696",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000008",
+                              "rest_id": "700000008",
+                              "core": {
+                                "name": "Brand New Here",
+                                "screen_name": "account08",
+                                "created_at": "Mon Aug 03 12:00:00 +0000 2026"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000008/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 12,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 300,
+                                "media_tweets": 60
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000010696",
+                          "created_at": "Sat Aug 08 11:05:00 +0000 2026",
+                          "favorite_count": 2,
+                          "full_text": "Testing the water. First week on here and already enjoying it.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 1,
+                          "retweet_count": 0,
+                          "user_id_str": "700000008",
+                          "id_str": "1900000000000010696",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "340",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000010696"],
+                          "editable_until_msecs": "1786190700000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000008",
+                "sortIndex": "1799999999999999992",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000012033",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000009",
+                              "rest_id": "700000009",
+                              "core": {
+                                "name": "Occasional Poster",
+                                "screen_name": "account09",
+                                "created_at": "Fri Jul 04 12:00:00 +0000 2025"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000009/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 640,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 80,
+                                "media_tweets": 16
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000012033",
+                          "created_at": "Sat Aug 08 08:00:00 +0000 2026",
+                          "favorite_count": 44,
+                          "full_text": "Finally finished rewiring the workshop. Took four weekends longer than planned.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 6,
+                          "retweet_count": 2,
+                          "user_id_str": "700000009",
+                          "id_str": "1900000000000012033",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "3100",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000012033"],
+                          "editable_until_msecs": "1786179600000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000009",
+                "sortIndex": "1799999999999999991",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000013370",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000010",
+                              "rest_id": "700000010",
+                              "core": {
+                                "name": "Counts Missing",
+                                "screen_name": "account10",
+                                "created_at": "Sat Sep 07 12:00:00 +0000 2024"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000010/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 3400,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle"
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000013370",
+                          "created_at": "Sat Aug 08 10:50:00 +0000 2026",
+                          "favorite_count": 18,
+                          "full_text": "A perfectly ordinary post from an account whose post count is absent from the payload.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 2,
+                          "retweet_count": 1,
+                          "user_id_str": "700000010",
+                          "id_str": "1900000000000013370",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "2400",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000013370"],
+                          "editable_until_msecs": "1786189800000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000010",
+                "sortIndex": "1799999999999999990",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000014707",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000011",
+                              "rest_id": "700000011",
+                              "core": {
+                                "name": "Undated Account",
+                                "screen_name": "account11"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000011/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 900,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 5000,
+                                "media_tweets": 1000
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000014707",
+                          "created_at": "Sat Aug 08 10:10:00 +0000 2026",
+                          "favorite_count": 7,
+                          "full_text": "An account whose creation date is missing from the payload entirely.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 0,
+                          "retweet_count": 0,
+                          "user_id_str": "700000011",
+                          "id_str": "1900000000000014707",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "810",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000014707"],
+                          "editable_until_msecs": "1786187400000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000011",
+                "sortIndex": "1799999999999999989",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000016044",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000012",
+                              "rest_id": "700000012",
+                              "core": {
+                                "name": "Malformed Date",
+                                "screen_name": "account12",
+                                "created_at": "not a date"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000012/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 1500,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 26000,
+                                "media_tweets": 5200
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000016044",
+                          "created_at": "Sat Aug 08 09:50:00 +0000 2026",
+                          "favorite_count": 3,
+                          "full_text": "An account whose creation date is present but not a date this parser understands.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 1,
+                          "retweet_count": 0,
+                          "user_id_str": "700000012",
+                          "id_str": "1900000000000016044",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "700",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000016044"],
+                          "editable_until_msecs": "1786186200000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000012",
+                "sortIndex": "1799999999999999988",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000017381",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000013",
+                              "rest_id": "700000013",
+                              "core": {
+                                "name": "No View Count",
+                                "screen_name": "account13",
+                                "created_at": "Wed Apr 26 12:00:00 +0000 2023"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000013/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 2200,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 9100,
+                                "media_tweets": 1820
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000017381",
+                          "created_at": "Sat Aug 08 09:30:00 +0000 2026",
+                          "favorite_count": 15,
+                          "full_text": "A post whose view count is missing, which the ratio signal must treat as unknown.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 3,
+                          "retweet_count": 2,
+                          "user_id_str": "700000013",
+                          "id_str": "1900000000000017381",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {},
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000017381"],
+                          "editable_until_msecs": "1786185000000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000013",
+                "sortIndex": "1799999999999999987",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000018718",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000014",
+                              "rest_id": "700000014",
+                              "core": {
+                                "name": "Long Form Notes",
+                                "screen_name": "account14",
+                                "created_at": "Fri Sep 03 12:00:00 +0000 2021"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000014/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 44000,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 12000,
+                                "media_tweets": 2400
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000018718",
+                          "created_at": "Sat Aug 08 07:00:00 +0000 2026",
+                          "favorite_count": 900,
+                          "full_text": "A thread on why estuary tides matter for migratory birds, and what four hundred mornings of observation actually show.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 40,
+                          "retweet_count": 120,
+                          "user_id_str": "700000014",
+                          "id_str": "1900000000000018718",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "120000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000018718"],
+                          "editable_until_msecs": "1786176000000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false,
+                        "note_tweet": {
+                          "is_expandable": true,
+                          "note_tweet_results": {
+                            "result": {
+                              "id": "Tm90ZVR3ZWV0OjE14",
+                              "text": "A thread on why estuary tides matter for migratory birds. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. The birds arrive on the falling tide and feed along the exposed mud for roughly two hours. ",
+                              "entity_set": {
+                                "hashtags": [],
+                                "symbols": [],
+                                "urls": [],
+                                "user_mentions": []
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000014",
+                "sortIndex": "1799999999999999986",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000020055",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000015",
+                              "rest_id": "700000015",
+                              "core": {
+                                "name": "Quote Commentator",
+                                "screen_name": "account15",
+                                "created_at": "Mon Feb 15 12:00:00 +0000 2021"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000015/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 7700,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 18000,
+                                "media_tweets": 3600
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000020055",
+                          "created_at": "Sat Aug 08 11:16:00 +0000 2026",
+                          "favorite_count": 60,
+                          "full_text": "This matches what the survey data showed last year.",
+                          "is_quote_status": true,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 4,
+                          "retweet_count": 8,
+                          "user_id_str": "700000015",
+                          "id_str": "1900000000000020055",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          },
+                          "quoted_status_id_str": "1900000000000021392"
+                        },
+                        "views": {
+                          "count": "14000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000020055"],
+                          "editable_until_msecs": "1786191360000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false,
+                        "quoted_status_result": {
+                          "result": {
+                            "__typename": "Tweet",
+                            "rest_id": "1900000000000021392",
+                            "core": {
+                              "user_results": {
+                                "result": {
+                                  "__typename": "User",
+                                  "id": "VXNlcjo700000515",
+                                  "rest_id": "700000515",
+                                  "core": {
+                                    "name": "Marine Biology Lab",
+                                    "screen_name": "account07",
+                                    "created_at": "Mon Apr 17 12:00:00 +0000 2017"
+                                  },
+                                  "avatar": {
+                                    "image_url": "https://pbs.twimg.com/profile_images/700000515/avatar_normal.jpg"
+                                  },
+                                  "dm_permissions": {
+                                    "can_dm": false
+                                  },
+                                  "location": {
+                                    "location": ""
+                                  },
+                                  "media_permissions": {
+                                    "can_media_tag": true
+                                  },
+                                  "is_blue_verified": false,
+                                  "profile_bio": {
+                                    "description": "",
+                                    "entities": {}
+                                  },
+                                  "privacy": {
+                                    "protected": false
+                                  },
+                                  "relationship_counts": {
+                                    "followers": 512000,
+                                    "following": 300
+                                  },
+                                  "relationship_perspectives": {
+                                    "blocked_by": false,
+                                    "blocking": false,
+                                    "followed_by": false,
+                                    "following": false,
+                                    "live_following": false,
+                                    "muting": false
+                                  },
+                                  "verification": {
+                                    "verified": true
+                                  },
+                                  "profile_image_shape": "Circle",
+                                  "tweet_counts": {
+                                    "tweets": 4100,
+                                    "media_tweets": 820
+                                  }
+                                }
+                              }
+                            },
+                            "legacy": {
+                              "bookmark_count": 0,
+                              "conversation_id_str": "1900000000000021392",
+                              "created_at": "Sat Aug 08 09:00:00 +0000 2026",
+                              "favorite_count": 25958,
+                              "full_text": "Our team recorded the same individual whale on three separate surveys nine years apart.",
+                              "is_quote_status": false,
+                              "lang": "en",
+                              "quote_count": 0,
+                              "reply_count": 380,
+                              "retweet_count": 4120,
+                              "user_id_str": "700000515",
+                              "id_str": "1900000000000021392",
+                              "entities": {
+                                "hashtags": [],
+                                "symbols": [],
+                                "urls": [],
+                                "user_mentions": []
+                              }
+                            },
+                            "views": {
+                              "count": "3594208",
+                              "state": "EnabledWithCount"
+                            },
+                            "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                            "unmention_data": {},
+                            "edit_control": {
+                              "edit_tweet_ids": ["1900000000000021392"],
+                              "editable_until_msecs": "1786183200000",
+                              "is_edit_eligible": true,
+                              "edits_remaining": "5"
+                            },
+                            "is_translatable": false
+                          }
+                        }
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000015",
+                "sortIndex": "1799999999999999985",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000022729",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000016",
+                              "rest_id": "700000016",
+                              "core": {
+                                "name": "Clip Reposter",
+                                "screen_name": "account16",
+                                "created_at": "Fri Nov 21 12:00:00 +0000 2025"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000016/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 5100,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 15800,
+                                "media_tweets": 3160
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000022729",
+                          "created_at": "Sat Aug 08 11:40:00 +0000 2026",
+                          "favorite_count": 410,
+                          "full_text": "Watch until the end. Repost if this made you smile.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 15,
+                          "retweet_count": 88,
+                          "user_id_str": "700000016",
+                          "id_str": "1900000000000022729",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": [],
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/vid1",
+                                "id_str": "1900000000000022729v",
+                                "media_url_https": "https://pbs.twimg.com/ext_tw_video_thumb/1/pu/img/thumb.jpg",
+                                "type": "video",
+                                "video_info": {
+                                  "aspect_ratio": [16, 9],
+                                  "duration_millis": 30000,
+                                  "variants": [
+                                    {
+                                      "bitrate": 832000,
+                                      "content_type": "video/mp4",
+                                      "url": "https://video.twimg.com/ext_tw_video/1/pu/vid/640x360/synthetic.mp4"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "extended_entities": {
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/vid1",
+                                "id_str": "1900000000000022729v",
+                                "media_url_https": "https://pbs.twimg.com/ext_tw_video_thumb/1/pu/img/thumb.jpg",
+                                "type": "video",
+                                "video_info": {
+                                  "aspect_ratio": [16, 9],
+                                  "duration_millis": 30000,
+                                  "variants": [
+                                    {
+                                      "bitrate": 832000,
+                                      "content_type": "video/mp4",
+                                      "url": "https://video.twimg.com/ext_tw_video/1/pu/vid/640x360/synthetic.mp4"
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "views": {
+                          "count": "610000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000022729"],
+                          "editable_until_msecs": "1786192800000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000016",
+                "sortIndex": "1799999999999999984",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000024066",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000017",
+                              "rest_id": "700000017",
+                              "core": {
+                                "name": "Silent Media",
+                                "screen_name": "account17",
+                                "created_at": "Thu Jun 30 12:00:00 +0000 2022"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000017/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 3300,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 6400,
+                                "media_tweets": 1280
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000024066",
+                          "created_at": "Sat Aug 08 08:30:00 +0000 2026",
+                          "favorite_count": 22,
+                          "full_text": "",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 1,
+                          "retweet_count": 3,
+                          "user_id_str": "700000017",
+                          "id_str": "1900000000000024066",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": [],
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia004.jpg",
+                                "expanded_url": "https://x.com/account17/status/1900000000000024066/photo/1",
+                                "id_str": "19000000000000240660",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia004.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              }
+                            ]
+                          },
+                          "extended_entities": {
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/SYNTHmedia004.jpg",
+                                "expanded_url": "https://x.com/account17/status/1900000000000024066/photo/1",
+                                "id_str": "19000000000000240660",
+                                "media_url_https": "https://pbs.twimg.com/media/SYNTHmedia004.jpg?format=jpg&name=small",
+                                "type": "photo",
+                                "sizes": {
+                                  "small": {
+                                    "h": 383,
+                                    "w": 680,
+                                    "resize": "fit"
+                                  }
+                                },
+                                "original_info": {
+                                  "height": 1080,
+                                  "width": 1920
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "views": {
+                          "count": "4900",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000024066"],
+                          "editable_until_msecs": "1786181400000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1900000000000000017",
+                "sortIndex": "1799999999999999983",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1900000000000025403",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "id": "VXNlcjo700000018",
+                              "rest_id": "700000018",
+                              "core": {
+                                "name": "Allotment Diary",
+                                "screen_name": "account18",
+                                "created_at": "Thu Aug 30 12:00:00 +0000 2018"
+                              },
+                              "avatar": {
+                                "image_url": "https://pbs.twimg.com/profile_images/700000018/avatar_normal.jpg"
+                              },
+                              "dm_permissions": {
+                                "can_dm": false
+                              },
+                              "location": {
+                                "location": ""
+                              },
+                              "media_permissions": {
+                                "can_media_tag": true
+                              },
+                              "is_blue_verified": false,
+                              "profile_bio": {
+                                "description": "",
+                                "entities": {}
+                              },
+                              "privacy": {
+                                "protected": false
+                              },
+                              "relationship_counts": {
+                                "followers": 1100,
+                                "following": 300
+                              },
+                              "relationship_perspectives": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "followed_by": false,
+                                "following": false,
+                                "live_following": false,
+                                "muting": false
+                              },
+                              "verification": {
+                                "verified": false
+                              },
+                              "profile_image_shape": "Circle",
+                              "tweet_counts": {
+                                "tweets": 3200,
+                                "media_tweets": 640
+                              }
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "bookmark_count": 0,
+                          "conversation_id_str": "1900000000000025403",
+                          "created_at": "Sat Aug 08 07:40:00 +0000 2026",
+                          "favorite_count": 31,
+                          "full_text": "The second sowing of radishes came up unevenly, probably because the bed dried out while I was away.",
+                          "is_quote_status": false,
+                          "lang": "en",
+                          "quote_count": 0,
+                          "reply_count": 5,
+                          "retweet_count": 1,
+                          "user_id_str": "700000018",
+                          "id_str": "1900000000000025403",
+                          "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "urls": [],
+                            "user_mentions": []
+                          }
+                        },
+                        "views": {
+                          "count": "2000",
+                          "state": "EnabledWithCount"
+                        },
+                        "source": "<a href=\"https://mobile.x.com\" rel=\"nofollow\">X for Android</a>",
+                        "unmention_data": {},
+                        "edit_control": {
+                          "edit_tweet_ids": ["1900000000000025403"],
+                          "editable_until_msecs": "1786178400000",
+                          "is_edit_eligible": true,
+                          "edits_remaining": "5"
+                        },
+                        "is_translatable": false
+                      }
+                    },
+                    "tweetDisplayType": "Tweet"
+                  },
+                  "clientEventInfo": {
+                    "component": "suggest_ranked_organic_tweet",
+                    "element": "tweet"
+                  }
+                }
+              },
+              {
+                "entryId": "cursor-top-1800000000000000000",
+                "sortIndex": "1800000000000000001",
+                "content": {
+                  "entryType": "TimelineTimelineCursor",
+                  "__typename": "TimelineTimelineCursor",
+                  "value": "DAABCgABSYNTHETIC-TOP",
+                  "cursorType": "Top"
+                }
+              },
+              {
+                "entryId": "cursor-bottom-1800000000000000000",
+                "sortIndex": "1799999999999999000",
+                "content": {
+                  "entryType": "TimelineTimelineCursor",
+                  "__typename": "TimelineTimelineCursor",
+                  "value": "DAABCgABSYNTHETIC-BOTTOM",
+                  "cursorType": "Bottom"
+                }
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "scribeConfig": {
+            "page": "profile"
+          }
+        },
+        "responseObjects": {
+          "feedbackActions": [],
+          "immediateReactions": []
+        }
+      }
+    }
+  }
+}

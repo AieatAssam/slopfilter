@@ -30,6 +30,9 @@ rules:
     average and a damning recent one.
   - Expose both raw inputs and the chosen rate to the SF-213 inspector, not merely the resulting
     score. The whole point of this signal is that its inputs are legible.
+  - "Account age must be computed from an injected `now`, never Date.now(). The payload fixture
+    tests/fixtures/payload/x/home-timeline.json encodes ages against FIXTURE_NOW 2026-08-08T12:00:00Z,
+    so a signal reading the wall clock drifts and its calibration rows fail on a later date."
 changes:
   - path: src/core/signals/behavioural.ts
     do: "Add scoreAccountCohort(stats, config) as a distinct SignalResult contribution: a volume ramp
