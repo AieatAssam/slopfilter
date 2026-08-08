@@ -124,6 +124,10 @@ toolchain:
       not widen further.
 decisions:
   answered:
+    HD-016: "Owner confirmed 2026-08-08: a same-origin read of a response the page already fetched
+      is compatible with the privacy claim, because it adds no outbound request. The store listing,
+      privacy page, and README need no change for SF-216. This does not extend to issuing,
+      replaying, or prefetching any request."
     HD-001: Product name is SlopFilter.
     HD-002: MIT licence; copyright-holder line in LICENSE still needs owner confirmation.
     HD-014: Plain TypeScript and direct DOM APIs for all extension UI. No framework.
