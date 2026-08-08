@@ -37,3 +37,37 @@ test('clamps an out-of-range stored threshold', async ({ page, context, extensio
   await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
   await options.close();
 });
+
+test('resets an individual layer setting to its documented default', async ({
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+  const weight = options.getByLabel('Weight Posting behaviour');
+  await weight.fill('0.9');
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+
+  await options.getByRole('button', { name: 'Reset weight' }).first().click();
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+  await expect(weight).toHaveValue('0.4');
+  await options.close();
+});
+
+test('advertisement hiding is on by default and can be switched off', async ({
+  page,
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+  const hideAds = options.getByLabel('Hide advertisements');
+  await expect(hideAds).toBeChecked();
+  await hideAds.uncheck();
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+
+  await page.goto('/?fixture=advertisement');
+  await expect(page.getByTestId('slopfilter-placeholder')).toHaveCount(0);
+  await expect(page.locator('article[data-testid="tweet"]')).toBeVisible();
+  await options.close();
+});

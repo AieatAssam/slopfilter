@@ -9,7 +9,7 @@ import {
 describe('selector contract', () => {
   test('accepts the shipped contract', () => {
     expect(validateSelectorContract(selectorContract).ok).toBe(true);
-    expect(selectorContract.entries).toHaveLength(14);
+    expect(selectorContract.entries).toHaveLength(15);
   });
 
   test('rejects an entry with an empty selectors array', () => {

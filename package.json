@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "bench:scoring": "vitest bench --run",
+    "bench:scoring": "playwright test --config playwright.bench.config.ts bench/scoring-latency.bench.ts",
     "bench:pageload": "playwright test --config playwright.bench.config.ts"
   },
   "devDependencies": {
@@ -30,5 +30,13 @@
     "typescript": "7.0.2",
     "vite": "8.2.0",
     "vitest": "4.1.10"
+  },
+  "dependencies": {
+    "@contentauth/c2pa-web": "0.13.2",
+    "@huggingface/transformers": "4.2.0"
+  },
+  "overrides": {
+    "adm-zip": "0.6.0",
+    "sharp": "0.35.3"
   }
 }

@@ -23,9 +23,25 @@ const variantName = (message: ExtensionMessage): string => {
       return message.type;
     case 'score-batch-response':
       return message.type;
+    case 'embed-request':
+      return message.type;
+    case 'embed-response':
+      return message.type;
+    case 'downvote-complete':
+      return message.type;
+    case 'model-status-request':
+      return message.type;
+    case 'model-status':
+      return message.type;
+    case 'model-retry':
+      return message.type;
     case 'downvote-post':
       return message.type;
     case 'wrong-call':
+      return message.type;
+    case 'record-stats-batch':
+      return message.type;
+    case 'record-wrong-call':
       return message.type;
     default: {
       const exhaustive: never = message;
@@ -43,10 +59,18 @@ describe('ExtensionMessage', () => {
       {
         type: 'score-batch-response',
         requestId: 'request-1',
-        results: [{ postId: post.id, score: 0 }],
+        results: [{ postId: post.id, signals: [] }],
       },
+      { type: 'embed-request', requestId: 'embed-1', text: post.text },
+      { type: 'embed-response', requestId: 'embed-1', vector: null },
+      { type: 'downvote-complete', postId: post.id, ok: true },
+      { type: 'model-status-request' },
+      { type: 'model-status', status: { state: 'idle', progress: 0, error: null } },
+      { type: 'model-retry' },
       { type: 'downvote-post', postId: post.id, text: post.text },
       { type: 'wrong-call', postId: post.id, firedLayerIds: [] },
+      { type: 'record-stats-batch', entries: [] },
+      { type: 'record-wrong-call', reasonIds: [] },
     ];
 
     expect(messages.map(variantName)).toEqual(messages.map(({ type }) => type));

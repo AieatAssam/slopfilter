@@ -4,6 +4,9 @@ Date: 2026-08-05
 
 The monitor was run against the committed fixtures and an unreachable local port.
 
+The workflow defaults to the committed baseline fixture until `SLOPFILTER_DRIFT_TARGET` is set
+to an owner-approved live target. This keeps scheduled runs hermetic while HD-006 remains open.
+
 ## Baseline
 
 Command:

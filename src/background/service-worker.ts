@@ -1,5 +1,7 @@
 import { logger } from '@/shared/logger';
 import { type ExtensionMessage, isExtensionMessage } from '@/shared/messages';
+import { recordBatch, recordWrongCall } from '@/storage/stats';
+import { maybeOpenOnboarding } from './onboarding';
 
 type SelfTestState = Extract<ExtensionMessage, { type: 'selftest-result' }>;
 
@@ -9,14 +11,69 @@ let lastSelfTest: SelfTestState = {
   failedSelectorIds: [],
 };
 const selfTestsByTab = new Map<number, SelfTestState>();
+const pendingSelfTestRequests: {
+  tabId?: number;
+  sendResponse: (response: SelfTestState | null) => void;
+}[] = [];
+let offscreenCreation: Promise<void> | null = null;
+
+const resolvePendingSelfTestRequests = () => {
+  for (let index = pendingSelfTestRequests.length - 1; index >= 0; index -= 1) {
+    const pending = pendingSelfTestRequests[index];
+    if (!pending) continue;
+    const state = getSelfTestState(pending.tabId);
+    if (!state) continue;
+    pendingSelfTestRequests.splice(index, 1);
+    pending.sendResponse(state);
+  }
+};
+
+const ensureInferenceDocument = async (): Promise<void> => {
+  const url = chrome.runtime.getURL('offscreen/offscreen.html');
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [url],
+  });
+  if (contexts.length > 0) return;
+  if (!offscreenCreation) {
+    offscreenCreation = chrome.offscreen
+      .createDocument({
+        url: 'offscreen/offscreen.html',
+        reasons: [chrome.offscreen.Reason.WORKERS],
+        justification: 'Run local text models in a shared worker without blocking X tabs.',
+      })
+      .finally(() => {
+        offscreenCreation = null;
+      });
+  }
+  await offscreenCreation;
+};
+
+const forwardInferenceMessage = async (message: ExtensionMessage): Promise<unknown> => {
+  await ensureInferenceDocument();
+  return chrome.runtime.sendMessage(message);
+};
 
 export function handleMessage(message: unknown, tabId?: number): void {
-  if (!isExtensionMessage(message) || message.type !== 'selftest-result') return;
+  if (!isExtensionMessage(message)) return;
+  if (message.type === 'record-stats-batch') {
+    void recordBatch(message.entries).catch(() => undefined);
+    return;
+  }
+  if (message.type === 'record-wrong-call') {
+    void recordWrongCall(message.reasonIds).catch(() => undefined);
+    return;
+  }
+  if (message.type !== 'selftest-result') return;
   if (typeof message.ok !== 'boolean' || !Array.isArray(message.failedSelectorIds)) return;
 
   lastSelfTest = message;
   if (tabId !== undefined) selfTestsByTab.set(tabId, message);
+  resolvePendingSelfTestRequests();
   if (message.ok) {
+    if (typeof chrome !== 'undefined' && chrome.offscreen) {
+      void ensureInferenceDocument().catch(() => undefined);
+    }
     chrome.action.setBadgeText({ text: '' });
     chrome.action.setTitle({ title: 'SlopFilter' });
     return;
@@ -32,10 +89,27 @@ export const getSelfTestState = (tabId?: number): SelfTestState | null =>
   tabId === undefined ? lastSelfTest : (selfTestsByTab.get(tabId) ?? null);
 
 if (typeof chrome !== 'undefined') {
-  chrome.runtime.onInstalled.addListener(() => logger.debug('service worker installed'));
+  chrome.runtime.onInstalled.addListener(() => {
+    logger.debug('service worker installed');
+    void maybeOpenOnboarding().catch(() => undefined);
+  });
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (isExtensionMessage(message) && message.type === 'get-selftest-state') {
-      sendResponse(getSelfTestState(message.tabId));
+      const state = getSelfTestState(message.tabId);
+      if (state) sendResponse(state);
+      else if (message.tabId === undefined) pendingSelfTestRequests.push({ sendResponse });
+      else pendingSelfTestRequests.push({ tabId: message.tabId, sendResponse });
+      return true;
+    }
+    if (
+      isExtensionMessage(message) &&
+      (message.type === 'score-batch-request' ||
+        message.type === 'embed-request' ||
+        message.type === 'downvote-post' ||
+        message.type === 'model-status-request' ||
+        message.type === 'model-retry')
+    ) {
+      void forwardInferenceMessage(message).then(sendResponse, () => sendResponse(null));
       return true;
     }
     handleMessage(message, sender.tab?.id);

@@ -8,6 +8,7 @@ export function collapsePost(
   element: HTMLElement,
   breakdown: ScoreBreakdown,
   theme: ContentTheme = 'generic',
+  onRestored?: () => void,
 ): void {
   if (element.dataset.slopfilterCollapsed === 'true') return;
 
@@ -28,7 +29,10 @@ export function collapsePost(
   showAnyway.className = 'slopfilter-show-anyway';
   showAnyway.type = 'button';
   showAnyway.textContent = 'Show anyway';
-  showAnyway.addEventListener('click', () => restorePost(element));
+  showAnyway.addEventListener('click', () => {
+    restorePost(element);
+    onRestored?.();
+  });
 
   placeholder.append(reason, showAnyway);
   element.after(placeholder);

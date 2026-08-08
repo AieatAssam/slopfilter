@@ -33,14 +33,16 @@ afterEach(() => {
 describe('settings', () => {
   test('returns defaults for an empty store', async () => {
     await expect(loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+    await expect(loadSettings()).resolves.toMatchObject({ hideAds: true });
   });
 
   test('repairs a corrupt store field by field', async () => {
-    stored = { hideThreshold: 'abc', weights: { behavioural: 0.4 } };
+    stored = { hideThreshold: 'abc', hideAds: 'yes', weights: { behavioural: 0.4 } };
 
     const settings = await loadSettings();
 
     expect(settings.hideThreshold).toBe(DEFAULT_SETTINGS.hideThreshold);
+    expect(settings.hideAds).toBe(true);
     expect(settings.weights.behavioural).toBe(0.4);
     expect(settings.weights.taste).toBe(DEFAULT_SETTINGS.weights.taste);
   });
@@ -56,6 +58,7 @@ describe('settings', () => {
   test('round-trips a valid settings object through save and load', async () => {
     const settings = {
       hideThreshold: 0.8,
+      hideAds: false,
       weights: { ...DEFAULT_SETTINGS.weights, behavioural: 0.4 },
       enabledLayers: { ...DEFAULT_SETTINGS.enabledLayers, taste: false },
     };

@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "entries": [
     {
       "id": "primary-column",
@@ -38,6 +38,12 @@
       "id": "author-display-name",
       "description": "The author's display name within the post header.",
       "selectors": ["[data-testid=\"User-Name\"] div[dir=\"ltr\"]"],
+      "required": false
+    },
+    {
+      "id": "ad-label",
+      "description": "The visible Ad label shown in a promoted post's header.",
+      "selectors": ["div[dir=\"ltr\"] > span"],
       "required": false
     },
     {

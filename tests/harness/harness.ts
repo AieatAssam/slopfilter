@@ -49,6 +49,23 @@ const applyFixtureVariant = () => {
     `;
     return;
   }
+  if (fixture === 'advertisement') {
+    const section = document.querySelector('main[data-testid="primaryColumn"] section');
+    if (!section) throw new Error('timeline section not found');
+    section.innerHTML = `
+      <article data-testid="tweet">
+        <div data-testid="User-Name">
+          <div dir="ltr">Advertiser</div>
+          <div dir="ltr"><a href="/advertiser/status/ad-1">@advertiser</a></div>
+        </div>
+        <div><div dir="ltr"><span>Ad</span></div></div>
+        <div data-testid="tweetText">A promoted post.</div>
+        <a href="/advertiser/status/ad-1">10% off today</a>
+        <time datetime="2026-08-05T10:00:00.000Z"></time>
+      </article>
+    `;
+    return;
+  }
   if (fixture !== 'broken') return;
   const section = document.querySelector('main[data-testid="primaryColumn"] section');
   if (!section?.parentNode) throw new Error('timeline section not found');
@@ -57,21 +74,21 @@ const applyFixtureVariant = () => {
   section.remove();
 };
 
-applyFixtureVariant();
-
 type HarnessPost = {
   id: string;
   authorHandle: string;
   text: string;
   postedAt: string;
+  imageUrl?: string;
 };
+
+const STORED_POSTS_KEY = 'slopfilter-harness-posts';
+
+applyFixtureVariant();
 
 const timeline = () => document.querySelector('[aria-label="Timeline: Your Home Timeline"]');
 
-const appendPost = (post: HarnessPost) => {
-  const container = timeline();
-  if (!container) throw new Error('timeline container not found');
-
+const createPostElement = (post: HarnessPost): HTMLElement => {
   const article = document.createElement('article');
   article.dataset.postId = post.id;
   article.dataset.testid = 'tweet';
@@ -82,14 +99,32 @@ const appendPost = (post: HarnessPost) => {
       <div dir="ltr"><a href="/${post.authorHandle.slice(1)}/status/${post.id}">${post.authorHandle}</a></div>
     </div>
     <div data-testid="tweetText"></div>
+    ${post.imageUrl ? `<div data-testid="tweetPhoto"><img alt="Benchmark image" src="${post.imageUrl}" /></div>` : ''}
     <time datetime="${post.postedAt}"></time>
   `;
   article.querySelector('[data-testid="tweetText"]')?.append(post.text);
-  container.append(article);
+  return article;
+};
+
+const appendPost = (post: HarnessPost, persist = true) => {
+  const container = timeline();
+  if (!container) throw new Error('timeline container not found');
+  container.append(createPostElement(post));
+  if (persist) {
+    const stored = JSON.parse(sessionStorage.getItem(STORED_POSTS_KEY) ?? '[]') as HarnessPost[];
+    sessionStorage.setItem(STORED_POSTS_KEY, JSON.stringify([...stored, post]));
+  }
+};
+
+const restoreAppendedPosts = () => {
+  const stored = JSON.parse(sessionStorage.getItem(STORED_POSTS_KEY) ?? '[]') as HarnessPost[];
+  if (!timeline()) return;
+  for (const post of stored) appendPost(post, false);
 };
 
 const reset = () => {
   for (const post of document.querySelectorAll('[data-harness-appended="true"]')) post.remove();
+  sessionStorage.removeItem(STORED_POSTS_KEY);
 };
 
 const collapseFirstPost = (reasons: string[]) => {
@@ -110,3 +145,5 @@ const collapseFirstPost = (reasons: string[]) => {
 };
 
 window.__slopfilterHarness = { appendPost, collapseFirstPost, reset };
+
+restoreAppendedPosts();

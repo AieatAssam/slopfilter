@@ -29,6 +29,15 @@ test('keeps a high-view post with meaningful likes and reposts visible', async (
   await expect(page.getByTestId('slopfilter-placeholder')).toHaveCount(0);
 });
 
+test('collapses an X-marked advertisement by default with an advertisement reason', async ({
+  page,
+}) => {
+  await page.goto('/?fixture=advertisement');
+
+  await expect(page.getByTestId('slopfilter-placeholder')).toContainText('advertisement');
+  await expect(page.locator('article[data-testid="tweet"]')).toBeHidden();
+});
+
 test('leaves an ordinary author visible and filters nothing when paused', async ({
   page,
 }, testInfo) => {

@@ -12,3 +12,6 @@ declare module 'node:fs/promises' {
 declare module 'node:fs' {
   export function readFileSync(path: string, encoding: 'utf8'): string;
 }
+
+type Buffer = Uint8Array;
+declare const Buffer: { from(input: string): Buffer };

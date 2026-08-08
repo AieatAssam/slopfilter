@@ -39,6 +39,13 @@ const textOf = (element: Element | null): string => element?.textContent?.trim()
 
 const entryMatches = (root: ParentNode, id: string): Element[] => allMatches(root, getEntry(id));
 
+const hasAdLabel = (root: ParentNode): boolean =>
+  entryMatches(root, 'ad-label').some(
+    (element) =>
+      textOf(element).toLowerCase() === 'ad' &&
+      !element.closest('[data-testid="User-Name"], [data-testid="tweetText"]'),
+  );
+
 export const xAdapter: PlatformAdapter = {
   platform: 'x',
   selectorContractVersion: selectorContract.contractVersion,
@@ -93,6 +100,7 @@ export const xAdapter: PlatformAdapter = {
           .map((image) => image.getAttribute('src'))
           .filter((src): src is string => Boolean(src)),
         hasVideo: firstMatch(element, getEntry('post-video')) !== null,
+        isAd: hasAdLabel(element),
       };
     } catch {
       return null;

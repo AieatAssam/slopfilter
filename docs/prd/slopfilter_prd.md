@@ -137,7 +137,7 @@ Target: every release requires green unit + fixture tests; drift monitor runs in
 - Layer 2 (provenance/C2PA) and Layer 4 (image forensics, thumbnails only).
 - Account controls (mute/trust), stats panel, settings export/import.
 - Model download progress UX, offline behaviour, Firefox support evaluation (single codebase via polyfill, decide by effort).
-- Store listing, onboarding flow, privacy page ("nothing leaves your browser", verifiable: no network calls besides model download).
+- Store listing, onboarding flow, privacy page ("nothing leaves your browser", verifiable: only model downloads and visible-thumbnail C2PA reads leave the browser).
 - **Exit criteria:** X version feature-complete per scope; 30+ days of real usage by the owner; crash-free; drift monitor has caught and been used to fix at least one real or simulated markup change end-to-end.
 
 ### Phase 3 (Stretch Goals, gated on Phase 2 proof)
@@ -151,7 +151,7 @@ Target: every release requires green unit + fixture tests; drift monitor runs in
 
 ## 8. Privacy and Trust
 
-- Zero network calls at runtime except one-time model download from Hugging Face CDN. Verifiable via DevTools; stated on the store listing.
+- Runtime network calls are limited to one-time model downloads from Hugging Face CDN and visible image-thumbnail fetches for C2PA reads. Verifiable via DevTools; stated on the store listing.
 - No analytics, no telemetry, no accounts. All stats local.
 - No authorship accusations anywhere in UI copy. All reason labels cite observable evidence.
 - Open source from day one; the privacy claim must be auditable.

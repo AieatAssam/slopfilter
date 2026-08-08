@@ -1,0 +1,103 @@
+name: Selector drift monitor
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Check selector contract
+        id: monitor
+        continue-on-error: true
+        env:
+          DRIFT_TARGET: ${{ vars.SLOPFILTER_DRIFT_TARGET }}
+        run: |
+          target="${DRIFT_TARGET:-file://${GITHUB_WORKSPACE}/tests/fixtures/dom/x/timeline-baseline.html}"
+          set +e
+          node scripts/check-drift.mjs --target "$target" --out drift-report.json
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selector-drift-report
+          path: |
+            drift-report.json
+            drift-dom.html
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: File selector-drift issue
+        if: steps.monitor.outputs.exit_code == '2'
+        uses: actions/github-script@v7
+        env:
+          REPORT: drift-report.json
+        with:
+          script: |
+            const fs = require('node:fs');
+            const title = 'Drift monitor: X selector contract failed';
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'drift-monitor',
+            });
+            if (open.some((issue) => issue.title === title)) return;
+            const report = fs.readFileSync(process.env.REPORT, 'utf8');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['drift-monitor'],
+              body: `The selector contract no longer matches the configured target.\n\n\`\`\`json\n${report}\n\`\`\``,
+            });
+
+      - name: File unreachable-target issue
+        if: steps.monitor.outputs.exit_code == '3'
+        uses: actions/github-script@v7
+        env:
+          REPORT: drift-report.json
+        with:
+          script: |
+            const fs = require('node:fs');
+            const title = 'Drift monitor: target unreachable';
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'drift-monitor',
+            });
+            if (open.some((issue) => issue.title === title)) return;
+            const report = fs.readFileSync(process.env.REPORT, 'utf8');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['drift-monitor'],
+              body: `The configured drift target could not be reached.\n\n\`\`\`json\n${report}\n\`\`\``,
+            });

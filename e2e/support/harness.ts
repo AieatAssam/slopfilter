@@ -5,6 +5,7 @@ export type HarnessPost = {
   authorHandle: string;
   text: string;
   postedAt: string;
+  imageUrl?: string;
 };
 
 export const uniqueRunId = (testInfo: TestInfo) =>
@@ -15,5 +16,5 @@ export const appendPost = async (page: Page, post: HarnessPost) => {
 };
 
 export const resetHarness = async (page: Page) => {
-  await page.evaluate(() => window.__slopfilterHarness.reset());
+  await page.evaluate(() => window.__slopfilterHarness?.reset());
 };

@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "SlopFilter",
   "version": "0.0.1",
-  "description": "Collapses low-quality posts in your X timeline using local, on-device signals. Nothing leaves your browser.",
-  "permissions": ["storage"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "description": "Collapses low-quality posts in your X timeline using local, on-device signals and optional visible-thumbnail provenance checks.",
+  "permissions": ["storage", "offscreen"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://pbs.twimg.com/*"],
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"
@@ -32,6 +32,6 @@
     "128": "icons/icon-128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src https://huggingface.co https://*.hf.co https://pbs.twimg.com"
   }
 }

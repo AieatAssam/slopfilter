@@ -5,7 +5,7 @@ export interface TimelineObserverOptions {
   adapter: PlatformAdapter;
   container: Element;
   shouldFilter: () => boolean;
-  onBatch: (batch: readonly { element: HTMLElement; post: Post }[]) => void;
+  onBatch: (batch: readonly { element: HTMLElement; post: Post }[]) => void | Promise<void>;
 }
 
 export interface TimelineObserverHandle {
@@ -45,7 +45,7 @@ export function createTimelineObserver(options: TimelineObserverOptions): Timeli
     }
     if (batch.length === 0) return;
     try {
-      options.onBatch(batch);
+      void options.onBatch(batch);
     } catch {
       // A scoring failure must not escape the observer microtask.
     }

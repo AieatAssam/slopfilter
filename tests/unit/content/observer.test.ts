@@ -16,7 +16,7 @@ const post: Post = {
 
 const adapterFor = (extractPost: PlatformAdapter['extractPost'] = () => post): PlatformAdapter => ({
   platform: 'x',
-  selectorContractVersion: '1.1.0',
+  selectorContractVersion: '1.2.0',
   selfTest: () => ({ ok: true, failedSelectorIds: [] }),
   findTimelineContainer: (root) => root.querySelector('div'),
   findPostElements: (container) => Array.from(container.querySelectorAll('article')),

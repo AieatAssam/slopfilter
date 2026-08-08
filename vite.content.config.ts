@@ -3,6 +3,9 @@ import { defineConfig } from 'vite';
 const root = new URL('./', import.meta.url).pathname;
 
 export default defineConfig({
+  define: {
+    __SLOPFILTER_TEST_BUILD__: JSON.stringify(process.env.SLOPFILTER_BUILD_TARGET === 'test'),
+  },
   resolve: { alias: { '@': `${root}src` } },
   publicDir: false,
   build: {

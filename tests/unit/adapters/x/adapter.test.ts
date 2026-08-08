@@ -44,6 +44,17 @@ describe('x adapter', () => {
     expect(actual).toEqual(expectedPosts);
   });
 
+  test('recognises the visible Ad label without matching post text', () => {
+    const container = xAdapter.findTimelineContainer(loadBaseline());
+    if (!container) throw new Error('timeline container missing');
+    const posts = xAdapter
+      .findPostElements(container)
+      .map((element) => xAdapter.extractPost(element));
+
+    expect(posts.filter((post) => post?.isAd)).toHaveLength(2);
+    expect(posts.filter((post) => !post?.isAd)).toHaveLength(7);
+  });
+
   test('returns null for an unparseable article instead of throwing', () => {
     expect(() => xAdapter.extractPost(document.createElement('article'))).not.toThrow();
     expect(xAdapter.extractPost(document.createElement('article'))).toBeNull();

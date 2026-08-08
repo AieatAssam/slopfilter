@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 const alias = { '@': new URL('./src', import.meta.url).pathname };
 
 export default defineConfig({
+  define: { __SLOPFILTER_TEST_BUILD__: false },
   resolve: { alias },
   test: {
     projects: [

@@ -20,12 +20,12 @@ export function scorePost(
   }
 
   const contributions = usable.map((result) => {
-    const weight = config.weights[result.layerId];
+    const weight = Math.max(0, config.weights[result.layerId] ?? 0);
     return {
       layerId: result.layerId,
-      score: result.score,
+      score: Math.max(0, Math.min(1, result.score)),
       weight,
-      weighted: result.score * weight,
+      weighted: Math.max(0, Math.min(1, result.score)) * weight,
       reason: result.reason,
     };
   });
@@ -40,8 +40,13 @@ export function scorePost(
     };
   }
 
-  const compositeScore =
-    contributions.reduce((sum, contribution) => sum + contribution.weighted, 0) / totalWeight;
+  const compositeScore = Math.max(
+    0,
+    Math.min(
+      1,
+      contributions.reduce((sum, contribution) => sum + contribution.weighted, 0) / totalWeight,
+    ),
+  );
   const veto = VETO_RULES.find((rule) => rule.applies(usable));
   const reasons = contributions.flatMap(({ reason }) => (reason ? [reason] : []));
   if (veto) reasons.push(veto.reason);

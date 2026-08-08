@@ -14,12 +14,14 @@ export const LAYER_IDS: readonly LayerId[] = [
 
 export interface Settings {
   hideThreshold: number;
+  hideAds: boolean;
   weights: Record<LayerId, number>;
   enabledLayers: Record<LayerId, boolean>;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   hideThreshold: DEFAULT_SCORING_CONFIG.hideThreshold,
+  hideAds: true,
   weights: { ...DEFAULT_SCORING_CONFIG.weights },
   enabledLayers: Object.fromEntries(LAYER_IDS.map((layerId) => [layerId, true])) as Record<
     LayerId,
@@ -34,6 +36,9 @@ const readThreshold = (value: unknown): number => {
   if (!isFiniteNumber(value)) return DEFAULT_SETTINGS.hideThreshold;
   return Math.max(THRESHOLD_MIN, Math.min(THRESHOLD_MAX, value));
 };
+
+const readHideAds = (value: unknown): boolean =>
+  typeof value === 'boolean' ? value : DEFAULT_SETTINGS.hideAds;
 
 const readWeights = (value: unknown): Record<LayerId, number> => {
   const stored = typeof value === 'object' && value !== null ? value : {};
@@ -63,13 +68,20 @@ const readEnabledLayers = (value: unknown): Record<LayerId, boolean> => {
   ) as Record<LayerId, boolean>;
 };
 
+export const repairSettings = (stored: unknown): Settings => {
+  const value = typeof stored === 'object' && stored !== null ? stored : {};
+  const record = value as Record<string, unknown>;
+  return {
+    hideThreshold: readThreshold(record.hideThreshold),
+    hideAds: readHideAds(record.hideAds),
+    weights: readWeights(record.weights),
+    enabledLayers: readEnabledLayers(record.enabledLayers),
+  };
+};
+
 export async function loadSettings(): Promise<Settings> {
   const stored = await chrome.storage.local.get(null);
-  return {
-    hideThreshold: readThreshold(stored.hideThreshold),
-    weights: readWeights(stored.weights),
-    enabledLayers: readEnabledLayers(stored.enabledLayers),
-  };
+  return repairSettings(stored);
 }
 
 export async function saveSettings(partial: Partial<Settings>): Promise<void> {

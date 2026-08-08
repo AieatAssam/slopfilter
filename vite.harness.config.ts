@@ -8,6 +8,10 @@ export default defineConfig({
     port: 5174,
     strictPort: true,
     fs: { allow: [root] },
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
   },
   resolve: { alias: { '@': `${root}src` } },
 });

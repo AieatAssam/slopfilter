@@ -16,11 +16,12 @@ export const DEFAULT_THRESHOLDS: BehaviouralThresholds = {
 export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
   hideThreshold: 0.6,
   weights: {
-    behavioural: 1,
-    provenance: 0,
-    'content-type': 0,
-    'image-forensics': 0,
-    taste: 0,
+    // Provisional HD-005 defaults: observable behavior remains the primary signal.
+    behavioural: 0.4,
+    provenance: 0.1,
+    'content-type': 0.2,
+    'image-forensics': 0.1,
+    taste: 0.2,
   },
 };
 

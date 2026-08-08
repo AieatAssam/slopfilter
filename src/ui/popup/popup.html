@@ -8,6 +8,18 @@
   <body>
     <h1>SlopFilter</h1>
     <p data-testid="slopfilter-popup-status"></p>
+    <section data-testid="slopfilter-models" aria-labelledby="slopfilter-models-heading">
+      <h2 id="slopfilter-models-heading">Local models</h2>
+      <p data-testid="slopfilter-model-status">Models have not started loading.</p>
+      <button type="button" data-testid="slopfilter-model-retry" hidden>Retry model download</button>
+    </section>
+    <section data-testid="slopfilter-stats" aria-labelledby="slopfilter-stats-heading">
+      <h2 id="slopfilter-stats-heading">This week</h2>
+      <p data-testid="slopfilter-stats-seen"></p>
+      <p data-testid="slopfilter-stats-hidden"></p>
+      <p data-testid="slopfilter-stats-wrong-rate"></p>
+      <button type="button" data-testid="slopfilter-clear-statistics">Clear statistics</button>
+    </section>
     <script type="module" src="./popup.js"></script>
   </body>
 </html>

@@ -90,6 +90,17 @@ describe('scorePost', () => {
     expect(result.compositeScore).toBeLessThanOrEqual(1);
   });
 
+  test('clamps an out-of-range signal before combining it', () => {
+    const result = scorePost(
+      post,
+      [{ layerId: 'behavioural', ok: true, score: 2, reason: 'evidence' }],
+      { ...config, hideThreshold: 1 },
+    );
+
+    expect(result.compositeScore).toBe(1);
+    expect(result.contributions[0]?.score).toBe(1);
+  });
+
   test('uses an injected threshold without changing the composite score', () => {
     const results = [behavioural(0.7)];
     const hidden = scorePost(post, results, { ...config, hideThreshold: 0.6 });

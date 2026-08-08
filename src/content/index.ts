@@ -1,11 +1,15 @@
 import { xAdapter } from '@/adapters/x/adapter';
-import { collapsePost } from '@/content/collapse';
+import { collapsePost, restorePost } from '@/content/collapse';
+import { attachFeedbackControls } from '@/content/feedback';
 import { createTimelineObserver, type TimelineObserverHandle } from '@/content/observer';
 import type { Post } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
+import type { SignalResult } from '@/core/scoring/types';
 import { DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
 import { deriveAuthorActivity, scoreBehavioural } from '@/core/signals/behavioural';
 import { logger } from '@/shared/logger';
+import { isExtensionMessage } from '@/shared/messages';
+import { applyAccountOverride, getAccountState } from '@/storage/accounts';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -23,6 +27,27 @@ let pageObserver: MutationObserver | null = null;
 let timelineContainer: Element | null = null;
 let selfTestObserver: MutationObserver | null = null;
 let selfTestTimer: number | null = null;
+let requestSequence = 0;
+
+const requestModelSignals = async (posts: readonly Post[]) => {
+  if (posts.length === 0) return new Map<string, readonly SignalResult[]>();
+  try {
+    const simulateModelFailure =
+      __SLOPFILTER_TEST_BUILD__ && new URL(location.href).searchParams.has('model-failure');
+    const response = await chrome.runtime.sendMessage({
+      type: 'score-batch-request',
+      requestId: `content-${requestSequence++}`,
+      posts,
+      ...(simulateModelFailure ? { simulateModelFailure: true } : {}),
+    });
+    if (!isExtensionMessage(response) || response.type !== 'score-batch-response') {
+      return new Map<string, readonly SignalResult[]>();
+    }
+    return new Map(response.results.map((result) => [result.postId, result.signals]));
+  } catch {
+    return new Map<string, readonly SignalResult[]>();
+  }
+};
 
 const sendSelfTestResult = (ok: boolean, failedSelectorIds: readonly string[]) => {
   try {
@@ -51,19 +76,83 @@ const pauseFiltering = (failedSelectorIds: readonly string[] = []) => {
   logger.warn('filtering paused');
 };
 
-const scoreBatch = (batch: readonly { element: HTMLElement; post: Post }[]) => {
+const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]) => {
   try {
-    for (const { element, post } of batch) {
-      seenPosts.set(post.id, post);
-      const activity = deriveAuthorActivity([...seenPosts.values()], post.author.handle);
-      const signal = scoreBehavioural(post, activity, DEFAULT_THRESHOLDS);
-      const signals = settings.enabledLayers.behavioural ? [signal] : [];
-      const breakdown = scorePost(post, signals, {
-        hideThreshold: settings.hideThreshold,
-        weights: settings.weights,
-      });
-      if (breakdown.hidden) collapsePost(element, breakdown, themeForPlatform(xAdapter.platform));
-    }
+    const stored = await chrome.storage.local.get('exclusions');
+    const exclusions = new Set(
+      Array.isArray(stored.exclusions)
+        ? stored.exclusions.filter((value): value is string => typeof value === 'string')
+        : [],
+    );
+    const modelResultsPromise = requestModelSignals(batch.map(({ post }) => post));
+    const renderBatch = async (
+      modelResults: ReadonlyMap<string, readonly SignalResult[]>,
+      recordStats: boolean,
+    ) => {
+      const stats: { hidden: boolean; reasons: readonly string[] }[] = [];
+      for (const { element, post } of batch) {
+        if (!recordStats) element.dataset.slopfilterModelProcessed = 'true';
+        seenPosts.set(post.id, post);
+        const activity = deriveAuthorActivity([...seenPosts.values()], post.author.handle);
+        const signal = scoreBehavioural(post, activity, DEFAULT_THRESHOLDS);
+        const signals = [signal, ...(modelResults.get(post.id) ?? [])].filter(
+          (result) => settings.enabledLayers[result.layerId],
+        );
+        const breakdown =
+          post.isAd && settings.hideAds
+            ? {
+                compositeScore: 1,
+                threshold: settings.hideThreshold,
+                hidden: true,
+                contributions: [],
+                reasons: ['advertisement'],
+              }
+            : scorePost(post, signals, {
+                hideThreshold: settings.hideThreshold,
+                weights: settings.weights,
+              });
+        const overridden = exclusions.has(post.id)
+          ? { ...breakdown, hidden: false, reasons: [] }
+          : applyAccountOverride(post, breakdown, await getAccountState(post.author.handle));
+        const theme = themeForPlatform(xAdapter.platform);
+        const attachVisibleFeedback = () => {
+          attachFeedbackControls(element, post, {
+            breakdown: overridden,
+            theme,
+          });
+        };
+        const restoreAndAttachFeedback = () => {
+          restorePost(element);
+          attachVisibleFeedback();
+        };
+        stats.push({ hidden: overridden.hidden, reasons: overridden.reasons });
+        if (overridden.hidden) {
+          collapsePost(element, overridden, theme, restoreAndAttachFeedback);
+          const placeholder = element.nextElementSibling;
+          if (placeholder instanceof HTMLElement) {
+            attachFeedbackControls(placeholder, post, {
+              breakdown: overridden,
+              theme,
+              onWrongCall: restoreAndAttachFeedback,
+            });
+          }
+        } else {
+          if (element.dataset.slopfilterCollapsed === 'true') restorePost(element);
+          attachVisibleFeedback();
+        }
+      }
+      if (!recordStats) return;
+      try {
+        const response = chrome.runtime.sendMessage({ type: 'record-stats-batch', entries: stats });
+        void response.catch(() => undefined);
+      } catch {
+        // Stats are optional; a missing service worker must not affect filtering.
+      }
+    };
+    await renderBatch(new Map(), true);
+    void modelResultsPromise.then((modelResults) => {
+      if (modelResults.size > 0) void renderBatch(modelResults, false).catch(() => undefined);
+    });
   } catch {
     pauseFiltering();
   }
@@ -161,5 +250,18 @@ const start = async () => {
   logger.debug('content script loaded');
   startAfterSelfTest();
 };
+
+if (typeof chrome !== 'undefined') {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!isExtensionMessage(message) || message.type !== 'get-selftest-state') return false;
+    const result = xAdapter.selfTest(document);
+    sendResponse({
+      type: 'selftest-result',
+      ok: result.ok,
+      failedSelectorIds: result.failedSelectorIds,
+    });
+    return true;
+  });
+}
 
 void start().catch(() => pauseFiltering());

@@ -20,6 +20,7 @@ export interface Post {
   engagement: PostEngagement;
   imageUrls: readonly string[];
   hasVideo: boolean;
+  isAd?: boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -33,6 +34,7 @@ export function isPost(value: unknown): value is Post {
     return false;
   }
   if (typeof value.hasVideo !== 'boolean') return false;
+  if ('isAd' in value && typeof value.isAd !== 'boolean') return false;
   if (!isRecord(value.author)) return false;
   if (typeof value.author.handle !== 'string' || typeof value.author.displayName !== 'string') {
     return false;
