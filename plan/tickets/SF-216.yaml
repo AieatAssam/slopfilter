@@ -1,108 +1,126 @@
 id: SF-216
-summary: Read account age and post count from X's own timeline response instead of inferring them
-status: blocked
-blocked_on: PAYLOAD-CHECK below only. The privacy question is settled - HD-016 records the owner
-  confirming on 2026-08-08 that a same-origin read of an already-fetched response is compatible with
-  the privacy claim.
+summary: Read author account age, post count, and exact engagement from X's own HomeTimeline response
 depends_on:
   - SF-215
-why: "X's timeline GraphQL response is believed to carry per-user legacy fields including
-  statuses_count and created_at, which are exactly the 'account age vs post count' inputs PRD
-  section 4 names and which no amount of DOM scraping can recover. Reading a response the page
-  already fetched adds no outbound request, so this is strictly better than SF-215's inference where
-  it applies. It is unverified: this repository's fixtures are sanitised DOM with no captured JSON,
-  and a probe of the live logged-in timeline on 2026-08-08 could not
-  read it. That probe is itself evidence for the MAIN-world requirement below: patching window.fetch
-  and XMLHttpRequest from an isolated world captured zero timeline responses while the page loaded
-  thousands of pixels of new posts, and no page global such as webpackChunk_twitter_responsive_web
-  was visible from that world."
-payload_check:
-  - Run this before anything else. On x.com logged in, open DevTools, Network, filter HomeTimeline,
-    scroll the timeline once, and open a response.
-  - "Record here: whether a per-user object exists with statuses_count and created_at; the JSON path
-    to it; and whether the response is JSON rather than a streamed or chunked format."
-  - "If the fields are absent, close this ticket as not viable and rely on SF-215. Do not substitute
-    an authenticated profile or API request: that is a separate owner decision with
-    credential-handling and account-safety costs, recorded against HD-004."
+why: Verified against the live logged-in timeline on 2026-08-08 over CDP. One HomeTimeline response
+  carried 35 authors and lifetime posts-per-day was computable for 35 of 35, versus the current DOM
+  path which needs two posts by one author in a single viewport and usually yields nothing. The
+  response also carries exact engagement and view counts, removing the lossy compact-count parsing
+  in parseCompactCount that turns 1.2K into 1200. Reading it adds no request, and HD-016 records the
+  owner confirming that is compatible with the privacy claim.
+verified_payload:
+  captured_on: 2026-08-08, live logged-in x.com/home, Chrome 151, via CDP Network.getResponseBody
+  operation: HomeTimeline, at /i/api/graphql/<queryId>/HomeTimeline, roughly 394 KB, JSON
+  query_id_warning: The <queryId> path segment rotates per deploy (observed psvmu2kIj08INJBBiZVgMw).
+    Match on the trailing operation name, never on the id.
+  entries: data.home.home_timeline_urt.instructions[].entries[]
+  tweet: content.itemContent.tweet_results.result
+  user: core.user_results.result
+  account_created_at: user.core.created_at, RFC 1123 style, for example "Wed Jun 24 13:32:17 +0000 2026"
+  account_post_count: user.tweet_counts.tweets, with user.tweet_counts.media_tweets alongside
+  screen_name: user.core.screen_name
+  followers: user.relationship_counts.followers, with .following alongside
+  verified: user.verification.verified
+  tweet_engagement: tweet.legacy.favorite_count, retweet_count, reply_count, quote_count, bookmark_count
+  tweet_views: tweet.views.count, a numeric string
+  breaking_change_note: "X has restructured the old flat user legacy object into typed sub-objects.
+    statuses_count no longer exists anywhere in the response: it is now tweet_counts.tweets. Any
+    guidance or code written against user.legacy.statuses_count is stale. Keep legacy.statuses_count
+    only as a trailing fallback selector for older shapes."
 rules:
-  - Zero new outbound requests. This ticket reads a response the page already made and must never
-    issue, retry, replay, or prefetch one. A single fetch added here breaks the privacy claim
-    asserted in the PRD, README, store listing, privacy page, the plan constraints, and the SF-207
-    grep.
-  - Never read document.cookie, never construct an x-csrf-token, and never attach credentials to
-    anything. If an approach needs either, stop and report.
-  - The JSON paths are a drift surface exactly like a CSS selector. Declare them in a versioned
-    contract with required and optional flags, cover them in the in-extension self-test, and add
-    them to the drift monitor. An unmonitored parse is worse than the DOM scraping it replaces.
-  - "Fail open and fail quiet: a missing path, a shape change, or a parse failure yields no-data for
-    the layer and never pauses filtering or hides a post."
-  - Interception runs in a MAIN-world content script at document_start, because the patch must be
-    installed before X application code runs and an isolated-world script cannot see the page fetch.
-    MAIN-world scripts have no chrome.* access, so results cross to the isolated world by
-    postMessage with an origin check and a shape validator on the receiving end. This is a new
-    manifest entry and a new build entry, not an edit to src/content/index.ts.
-  - "Persist only derived numbers on the existing SF-215 author record: account created-at, post
-    count, and the observation time. Never persist the response, and never persist post text."
-  - "Lifetime rate and recent rate stay separate sub-signals with separate reasons, as in SF-215.
-    statuses_count over account age is a lifetime average and does not describe current behaviour: a
-    ten-year account with 300k posts averages 82 per day and may be dormant, while a two-week
-    account with 500 posts is 35 per day and actively spamming."
+  - Zero new outbound requests. Read only the response the page already made. Never issue, retry,
+    replay, or prefetch one. A single added fetch breaks the privacy claim asserted in the PRD,
+    README, store listing, privacy page, plan constraints, and the SF-207 grep.
+  - Never read document.cookie, never construct an x-csrf-token, never attach credentials to
+    anything.
+  - "Interception must run in a MAIN-world content script at document_start. Verified twice on
+    2026-08-08: patching window.fetch and XMLHttpRequest from an isolated world captured zero
+    timeline responses while the page loaded new posts, and a patch installed late from the page
+    console also captured nothing because X captures its fetch reference at startup. MAIN-world
+    scripts have no chrome.* access, so results cross to the isolated world by postMessage with an
+    origin check and a shape validator."
+  - The JSON paths are a drift surface exactly like a CSS selector, and this ticket already
+    documents one breaking rename. Declare them in a versioned contract with required and optional
+    flags and ordered fallbacks, cover them in the self-test, and assert them in the drift monitor.
+  - Match the operation by its trailing name. The query id in the path rotates per deploy and must
+    never be hardcoded.
+  - "Fail open and fail quiet: a missing path, a renamed field, or a parse failure yields no-data
+    for that author and never pauses filtering or hides a post."
+  - "Persist only derived numbers on the SF-215 author record: account created-at, post count, and
+    observation time. Never persist the response, never persist post text."
+  - "Lifetime rate and recent rate stay separate sub-signals with separate reasons.
+    tweet_counts.tweets over account age is a lifetime average: a 2638-day account with 36193 posts
+    averages 13.7 per day, which says nothing about this week. SF-215's cross-session cache remains
+    the source of the recent rate, so it is a complement here, not a redundancy."
+  - "Account age is independently useful and cheap: a young account posting heavily is a much
+    stronger slop indicator than either fact alone. Expose both numbers to the SF-213 inspector
+    rather than only their ratio."
 changes:
   - path: src/adapters/x/payloadContract.json
-    do: "Create, mirroring the selectors.json shape: contractVersion, and entries with id, description,
-      ordered fallback JSON paths, and a required flag. Entries for the user object, statuses_count,
-      created_at, and the screen name used to join it to a handle."
+    do: "Create, mirroring selectors.json: contractVersion, and entries with id, description, ordered
+      fallback JSON paths, and a required flag. One entry per path in verified_payload, each with
+      the current path first and the pre-rename legacy path as a trailing fallback where one
+      existed."
   - path: src/adapters/x/payload.ts
-    do: Typed loader, path resolution with fallbacks, and a pure extract(json) returning per-handle
-      account stats. No DOM, no chrome.*.
+    do: Typed loader plus a pure extract(json) walking entries and returning per-handle author stats and
+      per-post exact engagement. No DOM, no chrome.*, no throw on a missing path.
   - path: src/content/interceptor.ts
-    do: "MAIN-world script: wrap window.fetch and XMLHttpRequest, match only the timeline endpoints
-      named in the contract, clone the response, extract via payload.ts, and postMessage the derived
-      per-handle stats to the isolated world. Never buffer or forward the raw response."
+    do: "MAIN-world script: wrap window.fetch and XMLHttpRequest, match responses whose URL path ends in
+      the contract operation name, clone, extract via payload.ts, and postMessage only the derived
+      numbers. Never forward the raw response. Handle arraybuffer responseType, observed in use on
+      x.com, by decoding with TextDecoder."
   - path: src/content/index.ts
-    do: Listen for interceptor messages with an origin check and a shape validator, and write the
-      derived stats onto the SF-215 author record. Everything else is unchanged.
+    do: Receive interceptor messages with an origin check and shape validation, write author stats onto
+      the SF-215 record, and prefer payload engagement over DOM-parsed counts when both exist for a
+      post.
+  - path: src/core/signals/behavioural.ts
+    do: Add the lifetime rate from post count over account age, and an account-age sub-signal, as
+      contributions separate from the SF-215 recent rate. Each carries its own evidence-based
+      reason.
   - path: public/manifest.json
-    do: Add the MAIN-world content script at document_start, matching the existing host permissions
-      only. No new host permission.
+    do: Add the MAIN-world content script at document_start against the existing host permissions. No
+      new host permission.
   - path: vite.content.config.ts
-    do: Emit the interceptor as a second IIFE bundle. It cannot share the existing content bundle, which
-      runs in the isolated world.
+    do: Emit the interceptor as a second IIFE bundle; it cannot share the isolated-world content bundle.
   - path: src/adapters/x/selftest.ts
-    do: Extend the self-test to report payload-contract health separately from selector health, so a
-      payload change degrades one signal rather than pausing filtering.
+    do: Report payload-contract health separately from selector health, so a payload rename degrades one
+      signal instead of pausing filtering.
   - path: scripts/check-drift.mjs
-    do: Assert the required payload paths alongside the required selectors, with the same distinct exit
-      codes for drift and unreachable target.
-  - path: tests/fixtures/payload/x/timeline-response.json
-    do: "Create a sanitised captured response: real shape and key paths, with handles, ids, text, and
-      counts replaced by synthetic values, matching how the DOM fixtures were sanitised."
+    do: Assert required payload paths alongside required selectors, keeping the distinct exit codes for
+      drift and unreachable target.
+  - path: tests/fixtures/payload/x/home-timeline.json
+    do: "Create a sanitised capture: real shape and paths, synthetic handles, ids, names, text, and
+      counts. Include one author with a missing tweet_counts to exercise the no-data path."
   - path: tests/unit/adapters/x/payload.test.ts
-    do: Extract against the fixture; assert fallback paths, a missing optional path, and that a shape
-      change yields no-data rather than a throw.
+    do: Extract against the fixture; assert the fallback chain, a renamed required path yielding no-data
+      rather than a throw, and that a rotated query id still matches by operation name.
   - path: e2e/specs/payload-intercept.spec.ts
-    do: "Create: the harness serves a stub endpoint returning the fixture, and the spec asserts the
-      derived stats reach the author record and that no additional network request was issued."
+    do: Harness serves the fixture from a stub endpoint; assert derived stats reach the author record,
+      that exact engagement replaces the DOM-parsed value, and that no extra network request was
+      issued.
 verify:
-  - assert: Derived account stats from an intercepted response reach the author record and feed the
-      lifetime sub-signal.
+  - assert: Author account age and post count from an intercepted response reach the author record and
+      feed the lifetime sub-signal.
     run: npm run build:test && npm run test:e2e -- e2e/specs/payload-intercept.spec.ts
-  - assert: No additional network request is issued by the interceptor, asserted from the recorded
-      request list in the spec.
+  - assert: Exact engagement from the payload supersedes the compact-count DOM parse for the same post.
     run: npm run build:test && npm run test:e2e -- e2e/specs/payload-intercept.spec.ts
-  - assert: A missing or renamed required path yields no-data and leaves filtering running.
+  - assert: No additional network request is issued, asserted from the recorded request list.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/payload-intercept.spec.ts
+  - assert: A renamed or missing required path yields no-data and leaves filtering running.
     run: npm run test:unit -- tests/unit/adapters/x/payload.test.ts
-  - assert: The drift monitor fails on a deliberately broken payload path with the drift exit code.
-    run: node scripts/check-drift.mjs --fixture tests/fixtures/payload/x/timeline-response.json --break
-      user-statuses-count
+  - assert: A rotated query id still matches by operation name.
+    run: npm run test:unit -- tests/unit/adapters/x/payload.test.ts
+  - assert: The drift monitor fails with the drift exit code on a deliberately broken payload path.
+    run: node scripts/check-drift.mjs --fixture tests/fixtures/payload/x/home-timeline.json --break
+      user-post-count
   - assert: No cookie read, no CSRF construction, and no request-issuing call in the interceptor.
     run: node --input-type=module -e "import fs from 'node:fs';const
       s=fs.readFileSync('src/content/interceptor.ts','utf8');for(const p of
       [/document\.cookie/,/csrf/i,/\bfetch\s*\(/,/\.open\s*\(/])if(p.test(s))throw new
       Error('interceptor must only observe, matched '+p);console.log('ok')"
-  - assert: The captured payload fixture contains no real handle, post id, or post text.
+  - assert: The payload fixture contains no real handle, post id, or post text.
     run: node --input-type=module -e "import fs from 'node:fs';const
-      s=fs.readFileSync('tests/fixtures/payload/x/timeline-response.json','utf8');if(!/synthetic|account0|example/i.test(s))throw
+      s=fs.readFileSync('tests/fixtures/payload/x/home-timeline.json','utf8');if(!/synthetic|account0|example/i.test(s))throw
       new Error('payload fixture does not look sanitised');console.log('ok')"
   - assert: The full suite is green.
     run: npm run lint && npm run typecheck && npm run test:unit && npm run build:test && npm run
