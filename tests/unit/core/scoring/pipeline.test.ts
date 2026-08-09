@@ -4,6 +4,7 @@ import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoringConfig, SignalResult } from '@/core/scoring/types';
 import { DEFAULT_SCORING_CONFIG, DEFAULT_THRESHOLDS, VETO_RULES } from '@/core/scoring/weights';
 import { scoreBehavioural } from '@/core/signals/behavioural';
+import { CALIBRATION_ROWS } from '../../../fixtures/posts/calibration';
 import scoringFixtures from '../../../fixtures/posts/posts-scoring.json';
 
 const post: Post = {
@@ -43,6 +44,8 @@ describe('scorePost', () => {
       hidden: false,
       contributions: [],
       reasons: [],
+      totalWeight: 0,
+      requiredDelta: 0,
     });
   });
 
@@ -64,19 +67,47 @@ describe('scorePost', () => {
       hidden: false,
       contributions: [],
       reasons: [],
+      totalWeight: 0,
+      requiredDelta: 0,
     });
   });
 
-  test('normalizes over the weights of available signals and preserves reason order', () => {
+  test('sums the weighted scores without normalizing and preserves reason order', () => {
     const results: SignalResult[] = [
       { layerId: 'behavioural', ok: true, score: 0.8, reason: 'frequency evidence' },
       { layerId: 'provenance', ok: true, score: 0.2, reason: 'provenance evidence' },
     ];
     const result = scorePost(post, results, config);
 
-    expect(result.compositeScore).toBeCloseTo(0.6286, 4);
-    expect(result.hidden).toBe(true);
+    expect(result.compositeScore).toBeCloseTo(0.8 * 0.5 + 0.2 * 0.2, 4);
+    expect(result.hidden).toBe(false);
     expect(result.reasons).toEqual(['frequency evidence', 'provenance evidence']);
+  });
+
+  test('additive composite equals a single layer clamped to its weight', () => {
+    const result = scorePost(post, [behavioural(1, 'loud evidence')], config);
+
+    expect(result.compositeScore).toBeCloseTo(config.weights.behavioural, 4);
+    expect(result.hidden).toBe(false);
+    expect(result.reasons).toEqual(['loud evidence']);
+  });
+
+  test('the mean is gone: zero layers do not dilute a fired layer', () => {
+    const fired = scorePost(
+      post,
+      [
+        { layerId: 'behavioural', ok: true, score: 1, reason: 'loud evidence' },
+        { layerId: 'content-type', ok: true, score: 0, reason: null },
+        { layerId: 'taste', ok: true, score: 0, reason: null },
+        { layerId: 'image-forensics', ok: true, score: 0, reason: null },
+      ],
+      config,
+    );
+    const alone = scorePost(post, [behavioural(1, 'loud evidence')], config);
+
+    expect(fired.compositeScore).toBe(alone.compositeScore);
+    expect(fired.compositeScore).toBeCloseTo(config.weights.behavioural, 4);
+    expect(fired.hidden).toBe(alone.hidden);
   });
 
   test('keeps the composite within the inclusive range for maximum inputs', () => {
@@ -85,30 +116,75 @@ describe('scorePost', () => {
     ).map((layerId) => ({ layerId, ok: true, score: 1, reason: `${layerId} evidence` }));
     const result = scorePost(post, results, config);
 
-    expect(result.compositeScore).toBe(1);
+    expect(result.compositeScore).toBeCloseTo(1, 6);
     expect(result.compositeScore).toBeGreaterThanOrEqual(0);
     expect(result.compositeScore).toBeLessThanOrEqual(1);
+    expect(result.hidden).toBe(true);
   });
 
-  test('clamps an out-of-range signal before combining it', () => {
+  test('clamps an out-of-range signal before weighing it', () => {
     const result = scorePost(
       post,
       [{ layerId: 'behavioural', ok: true, score: 2, reason: 'evidence' }],
-      { ...config, hideThreshold: 1 },
+      { ...config, hideThreshold: 0.6 },
     );
 
-    expect(result.compositeScore).toBe(1);
     expect(result.contributions[0]?.score).toBe(1);
+    expect(result.compositeScore).toBeCloseTo(config.weights.behavioural, 4);
   });
 
   test('uses an injected threshold without changing the composite score', () => {
     const results = [behavioural(0.7)];
-    const hidden = scorePost(post, results, { ...config, hideThreshold: 0.6 });
+    const hidden = scorePost(post, results, { ...config, hideThreshold: 0.3 });
     const visible = scorePost(post, results, { ...config, hideThreshold: 0.8 });
 
     expect(hidden.compositeScore).toBe(visible.compositeScore);
     expect(hidden.hidden).toBe(true);
     expect(visible.hidden).toBe(false);
+  });
+
+  test('carries each result detail into its contribution', () => {
+    const results: SignalResult[] = [
+      {
+        layerId: 'behavioural',
+        ok: true,
+        score: 0.75,
+        reason: 'frequency evidence',
+        detail: { status: 'scored', values: { postsPerDay: 80 } },
+      },
+      {
+        layerId: 'content-type',
+        ok: true,
+        score: 0,
+        reason: null,
+        detail: { status: 'gated', values: { gated: true } },
+      },
+    ];
+    const result = scorePost(post, results, config);
+
+    expect(result.contributions[0]?.detail).toEqual({
+      status: 'scored',
+      values: { postsPerDay: 80 },
+    });
+    expect(result.contributions[1]?.detail).toEqual({ status: 'gated', values: { gated: true } });
+  });
+
+  test('reports the total weight and the shortfall below the threshold', () => {
+    const results: SignalResult[] = [
+      { layerId: 'behavioural', ok: true, score: 0.25, reason: null },
+      { layerId: 'provenance', ok: true, score: 0.25, reason: null },
+    ];
+    const result = scorePost(post, results, config);
+
+    expect(result.totalWeight).toBeCloseTo(0.7, 10);
+    expect(result.requiredDelta).toBeCloseTo(0.6 - result.compositeScore, 10);
+    expect(result.requiredDelta).toBeGreaterThan(0);
+  });
+
+  test('omits detail entirely when a result carries none', () => {
+    const result = scorePost(post, [behavioural(0.5)], config);
+
+    expect(result.contributions[0]?.detail).toBeUndefined();
   });
 
   test('ships no inferred veto rules until they are explicitly approved', () => {
@@ -125,5 +201,12 @@ describe('scorePost', () => {
       expect(result.reasons.join(' ')).toContain(reasonId === 'frequency' ? 'posts' : 'engagement');
     }
     expect(fixture.derivation).toBeTruthy();
+  });
+
+  test('drives the calibration table to the recorded hide decisions', () => {
+    for (const row of CALIBRATION_ROWS) {
+      const result = scorePost(row.post, row.signals, DEFAULT_SCORING_CONFIG);
+      expect(result.hidden, row.id).toBe(row.hide);
+    }
   });
 });

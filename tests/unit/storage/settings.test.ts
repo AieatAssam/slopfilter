@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { DEFAULT_SCORING_CONFIG } from '@/core/scoring/weights';
 import {
   DEFAULT_SETTINGS,
+  LEGACY_DEFAULT_WEIGHTS,
   loadSettings,
   saveSettings,
   THRESHOLD_MAX,
@@ -45,6 +46,24 @@ describe('settings', () => {
     expect(settings.hideAds).toBe(true);
     expect(settings.weights.behavioural).toBe(0.4);
     expect(settings.weights.taste).toBe(DEFAULT_SETTINGS.weights.taste);
+  });
+
+  test('migrates stored weights matching the old defaults to the recalibrated defaults', async () => {
+    stored = { weights: { ...LEGACY_DEFAULT_WEIGHTS } };
+
+    const settings = await loadSettings();
+
+    expect(settings.weights).toEqual(DEFAULT_SETTINGS.weights);
+  });
+
+  test('leaves user-modified weights untouched by the migration', async () => {
+    const modified = { ...LEGACY_DEFAULT_WEIGHTS, behavioural: 0.85 };
+    stored = { weights: modified };
+
+    const settings = await loadSettings();
+
+    expect(settings.weights).toEqual(modified);
+    expect(settings.weights.behavioural).toBe(0.85);
   });
 
   test('clamps an out-of-range threshold', async () => {

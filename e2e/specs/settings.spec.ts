@@ -50,7 +50,7 @@ test('resets an individual layer setting to its documented default', async ({
 
   await options.getByRole('button', { name: 'Reset weight' }).first().click();
   await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
-  await expect(weight).toHaveValue('0.4');
+  await expect(weight).toHaveValue('0.6');
   await options.close();
 });
 
@@ -69,5 +69,46 @@ test('advertisement hiding is on by default and can be switched off', async ({
   await page.goto('/?fixture=advertisement');
   await expect(page.getByTestId('slopfilter-placeholder')).toHaveCount(0);
   await expect(page.locator('article[data-testid="tweet"]')).toBeVisible();
+  await options.close();
+});
+
+test('info tip expands a help bubble on click and closes on Escape', async ({
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  const tip = options.getByRole('button', { name: 'A higher value means fewer posts are hidden.' });
+  const bubble = options.getByRole('note', {
+    name: 'A higher value means fewer posts are hidden.',
+  });
+
+  await tip.click();
+  await expect(tip).toHaveAttribute('aria-expanded', 'true');
+  await expect(bubble).toBeVisible();
+  await expect(bubble).toContainText('A higher value means fewer posts are hidden.');
+
+  await tip.press('Escape');
+  await expect(tip).toHaveAttribute('aria-expanded', 'false');
+  await options.close();
+});
+
+test('only one info tip bubble is open at a time', async ({ context, extensionId }) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  const behavioural = options.getByRole('button', {
+    name: 'Looks at posting pace and engagement balance visible in your timeline.',
+  });
+  const taste = options.getByRole('button', {
+    name: 'Learns from posts you mark Not interested, using only local history.',
+  });
+
+  await behavioural.click();
+  await expect(behavioural).toHaveAttribute('aria-expanded', 'true');
+  await taste.click();
+  await expect(behavioural).toHaveAttribute('aria-expanded', 'false');
+  await expect(taste).toHaveAttribute('aria-expanded', 'true');
   await options.close();
 });

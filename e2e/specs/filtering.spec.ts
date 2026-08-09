@@ -22,6 +22,32 @@ test('collapses high-frequency posts with an evidence-based reason', async ({ pa
   await expect(page.locator('article[data-testid="tweet"]').first()).toBeVisible();
 });
 
+test('a single loud layer reaches the additive threshold while the other layers stay quiet', async ({
+  page,
+}) => {
+  await page.goto('/?fixture=high-frequency');
+  await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
+
+  const placeholders = page.getByTestId('slopfilter-placeholder');
+  await expect(placeholders.first()).toBeVisible();
+  await expect(placeholders.first()).toContainText(/posts \d+\+ times per day/);
+
+  await placeholders.first().getByRole('button', { name: 'Why this score' }).click();
+  const inspector = page.getByTestId('slopfilter-inspector');
+  await expect(inspector).toBeVisible();
+  const totals = await inspector.getByTestId('slopfilter-inspector-totals').textContent();
+  expect(totals).toContain('Composite 0.60');
+
+  const rows = inspector.locator('[data-testid="slopfilter-inspector-row"]');
+  const behavioralRow = rows.filter({ hasText: 'behavioural' });
+  await expect(behavioralRow).toContainText('contribution 0.60');
+  const content = (await rows.allTextContents()).join('\n');
+  expect(content).toMatch(/\bprovenance\b/);
+  expect(content).toMatch(/\bcontent-type\b/);
+  expect(content).toMatch(/\bimage-forensics\b/);
+  expect(content).toMatch(/\btaste\b/);
+});
+
 test('keeps a high-view post with meaningful likes and reposts visible', async ({ page }) => {
   await page.goto('/?fixture=engagement-popular');
 

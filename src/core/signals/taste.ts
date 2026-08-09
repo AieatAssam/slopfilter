@@ -24,14 +24,36 @@ export const scoreTaste = (
     (best, centroid) => Math.max(best, cosineSimilarity(embedding, centroid)),
     0,
   );
-  if (centroids.length === 0 || similarity < Math.max(0, threshold)) {
-    return { layerId: 'taste', ok: true, score: 0, reason: null };
+  const boundary = Math.max(0, threshold);
+  const values: Record<string, number | string | boolean | null> = {
+    bestSimilarity: similarity,
+    centroidCount: centroids.length,
+    similarityThreshold: boundary,
+  };
+  if (centroids.length === 0) {
+    return {
+      layerId: 'taste',
+      ok: true,
+      score: 0,
+      reason: null,
+      detail: { status: 'no-data', values },
+    };
+  }
+  if (similarity < boundary) {
+    return {
+      layerId: 'taste',
+      ok: true,
+      score: 0,
+      reason: null,
+      detail: { status: 'below-cutoff', values },
+    };
   }
   return {
     layerId: 'taste',
     ok: true,
     score: Math.max(0, Math.min(1, similarity)),
     reason: 'similar to posts you downvoted',
+    detail: { status: 'scored', values },
   };
 };
 

@@ -25,7 +25,37 @@ const reasonByLabel: Readonly<Record<string, string>> = Object.freeze({
   'giveaway or crypto spam': 'giveaway or crypto-spam content',
 });
 
-export const scoreContentType = (output: ClassifierOutput): SignalResult => {
+export interface ContentTypeDetail {
+  gated?: boolean;
+  unavailable?: boolean;
+}
+
+export const scoreContentType = (
+  output: ClassifierOutput,
+  detail?: ContentTypeDetail,
+): SignalResult => {
+  if (detail?.gated) {
+    return {
+      layerId: 'content-type',
+      ok: true,
+      score: 0,
+      reason: null,
+      detail: {
+        status: 'gated',
+        values: { gated: true, confidenceCutoff: CONTENT_TYPE_CONFIDENCE_THRESHOLD },
+      },
+    };
+  }
+  if (detail?.unavailable) {
+    return {
+      layerId: 'content-type',
+      ok: false,
+      score: 0,
+      reason: null,
+      detail: { status: 'unavailable' },
+    };
+  }
+
   const topIndex = output.scores.reduce(
     (best, score, index) =>
       score > (output.scores[best] ?? Number.NEGATIVE_INFINITY) ? index : best,
@@ -34,13 +64,34 @@ export const scoreContentType = (output: ClassifierOutput): SignalResult => {
   const label = output.labels[topIndex];
   const confidence = output.scores[topIndex] ?? 0;
   const reason = label ? reasonByLabel[label] : undefined;
+
+  const winning: Record<string, number | string | boolean | null> = label
+    ? { winningLabel: label }
+    : { winningLabel: null };
+  const values: Record<string, number | string | boolean | null> = {
+    ...winning,
+    confidence,
+    confidenceCutoff: CONTENT_TYPE_CONFIDENCE_THRESHOLD,
+  };
+  output.labels.forEach((candidateLabel, index) => {
+    values[candidateLabel] = output.scores[index] ?? 0;
+  });
+
   if (!reason || confidence < CONTENT_TYPE_CONFIDENCE_THRESHOLD) {
-    return { layerId: 'content-type', ok: true, score: 0, reason: null };
+    return {
+      layerId: 'content-type',
+      ok: true,
+      score: 0,
+      reason: null,
+      detail: { status: 'below-cutoff', values },
+    };
   }
+
   return {
     layerId: 'content-type',
     ok: true,
     score: Math.max(0, Math.min(1, confidence)),
     reason,
+    detail: { status: 'scored', values },
   };
 };

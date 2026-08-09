@@ -108,8 +108,9 @@ const analyseImages = async (postData: Post) => {
 };
 
 const classify = async (postData: Post) => {
-  if (!classifier || !shouldClassifyContent(postData.text)) {
-    return scoreContentType({ labels: [], scores: [] });
+  if (!classifier) return scoreContentType({ labels: [], scores: [] }, { unavailable: true });
+  if (!shouldClassifyContent(postData.text)) {
+    return scoreContentType({ labels: [], scores: [] }, { gated: true });
   }
   const output = await classifier(postData.text, [...CONTENT_TYPE_LABELS]);
   return scoreContentType(output);
@@ -137,13 +138,11 @@ const recordDownvote = async (postId: string, text: string): Promise<void> => {
 
 const scorePost = async (postData: Post) => {
   const signals: SignalResult[] = [await classify(postData)];
-  if (centroids.length > 0) {
-    try {
-      const vector = await embed(postData.text);
-      signals.push(scoreTaste(vector, centroids, 0.8));
-    } catch {
-      signals.push({ layerId: 'taste', ok: false, score: 0, reason: null });
-    }
+  try {
+    const vector = await embed(postData.text);
+    signals.push(scoreTaste(vector, centroids, 0.8));
+  } catch {
+    signals.push({ layerId: 'taste', ok: false, score: 0, reason: null });
   }
   signals.push(await analyseImages(postData));
   return { postId: postData.id, signals };

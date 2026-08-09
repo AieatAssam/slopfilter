@@ -1,15 +1,24 @@
 import { type ContentTheme, themeClass } from '@/content/themes';
 import type { Post } from '@/core/post';
-import type { ScoreBreakdown } from '@/core/scoring/types';
+import type { LayerId, ScoreBreakdown } from '@/core/scoring/types';
 import { setAccountState } from '@/storage/accounts';
 import { addEmbedding } from '@/storage/embeddings';
+import { LAYER_IDS } from '@/storage/settings';
+import { openInspector } from './inspector';
 
 export interface FeedbackOptions {
   breakdown: ScoreBreakdown;
   theme?: ContentTheme;
   embedText?: (text: string) => Promise<Float32Array | null>;
   onWrongCall?: () => void;
+  enabledLayers?: Partial<Record<LayerId, boolean>>;
+  getBreakdown?: () => ScoreBreakdown;
 }
+
+const enabledLayersFor = (options: FeedbackOptions): Record<LayerId, boolean> =>
+  Object.fromEntries(
+    LAYER_IDS.map((layerId) => [layerId, options.enabledLayers?.[layerId] ?? true]),
+  ) as Record<LayerId, boolean>;
 
 const addButton = (label: string, testId?: string): HTMLButtonElement => {
   const button = document.createElement('button');
@@ -83,18 +92,32 @@ export const attachFeedbackControls = (
     }
   });
 
+  const why = addButton('Why this score', 'slopfilter-inspector-trigger');
+  why.addEventListener('click', () => {
+    const breakdown = options.getBreakdown?.() ?? options.breakdown;
+    openInspector(post, {
+      breakdown,
+      enabledLayers: enabledLayersFor(options),
+    });
+  });
+
   const accountOptions = addButton('Account options');
   accountOptions.setAttribute('aria-haspopup', 'menu');
   accountOptions.setAttribute('aria-expanded', 'false');
+  const menuId = `slopfilter-menu-${post.id}`;
   const menu = document.createElement('div');
   menu.className = 'slopfilter-account-menu';
+  menu.id = menuId;
   menu.setAttribute('role', 'menu');
-  menu.hidden = true;
-  const toggleMenu = () => {
-    menu.hidden = !menu.hidden;
-    accountOptions.setAttribute('aria-expanded', String(!menu.hidden));
-  };
-  accountOptions.addEventListener('click', toggleMenu);
+  menu.setAttribute('popover', 'auto');
+  accountOptions.setAttribute('popovertarget', menuId);
+  menu.addEventListener('toggle', (event) => {
+    if (typeof (event as ToggleEvent).newState !== 'string') return;
+    accountOptions.setAttribute(
+      'aria-expanded',
+      String((event as ToggleEvent).newState === 'open'),
+    );
+  });
   for (const [label, state] of [
     ['Mute this account', 'muted'],
     ['Always show this account', 'trusted'],
@@ -103,13 +126,12 @@ export const attachFeedbackControls = (
     const button = addButton(label);
     button.addEventListener('click', () => {
       void setAccountState(post.author.handle, state);
-      menu.hidden = true;
-      accountOptions.setAttribute('aria-expanded', 'false');
+      if (typeof menu.hidePopover === 'function') menu.hidePopover();
     });
     menu.append(button);
   }
 
-  controls.append(downvote, accountOptions, menu);
+  controls.append(why, downvote, accountOptions, menu);
   if (options.onWrongCall) {
     const wrongCall = addButton('This was wrong');
     wrongCall.addEventListener('click', () => {

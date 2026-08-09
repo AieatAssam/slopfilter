@@ -1,0 +1,138 @@
+id: SF-223
+summary: Add the text-pattern detector as a capped, reasonless contribution that can never hide a post
+  on its own
+depends_on:
+  - SF-221
+  - SF-222
+why: "HD-017, answered 2026-08-09: the owner wants the signal available but not authoritative. Two
+  hard constraints shape the whole ticket. First, budget: trentmkelly/slop-detector-mini-2 is 23.12MB
+  quantized, and only SF-222 retiring the 26.97MB zero-shot classifier makes room for it - 71.17MB
+  today, 44.20MB after SF-222, 67.32MB with this model added. Second, copy: the model's label map is
+  {0: human, 1: llm}, an authorship map, and the plan forbids any string that claims, implies, or
+  hedges that a post was written by AI. Renaming the layer does not change what the model asserts, so
+  this layer emits no user-facing reason at all. It contributes score, it is capped below the hide
+  threshold, and its raw output is shown only in the SF-213 inspector, named as what it is. The
+  measured weakness of this detector family on short and non-native-English text is the reason for
+  the cap, not a footnote: published detectors misflag over 60% of non-native English writing, and an
+  X post is far shorter than the samples where that was measured."
+rules:
+  - "Never authoritative and never a veto. TEXT_PATTERN_WEIGHT_CAP is set so that a 1.0 output from
+    this layer, with every other layer silent, leaves the composite below hideThreshold under the
+    SF-214 combination. Assert this as a test, not as a comment."
+  - "No user-facing reason string, ever. The SignalResult reason is always null. This layer may never
+    appear in a collapsed post's reason label, the popup, or the stats panel. A post whose only
+    contribution is this layer stays visible by construction of the cap."
+  - "The SF-213 inspector shows it honestly: the model id, the dataset it was trained on, the raw
+    output, and a fixed sentence stating the output is a statistical text-pattern score that is
+    unreliable on short posts and biased against non-native English writing. No euphemism and no
+    dressing it as an observation."
+  - "Off by default. The user opts in from the options page, and the opt-in control carries the same
+    caveat sentence. Existing installs are not opted in by an update."
+  - "Licensing is documented, not resolved. HD-019, answered 2026-08-09: the model ships as it
+    stands, and the position is written down rather than glossed. trentmkelly/slop-detector-mini-2
+    declares no licence on its Hub repo, so no rights are expressly granted, and the Apache-2.0 of
+    its base model TaylorAI/gte-tiny does not carry to the derivative. Nothing is bundled or
+    redistributed - the user's browser fetches it from huggingface.co on opt-in. State exactly that
+    in README.md and LICENSES.md; do not paraphrase it into a claim that the model is
+    permissively licensed."
+  - "Pin an immutable revision, as HD-007 and HD-010 do. Revision 30775d5640f1ac6524d6a469d02e531e37852360,
+    artifact onnx/model_quantized.onnx, 23.12MB, id2label {0: human, 1: llm}, verified 2026-08-09."
+  - "Skip short posts. Below TEXT_PATTERN_MIN_CHARS 180 the layer returns no data, because that is
+    where the published accuracy collapses. Most posts will return no data and that is the intended
+    behaviour."
+  - "Download is separate and lazy. This model is fetched only after the user opts in, never in the
+    first-run set, and the first-run download budget assertion covers the default state."
+  - The SF-221 false-positive rate must not get worse with the layer enabled. If it does, the cap is
+    too high; report rather than retune past the point the layer does nothing.
+changes:
+  - path: src/core/scoring/types.ts
+    do: Add 'text-pattern' to LayerId.
+  - path: src/core/signals/textPattern.ts
+    do: "Create. Pure. scoreTextPattern(output, text, config) taking the two-class output, returning
+      score 0 and reason null below TEXT_PATTERN_MIN_CHARS, otherwise the llm-class value with reason
+      always null and a detail carrying the raw class values and the character count."
+  - path: src/core/scoring/weights.ts
+    do: "Add TEXT_PATTERN_DEFAULTS with a comment naming HD-005 and HD-017: minChars 180, weight cap
+      chosen so a 1.0 output alone stays under hideThreshold 0.6, enabled false."
+  - path: src/offscreen/models.ts
+    do: Add the textPattern entry with the id, revision, and dtype above, loaded only on demand and
+      never in the first-run set.
+  - path: src/offscreen/download.ts
+    do: Add an opt-in-triggered download path with its own progress reporting, separate from the
+      first-run set.
+  - path: src/offscreen/inference.worker.ts
+    do: Run the classification only when the layer is enabled and the text clears the minimum length.
+  - path: src/shared/messages.ts
+    do: Carry the text-pattern result and its detail across the boundary.
+  - path: src/content/breakdown.ts
+    do: Render the inspector entry with the model id, dataset, raw output, and the fixed caveat
+      sentence.
+  - path: src/ui/options/options.html
+    do: Add the layer row, off by default, whose help text carries the caveat sentence and states the
+      extra download size.
+  - path: src/ui/options/options.ts
+    do: Bind the toggle and weight, clamp the weight to the cap, and trigger the download on opt-in.
+  - path: src/storage/settings.ts
+    do: Persist the toggle and weight, defaulting off, clamping the weight to the cap on read.
+  - path: tests/unit/core/signals/textPattern.test.ts
+    do: "Calibration table: a 400-character post yields the raw output with a null reason; a
+      120-character post returns no data; a maximal 1.0 output with every other layer silent leaves
+      the composite below the hide threshold; the reason is null on every path."
+  - path: tests/unit/content/breakdown.test.ts
+    do: Assert the inspector entry names the model and carries the caveat sentence verbatim.
+  - path: tests/unit/storage/settings.test.ts
+    do: Assert the layer defaults off, the weight clamps to the cap, and an upgrade does not opt an
+      existing install in.
+  - path: LICENSES.md
+    do: "Create: one table of every third-party model and runtime package the extension downloads or
+      ships, each row carrying the id, the pinned revision, the artifact, its size, and its declared
+      licence, with 'none declared on the source repository' written literally for
+      trentmkelly/slop-detector-mini-2 rather than left blank or inferred from its base model. Cover
+      the pinned embedder and image-forensics models and @contentauth/c2pa-web too, so the file is
+      the single place this is answered."
+  - path: README.md
+    do: Add a short third-party models section stating that models are fetched by the user's browser
+      on demand and never bundled, that the optional text-pattern model declares no licence on its
+      source repository, and linking to LICENSES.md.
+  - path: src/ui/options/options.html
+    do: Link the opt-in help text to LICENSES.md alongside the accuracy caveat, so the licence
+      position is visible at the point of opting in.
+  - path: e2e/specs/text-pattern.spec.ts
+    do: "Create: with the layer enabled and forced to a maximal output, the post stays visible and no
+      collapsed post's reason label mentions this layer."
+verify:
+  - assert: A maximal output with every other layer silent does not cross the hide threshold.
+    run: npm run test:unit -- tests/unit/core/signals/textPattern.test.ts
+  - assert: The reason is null on every path, including the maximal one.
+    run: npm run test:unit -- tests/unit/core/signals/textPattern.test.ts
+  - assert: Posts under 180 characters return no data.
+    run: npm run test:unit -- tests/unit/core/signals/textPattern.test.ts
+  - assert: The layer is off by default and an existing install is not opted in by an update.
+    run: npm run test:unit -- tests/unit/storage/settings.test.ts
+  - assert: A maximal output never hides a post and never appears in a reason label, end to end.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/text-pattern.spec.ts
+  - assert: "The signal source carries no user-facing copy: the unit test above is what proves reason
+      is null on every path, and this gate only proves there is no sentence in the file that could
+      become one."
+    run: >-
+      node --input-type=module -e "import fs from 'node:fs';const
+      s=fs.readFileSync('src/core/signals/textPattern.ts','utf8').replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g,'');const
+      long=[...s.matchAll(/'([^']{25,})'|\"([^\"]{25,})\"/g)].map(m=>m[1]||m[2]);if(long.length)throw
+      new Error('text-pattern must carry no user-facing sentence: '+long);console.log('ok')"
+  - assert: The model is not in the first-run download set, so the default first-run total stays at
+      the post-SF-222 figure.
+    run: npm run test:unit -- tests/unit/offscreen/models.test.ts
+  - assert: LICENSES.md names every pinned model id and states the undeclared licence literally, and
+      README.md links to it.
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      l=fs.readFileSync('LICENSES.md','utf8');for(const
+      id of
+      ['trentmkelly/slop-detector-mini-2','Xenova/all-MiniLM-L6-v2','onnx-community/CommunityForensics-DeepfakeDet-ViT-ONNX','@contentauth/c2pa-web'])if(!l.includes(id))throw
+      new Error(id+' is missing from LICENSES.md');if(!/none declared/i.test(l))throw new Error('the
+      undeclared licence must be stated literally');if(!fs.readFileSync('README.md','utf8').includes('LICENSES.md'))throw
+      new Error('README.md must link to LICENSES.md');console.log('ok')"
+  - assert: The SF-221 false-positive rate is no worse with the layer enabled.
+    run: npm run calibration
+  - assert: The full suite is green.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run build:test
+      && npm run test:e2e

@@ -13,12 +13,13 @@ export const test = base.extend<Fixtures>({
     await mkdir(userDataDir, { recursive: true });
     const distPath = new URL('../../dist/', import.meta.url).pathname.replace(/\/$/, '');
     const context = await chromium.launchPersistentContext(userDataDir, {
+      channel: 'chromium',
       args: [
         `--disable-extensions-except=${distPath}`,
         `--load-extension=${distPath}`,
         '--no-first-run',
       ],
-      headless: false,
+      headless: true,
     });
 
     try {

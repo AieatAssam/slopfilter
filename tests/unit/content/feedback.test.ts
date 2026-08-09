@@ -106,7 +106,9 @@ describe('feedback controls', () => {
     document.body.append(element);
     attachFeedbackControls(element, post, { breakdown });
 
-    expect(element.querySelector('button')?.textContent).toBe('Not interested');
+    expect(element.querySelector('[data-testid="slopfilter-downvote"]')?.textContent).toBe(
+      'Not interested',
+    );
   });
 
   test('creates one anchor as the first child and keeps it across attaches', () => {
@@ -151,5 +153,49 @@ describe('feedback controls', () => {
     for (const key of ['position', 'top', 'right', 'left', 'bottom', 'zIndex']) {
       expect(element.style[key as keyof CSSStyleDeclaration]).toBe('');
     }
+  });
+
+  test('the account menu is a popover whose trigger targets its id', () => {
+    const element = document.createElement('div');
+    document.body.append(element);
+    attachFeedbackControls(element, post, { breakdown });
+
+    const menu = element.querySelector('.slopfilter-account-menu');
+    const trigger = Array.from(element.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Account options',
+    );
+    if (!(menu instanceof HTMLElement) || !(trigger instanceof HTMLButtonElement)) {
+      throw new Error('menu or trigger missing');
+    }
+
+    expect(menu.getAttribute('popover')).toBe('auto');
+    expect(menu.id).toBeTruthy();
+    expect(trigger.getAttribute('popovertarget')).toBe(menu.id);
+    expect(menu.getAttribute('role')).toBe('menu');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+  });
+
+  test('aria-expanded tracks a popover toggle event', () => {
+    const element = document.createElement('div');
+    document.body.append(element);
+    attachFeedbackControls(element, post, { breakdown });
+
+    const trigger = Array.from(element.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Account options',
+    );
+    const menu = element.querySelector('.slopfilter-account-menu');
+    if (!(trigger instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
+      throw new Error('menu or trigger missing');
+    }
+
+    const dispatchToggle = (newState: 'open' | 'closed') => {
+      const event = new Event('toggle');
+      Object.defineProperty(event, 'newState', { value: newState });
+      menu.dispatchEvent(event);
+    };
+    dispatchToggle('open');
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    dispatchToggle('closed');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 });

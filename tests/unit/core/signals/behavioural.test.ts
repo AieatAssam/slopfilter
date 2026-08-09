@@ -60,6 +60,14 @@ describe('scoreBehavioural', () => {
       ok: true,
       score: 0,
       reason: null,
+      detail: {
+        status: 'no-data',
+        values: {
+          postsPerDay: null,
+          observedPostCount: 0,
+          observationWindowHours: null,
+        },
+      },
     });
   });
 

@@ -4,7 +4,7 @@ import { attachFeedbackControls } from '@/content/feedback';
 import { createTimelineObserver, type TimelineObserverHandle } from '@/content/observer';
 import type { Post } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
-import type { SignalResult } from '@/core/scoring/types';
+import type { ScoreBreakdown, SignalResult } from '@/core/scoring/types';
 import { DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
 import { deriveAuthorActivity, scoreBehavioural } from '@/core/signals/behavioural';
 import { logger } from '@/shared/logger';
@@ -19,6 +19,7 @@ import {
 import { applyThemeTokens, observeTheme, themeForPlatform } from './themes';
 
 const seenPosts = new Map<string, Post>();
+const lastBreakdowns = new Map<string, ScoreBreakdown>();
 const SELF_TEST_TIMEOUT_MS = 3_000;
 let settings: Settings = DEFAULT_SETTINGS;
 let paused = false;
@@ -115,11 +116,26 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
         const overridden = exclusions.has(post.id)
           ? { ...breakdown, hidden: false, reasons: [] }
           : applyAccountOverride(post, breakdown, await getAccountState(post.author.handle));
+        lastBreakdowns.set(post.id, overridden);
         const theme = themeForPlatform(xAdapter.platform);
+        const feedbackOptions = {
+          enabledLayers: settings.enabledLayers,
+          getBreakdown: () =>
+            lastBreakdowns.get(post.id) ?? {
+              compositeScore: 0,
+              threshold: settings.hideThreshold,
+              hidden: false,
+              contributions: [],
+              reasons: [],
+              totalWeight: 0,
+              requiredDelta: settings.hideThreshold,
+            },
+        } as const;
         const attachVisibleFeedback = () => {
           attachFeedbackControls(element, post, {
             breakdown: overridden,
             theme,
+            ...feedbackOptions,
           });
         };
         const restoreAndAttachFeedback = () => {
@@ -135,6 +151,7 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
               breakdown: overridden,
               theme,
               onWrongCall: restoreAndAttachFeedback,
+              ...feedbackOptions,
             });
           }
         } else {

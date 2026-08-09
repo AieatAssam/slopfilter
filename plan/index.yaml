@@ -10,11 +10,11 @@ state:
   verified_on: 2026-08-08
   gates_green: lint, typecheck, test:unit (157), build, build:test, test:e2e (29) all exit 0
   shipped: SF-001..SF-207, all 30 tickets. Code is in the repository; do not rebuild it.
-  open_work: SF-208..SF-217, none blocked.
-  known_defect: "Measured 2026-08-08: scorePost computes a weighted mean, so quiet layers dilute loud
-    ones. behavioural 1.0 alone scores 1.000 and hides; with two model layers at 0 it scores 0.500,
-    with four 0.400, and a 0.95 content-type result scores 0.237, all under the 0.6 threshold.
-    Detection therefore degrades when models load. SF-214 fixes it; SF-213 makes it visible."
+  open_work: "SF-208..SF-224, none blocked. SF-219..SF-221 depend on SF-214; SF-222 then SF-223
+    follow SF-221; SF-224 is independent of all of them."
+  known_defect: "Measured 2026-08-08: scorePost computed a weighted mean, so quiet layers diluted
+    loud ones. Fixed by SF-214: composite is now a clamped additive sum of weighted scores, so
+    behavioural 1.0 alone scores 0.6 and hides while model layers report zero."
 protocol:
   - Read this file plus the one plan/tickets/<id>.yaml you are working. Nothing else.
   - "Work open tickets in depends_on order. done[] is a ledger of shipped work: read the code, never
@@ -45,6 +45,10 @@ constraints:
   - Platform DOM knowledge lives only in src/adapters/x/ and its selectors.json contract.
   - "Budgets: page-load delta <50ms, scoring <100ms per 10-post batch, memory <300MB, first-run
     download <100MB. A breach is reported, never absorbed by raising the budget."
+  - "public/content/styles.css stayed at 4778 bytes through SF-212; its old 5296-byte ceiling lived
+    only in that ticket and died with it. SF-213 raises the encoding ceiling to 6450 bytes for the
+    .slopfilter-inspector surface; re-measure whenever the set of injected controls changes: `wc -c
+    public/content/styles.css`."
   - "Dependencies are pinned exact, latest published, and only those already in package.json. Never
     add eslint, typescript-eslint, prettier, or eslint-config-prettier: Biome replaces all four."
   - tsconfig.json must have no baseUrl and every paths target must start with ./ (TypeScript 7 hard
@@ -129,26 +133,60 @@ decisions:
       privacy page, and README need no change for SF-216. This does not extend to issuing,
       replaying, or prefetching any request."
     HD-001: Product name is SlopFilter.
-    HD-002: MIT licence; copyright-holder line in LICENSE still needs owner confirmation.
     HD-014: Plain TypeScript and direct DOM APIs for all extension UI. No framework.
     HD-015: Golden fixtures are captured and committed under tests/fixtures/dom/x/. No further live
       capture is authorised.
-  reopened:
-    HD-004: "Was answered as: estimate posting rate from consecutive timestamps visible in the
-      timeline, no profile fetches, no X API. Re-opened 2026-08-08 because the in-viewport
-      derivation needs two posts by the same author in one pass, which is rare in For You, so
-      postsPerDay is usually null for exactly the accounts the layer exists to catch. SF-215 stays
-      inside the original answer: it accumulates timeline sightings across sessions and adds no
-      request. SF-216 would additionally read X's own already-fetched timeline response, which adds
-      no request either but needs the owner to confirm it is compatible with the privacy claim. An
-      authenticated profile or API fetch remains rejected: it requires reading the ct0 cookie to
-      forge x-csrf-token, which is credential handling, risks the user's account through unusual
-      request patterns, and would rewrite the privacy claim in six places including the SF-207
-      grep gate."
+    HD-017: "Owner answered 2026-08-09: a text-pattern detector may ship as one available signal, but
+      never as authoritative on its own. Review evidence in
+      docs/research/2026-08-09-small-model-and-signal-review.md. Implemented by SF-223 under three
+      binding conditions carried in that ticket: the layer emits no user-facing reason string ever,
+      because the model's label map is {0:human,1:llm} and the plan forbids any string that claims,
+      implies, or hedges AI authorship; its weight is capped so a maximal output alone cannot cross
+      the hide threshold; and it is off by default with an opt-in download. The model is
+      trentmkelly/slop-detector-mini-2 at revision 30775d5640f1ac6524d6a469d02e531e37852360,
+      onnx/model_quantized.onnx, 23.12MB, verified 2026-08-09. Licensing is unresolved and tracked as
+      HD-019."
+    HD-018: "Owner answered 2026-08-09: retire the pinned zero-shot classifier
+      Xenova/mobilebert-uncased-mnli and score the three PRD content labels as cosine distance to
+      committed prototype centroids in the already pinned Xenova/all-MiniLM-L6-v2 embedder.
+      Implemented by SF-222. One forward pass replaces three plus a second model, and first-run
+      download drops from 71.17MB to 44.20MB, which is what makes SF-223 fit inside the 100MB budget
+      at 67.32MB. HD-008 is untouched: the three labels are unchanged, only their scoring method.
+      HD-007 now covers the embedder alone."
+    HD-004: "Closed 2026-08-09. Re-opened 2026-08-08 because the in-viewport derivation needs two
+      posts by the same author in one pass, which is rare in For You, so postsPerDay was usually null
+      for exactly the accounts the layer exists to catch. Owner confirmed SF-215 plus SF-216 is the
+      answer: SF-215 accumulates timeline sightings across sessions, SF-216 reads X's own
+      already-fetched HomeTimeline response, and neither adds a request, so both stay inside the
+      original answer of deriving the rate from data the page already has. An authenticated profile
+      or API fetch remains rejected: it requires reading the ct0 cookie to forge x-csrf-token, which
+      is credential handling, risks the user's account through unusual request patterns, and would
+      rewrite the privacy claim in six places including the SF-207 grep gate."
+    HD-003: "Owner answered 2026-08-09: the drift monitor files issues against the main repository,
+      AieatAssam/slopfilter, which context.repo already resolves to. Because that repository is
+      public, the captured DOM must be sanitised on the runner before it reaches an artifact or an
+      issue body. SF-224 does that by reusing scripts/sanitise-fixture.mjs. drift-report.json needs
+      no change: it carries only contract version, target, timestamp, status, and selector ids."
+    HD-002: "Owner confirmed 2026-08-09: MIT licence, copyright holder Aieat Assam, as already
+      written in LICENSE. No change required."
+    HD-019: "Owner answered 2026-08-09: ship trentmkelly/slop-detector-mini-2 as it stands and
+      document the position, rather than wait. The Hub repo declares no licence, so no rights are
+      expressly granted and the Apache-2.0 of the base model TaylorAI/gte-tiny does not carry to the
+      derivative; the owner accepts that risk knowingly. Nothing about the model is bundled or
+      redistributed - the user's browser fetches it from huggingface.co on opt-in, as HD-013 already
+      permits for the other pinned models. SF-223 records the position in README.md and in a new
+      LICENSES.md covering every third-party model and package, and the opt-in copy links to it."
   provisional:
+    SF-214: "Provisional recalibration, pending HD-005 sign-off: composite is now a clamped additive
+      sum of weighted layer scores (never divided by total weight), hideThreshold 0.6, weights
+      behavioural 0.6, content-type 0.5, taste 0.5, image-forensics 0.4, provenance 0.2. A maximal
+      single layer alone crosses the threshold; layers reporting zero no longer dilute a fired
+      layer. Acceptance evidence is tests/fixtures/posts/calibration.ts driven from pipeline.test.ts."
     HD-006: Drift workflow targets the committed fixture until SLOPFILTER_DRIFT_TARGET names an
       owner-approved live target.
-    HD-007: Classifier and embedder pair pinned to immutable revisions; classifier licensing unconfirmed.
+    HD-007: "Embedder pinned to an immutable revision. The classifier half is superseded by HD-018:
+      once SF-222 lands, Xenova/mobilebert-uncased-mnli is gone from MODEL_IDS and its unconfirmed
+      licensing is moot. Until SF-222 lands the classifier is still pinned and still unconfirmed."
     HD-008: Three PRD content labels, equal treatment, 0.80 confidence cutoff.
     HD-009: No hard-veto rules are enabled until the evidence rules are approved.
     HD-010: onnx-community/CommunityForensics-DeepfakeDet-ViT-ONNX @
@@ -159,9 +197,16 @@ decisions:
     HD-013: Runtime downloads from huggingface.co and its CDN; WASM backend, WebGPU disabled after
       benchmarking.
   open:
-    HD-003: GitHub owner/name the drift monitor files issues against.
-    HD-005: Owner sign-off on the shipped default thresholds in src/core/scoring/weights.ts.
+    HD-005: "Owner sign-off on the shipped default thresholds in src/core/scoring/weights.ts, and on
+      the provisional constants added by SF-219 through SF-223. Deliberately left provisional
+      2026-08-09: review once SF-221 has measured them rather than guessing again."
 done:
+  - id: SF-214
+    did: Replace the weighted-mean composite with a clamped additive sum and provisionally recalibrate
+      weights and threshold so a single strong layer can hide a post
+    provisional: SF-214
+  - id: SF-213
+    did: Add a per-post inspector modal exposing every signal, its raw value, and why it did not fire
   - id: SF-208
     did: Serve golden X markup, X's three themes, and a switchable accent from the E2E harness
   - id: SF-209
@@ -170,9 +215,13 @@ done:
     did: Anchor injected controls at each article's top-right with a zero-size anchor child
   - id: SF-211
     did: Make per-post control clusters quiet until hover, focus, or an open menu
+  - id: SF-212
+    did: Give the placeholder X cell chrome and drive the account menu with the native popover API
+  - id: SF-218
+    did: Make the options-page info-tip icons open help bubbles on click instead of relying on native title tooltips
+    provisional: user-reported bug fixed 2026-08-08; not a planned ticket
   - id: SF-001
     did: Scaffold the Manifest V3 extension with npm, TypeScript, and Vite
-    provisional: HD-002
   - id: SF-002
     did: Add Biome and Vitest with the core-purity import boundary
   - id: SF-003
@@ -238,14 +287,6 @@ done:
   - id: SF-207
     did: Add the onboarding flow, the privacy page, and the store-listing copy
 open_tickets:
-  - id: SF-212
-    file: plan/tickets/SF-212.yaml
-    depends_on: [SF-209, SF-210]
-    summary: Make the placeholder read as an X timeline cell and the account menu behave as a real popover
-  - id: SF-213
-    file: plan/tickets/SF-213.yaml
-    depends_on: []
-    summary: Add a per-post inspector modal exposing every signal, its raw value, and why it did not fire
   - id: SF-214
     file: plan/tickets/SF-214.yaml
     depends_on: [SF-213]
@@ -262,6 +303,36 @@ open_tickets:
     file: plan/tickets/SF-217.yaml
     depends_on: [SF-216]
     summary: Score recently created accounts that post at high volume as a graded behavioural sub-signal
+  - id: SF-219
+    file: plan/tickets/SF-219.yaml
+    depends_on: [SF-214]
+    summary: Score near-duplicate and templated posts against the observed timeline using the already
+      pinned embedder, with no new download
+  - id: SF-220
+    file: plan/tickets/SF-220.yaml
+    depends_on: [SF-214]
+    summary: Score engagement-bait post structure from observable formatting features, with no model,
+      so Layer 3 is no longer silent before the classifier loads
+  - id: SF-221
+    file: plan/tickets/SF-221.yaml
+    depends_on: [SF-214, SF-219, SF-220]
+    summary: Add a labelled calibration corpus and an asymmetric false-positive gate over the combined
+      pipeline
+  - id: SF-222
+    file: plan/tickets/SF-222.yaml
+    depends_on: [SF-220, SF-221]
+    summary: Replace the zero-shot MNLI classifier with prototype centroids in the already pinned
+      embedder, taking first-run download from 71.17MB to 44.20MB
+  - id: SF-223
+    file: plan/tickets/SF-223.yaml
+    depends_on: [SF-221, SF-222]
+    summary: Add the text-pattern detector as a capped, reasonless, opt-in contribution that can never
+      hide a post on its own
+  - id: SF-224
+    file: plan/tickets/SF-224.yaml
+    depends_on: []
+    summary: Sanitise the captured drift DOM on the runner before upload, so drift issues can be filed
+      in the public main repository
 
 fixtures:
   dom: "tests/fixtures/dom/x/*.html - real captured X markup, sanitised. Class names and inline

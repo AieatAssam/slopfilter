@@ -1,0 +1,119 @@
+id: SF-219
+summary: Score near-duplicate and templated posts against the rest of the observed timeline using the
+  already-pinned embedder
+depends_on:
+  - SF-214
+why: "Slop is produced at scale, and scale leaves the one trace no paraphrase removes: the same text,
+  or the same template with the nouns swapped, appearing repeatedly across a timeline. Coordinated
+  and automated posting research converges on near-duplicate clustering (MinHash/LSH, character
+  n-gram TF-IDF cosine, embedding cosine) as the durable content-side feature, precisely because it
+  measures distribution rather than authorship. It is observable evidence in the PRD section 8 sense
+  ('this text is near-identical to 6 other posts in your feed'), it needs no authorship claim, and it
+  costs zero additional download because Xenova/all-MiniLM-L6-v2 is already pinned and loaded for the
+  Layer 5 taste model. It depends on SF-214 because the shipped scorePost takes a weighted mean, so
+  until that is fixed every layer added here dilutes the loud layers and makes detection worse."
+rules:
+  - Reuse the pinned embedder. No new model id, no new download, no new pipeline kind. If the
+    embedder is unavailable the signal returns ok with no data and never blocks scoring.
+  - "Two distinct sub-signals, scored separately and reported separately: author self-repetition (the
+    same handle repeating near-identical text) and cross-account repetition (distinct handles
+    carrying near-identical text). Cross-account repetition is the stronger indicator; a person
+    quoting themselves is not."
+  - "Graded on cluster size and similarity, never binary. A single 0.93-cosine pair is weak; six
+    posts above 0.93 from six handles is strong."
+  - "Never a veto. Quote-posts, breaking-news wording, song lyrics, and recurring formats
+    legitimately collide. A single maximal fire must stay below the hide threshold on the default
+    weights."
+  - "Corpus is the posts this content script has already observed, nothing else. No new fetch, no
+    index shipped with the extension, no upload. Bounded to a documented cap of recent posts, evicted
+    oldest-first, cleared with the existing settings reset."
+  - "Store centroids and hashes, not post text. The existing SF-103 IndexedDB store already holds
+    embeddings; follow its cap-and-evict pattern rather than inventing a second policy."
+  - "Cheap gate before the model: skip texts under a documented minimum length, and compare a
+    character 5-gram SimHash first, only embedding candidates that survive. The scoring budget is
+    100ms per 10-post batch and an embed-everything design will not hold it."
+  - "Reason copy states the observed fact and its count only, for example 'near-identical to 6 other
+    posts in this feed'. Never AI, bot, model, generated, or authored."
+  - Every raw input reaches the SF-213 inspector - similarity, cluster size, distinct-handle count,
+    and which sub-signal fired.
+  - Similarity thresholds, cluster-size floor, and the corpus cap are documented constants recorded
+    as provisional under HD-005, not tuned literals buried in a function.
+changes:
+  - path: src/core/scoring/types.ts
+    do: Add 'repetition' to LayerId.
+  - path: src/core/signals/repetition.ts
+    do: "Create. Pure. simhash64(text) over character 5-grams, hammingDistance, and
+      scoreRepetition(target, corpus, config) taking already-computed embeddings plus handles and
+      returning a SignalResult with a detail carrying similarity, clusterSize, distinctHandles, and
+      which sub-signal fired. No chrome.*, no DOM, no IndexedDB."
+  - path: src/core/scoring/weights.ts
+    do: "Add REPETITION_DEFAULTS with a comment naming HD-005: minTextLength 60, simhashHammingGate
+      12, cosineThreshold 0.93, clusterFloor 3, corpusCap 500, and a repetition weight low enough
+      that one maximal fire alone stays under hideThreshold."
+  - path: src/storage/embeddings.ts
+    do: Add a bounded recent-post corpus (embedding, handle, simhash, observedAt) reusing the
+      existing cap-and-evict and reset paths, kept separate from the downvote store.
+  - path: src/content/index.ts
+    do: Feed each scored post into the corpus and pass the corpus to the repetition signal, behind
+      the same layer toggle mechanism as the other layers.
+  - path: src/storage/settings.ts
+    do: "Add the repetition layer toggle and weight, with validation and clamping, defaulting as
+      above. Adding a LayerId touches every enumeration of the union: check src/shared/messages.ts,
+      src/ui/options/options.html, and the settings tests below, and add nothing to
+      src/content/breakdown.ts, src/storage/stats.ts, or src/storage/settingsIo.ts if they iterate
+      keys generically."
+  - path: src/shared/messages.ts
+    do: Extend the message schema and its validation so a repetition result crosses the content
+      script boundary, matching how the five shipped layers are handled.
+  - path: src/ui/options/options.html
+    do: "Add the repetition layer row, matching the existing layer-row markup exactly: label, info
+      tip, help paragraph naming the default weight, use toggle, weight input, and both reset
+      buttons. Help copy states the observed fact only."
+  - path: src/ui/options/options.ts
+    do: Bind the repetition toggle and weight to settings, including reset-to-default.
+  - path: e2e/specs/settings.spec.ts
+    do: Extend the layer coverage so the repetition toggle and weight round-trip like the other five.
+  - path: tests/unit/storage/settings.test.ts
+    do: Assert the repetition defaults, clamping, and reset paths.
+  - path: tests/fixtures/posts/repetition.ts
+    do: "Calibration table, each row carrying a written derivation: six handles posting one template
+      with swapped nouns fires strongly; one author posting the same text twice fires weakly; two
+      unrelated posts about the same news event do not fire; a 40-character post is skipped on the
+      length gate; an empty corpus returns no data."
+  - path: tests/unit/core/signals/repetition.test.ts
+    do: Drive the calibration table, assert the SimHash gate rejects the non-candidates before any
+      embedding is consulted, and assert one maximal fire does not cross the hide threshold.
+  - path: tests/unit/storage/embeddings.test.ts
+    do: Assert the corpus caps, evicts oldest-first, and clears on reset without touching the
+      downvote store.
+  - path: e2e/specs/repetition-signal.spec.ts
+    do: "Create: the harness serves a timeline containing one template repeated across handles plus
+      unrelated posts, and the spec asserts only the template cluster is affected and the reason
+      names the count."
+verify:
+  - assert: Every calibration row reaches its documented outcome, including both gates and the
+      no-data paths.
+    run: npm run test:unit -- tests/unit/core/signals/repetition.test.ts
+  - assert: A single maximal repetition fire does not on its own cross the hide threshold.
+    run: npm run test:unit -- tests/unit/core/signals/repetition.test.ts
+  - assert: The corpus caps, evicts, and clears without disturbing the downvote embeddings.
+    run: npm run test:unit -- tests/unit/storage/embeddings.test.ts
+  - assert: A repeated template is affected end to end and unrelated posts are not.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/repetition-signal.spec.ts
+  - assert: "This ticket adds no model: MODEL_IDS still holds exactly the kinds recorded under HD-007
+      and HD-010, so the check tracks the decisions rather than a snapshot of today's ids."
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      m=fs.readFileSync('src/offscreen/models.ts','utf8');const
+      kinds=[...m.matchAll(/^\s{2}(\w+):\s*Object\.freeze\(\{/gm)].map(x=>x[1]);const
+      allowed=['classifier','embedder','imageForensics'];for(const k of
+      kinds)if(!allowed.includes(k))throw new Error('unrecorded model kind '+k+'; a new model needs an
+      owner decision, not a ticket');console.log('ok')"
+  - assert: No repetition reason string mentions AI, bots, models, or authorship.
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      s=fs.readFileSync('src/core/signals/repetition.ts','utf8');if(/\b(ai|bot|model|generated|synthetic|authored)\b/i.test(s))throw
+      new Error('repetition copy must state observed facts only');console.log('ok')"
+  - assert: Scoring stays inside the 100ms per 10-post budget with the corpus at its cap.
+    run: npm run build:test && npm run bench:scoring
+  - assert: The full suite is green.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run build:test
+      && npm run test:e2e

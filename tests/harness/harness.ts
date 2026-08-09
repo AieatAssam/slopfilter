@@ -81,7 +81,7 @@ const applyFixtureVariant = async () => {
           <div dir="ltr"><a href="/account01/status/high-frequency-${index}">@account01</a></div>
         </div>
         <div data-testid="tweetText">High-frequency post ${index + 1}.</div>
-        <time datetime="${new Date(Date.parse('2026-08-05T10:00:00.000Z') - index * 1_800_000).toISOString()}"></time>
+        <time datetime="${new Date(Date.parse('2026-08-05T10:00:00.000Z') - index * 8 * 60_000).toISOString()}"></time>
       `;
       return article;
     });

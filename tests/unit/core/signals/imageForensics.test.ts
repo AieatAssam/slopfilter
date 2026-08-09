@@ -31,6 +31,7 @@ describe('scoreImageForensics', () => {
       ok: false,
       score: 0,
       reason: null,
+      detail: { status: 'unavailable', values: { sampleCount: 1 } },
     });
   });
 

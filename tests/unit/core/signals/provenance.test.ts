@@ -5,7 +5,16 @@ describe('scoreProvenance', () => {
   test('a valid manifest yields score 0 and reason null', () => {
     expect(
       scoreProvenance({ imageCount: 1, withManifest: 1, withoutManifest: 0, unreadable: 0 }),
-    ).toEqual({ layerId: 'provenance', ok: true, score: 0, reason: null });
+    ).toEqual({
+      layerId: 'provenance',
+      ok: true,
+      score: 0,
+      reason: null,
+      detail: {
+        status: 'scored',
+        values: { imageCount: 1, withManifest: 1, withoutManifest: 0, unreadable: 0 },
+      },
+    });
   });
 
   test('absent credentials yield a small score with the exact reason', () => {
@@ -24,7 +33,16 @@ describe('scoreProvenance', () => {
   test('an unreadable manifest yields ok false', () => {
     expect(
       scoreProvenance({ imageCount: 1, withManifest: 0, withoutManifest: 0, unreadable: 1 }),
-    ).toEqual({ layerId: 'provenance', ok: false, score: 0, reason: null });
+    ).toEqual({
+      layerId: 'provenance',
+      ok: false,
+      score: 0,
+      reason: null,
+      detail: {
+        status: 'unavailable',
+        values: { imageCount: 1, withManifest: 0, withoutManifest: 0, unreadable: 1 },
+      },
+    });
   });
 
   test('a post with no images contributes nothing', () => {
@@ -35,6 +53,10 @@ describe('scoreProvenance', () => {
       ok: true,
       score: 0,
       reason: null,
+      detail: {
+        status: 'no-data',
+        values: { imageCount: 0, withManifest: 0, withoutManifest: 0, unreadable: 0 },
+      },
     });
   });
 

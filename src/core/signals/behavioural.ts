@@ -69,7 +69,22 @@ export function scoreBehavioural(
   activity: AuthorActivity | null,
   thresholds: BehaviouralThresholds,
 ): SignalResult {
-  if (!activity) return { layerId: 'behavioural', ok: true, score: 0, reason: null };
+  if (!activity) {
+    return {
+      layerId: 'behavioural',
+      ok: true,
+      score: 0,
+      reason: null,
+      detail: {
+        status: 'no-data',
+        values: {
+          postsPerDay: null,
+          observedPostCount: 0,
+          observationWindowHours: null,
+        },
+      },
+    };
+  }
 
   const scores: number[] = [];
   const reasons: string[] = [];
@@ -97,11 +112,23 @@ export function scoreBehavioural(
     reasons.push('high views with weak absolute engagement');
   }
 
-  if (scores.length === 0) return { layerId: 'behavioural', ok: true, score: 0, reason: null };
+  const values: Record<string, number | string | boolean | null> = {
+    postsPerDay: activity.postsPerDay,
+    observedPostCount: activity.observedPostCount,
+    observationWindowHours: activity.observationWindowHours,
+    engagementRatio: ratio,
+    engagementStrength: engagementStrength(post),
+  };
+  const score =
+    scores.length === 0 ? 0 : clamped(scores.reduce((total, s) => total + s, 0) / scores.length);
   return {
     layerId: 'behavioural',
     ok: true,
-    score: clamped(scores.reduce((total, score) => total + score, 0) / scores.length),
-    reason: reasons.join(' · '),
+    score,
+    reason: reasons.length === 0 ? null : reasons.join(' · '),
+    detail: {
+      status: 'scored',
+      values,
+    },
   };
 }

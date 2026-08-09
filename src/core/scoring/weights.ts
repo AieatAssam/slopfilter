@@ -14,14 +14,18 @@ export const DEFAULT_THRESHOLDS: BehaviouralThresholds = {
 };
 
 export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
+  // Provisional HD-005 recalibration (SF-214): weights are additive contributions toward the
+  // threshold, not shares of a mean. Measured 2026-08-08: the old 0.40/0.20/0.10 weights capped a
+  // lone scored layer at 0.5 of 0.8 usable weight, so no single strong layer could ever hide a
+  // post once the model layers reported zero. These numbers make a maximal behavioural signal
+  // alone cross the 0.6 threshold. Owner sign-off still pending.
   hideThreshold: 0.6,
   weights: {
-    // Provisional HD-005 defaults: observable behavior remains the primary signal.
-    behavioural: 0.4,
-    provenance: 0.1,
-    'content-type': 0.2,
-    'image-forensics': 0.1,
-    taste: 0.2,
+    behavioural: 0.6,
+    provenance: 0.2,
+    'content-type': 0.5,
+    'image-forensics': 0.4,
+    taste: 0.5,
   },
 };
 

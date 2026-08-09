@@ -1,0 +1,86 @@
+id: SF-224
+summary: Sanitise the captured drift DOM before it leaves the runner, so drift issues can be filed in
+  the public repository
+depends_on: []
+why: "HD-003, answered 2026-08-09: drift issues are filed in the main repository, which is public, so
+  nothing that reaches an issue body or a build artifact may carry third-party personal data. Two
+  audited paths, one of which is already safe. The issue body embeds drift-report.json, which holds
+  only contractVersion, target, timestamp, status, and per-entry selector ids and match results - no
+  post text, no handles, no URLs beyond the configured target. The unsafe path is drift-dom.html,
+  written by scripts/check-drift.mjs on a drift result as 200_000 characters of the live outerHTML
+  and uploaded by the workflow as the selector-drift-report artifact. Once HD-006 names a live target
+  that capture is real X markup: other people's post text, display names, handles, and media URLs.
+  scripts/sanitise-fixture.mjs already scrubs exactly that shape for the golden fixtures under
+  HD-015, so this is a reuse, not a new sanitiser, and it needs no second language toolchain in CI."
+rules:
+  - "Sanitise on the runner, before upload. The unsanitised DOM must never be written to a path the
+    upload-artifact step can see, and must never reach an issue body."
+  - "Reuse scripts/sanitise-fixture.mjs. Do not write a second sanitiser and do not add a Python or
+    spaCy toolchain to a Node-only workflow. If a rule is missing, add it to the shared script so the
+    golden fixtures gain it too."
+  - "The shared script currently throws when the input contains no article[data-testid=\"tweet\"], and
+    the drift case is precisely a page whose selectors no longer match. It must gain a mode that
+    scrubs handles, URLs, and text without requiring post elements, and returns a count of what it
+    scrubbed. The existing fixture behaviour, including the throw, stays the default."
+  - "Fail closed, unlike the extension's fail-open rule. If sanitisation throws or the check below
+    fails, the capture is deleted and the issue is filed without it. A drift issue with no DOM is
+    useful; a leak is not reversible once the repository is public."
+  - "Assert the output, do not trust the transform. A grep gate over the sanitised file must find no
+    at-handle outside the synthetic @accountNN form and no hostname other than example.invalid, and
+    it runs in the workflow, not only in tests."
+  - Keep the retention and the artifact name as they are. This ticket changes what is uploaded, not
+    how long it lives.
+  - "Record in the issue body that the attached capture is sanitised and what that means, so a future
+    reader does not treat it as a faithful reproduction."
+changes:
+  - path: scripts/sanitise-fixture.mjs
+    do: "Add a --loose flag that skips the post-element requirement and the per-post synthetic-body
+      rewrite, keeping the handle map, URL rewriting to example.invalid, script removal, on* attribute
+      removal, and img alt replacement. Without the flag every current behaviour is unchanged. Print
+      a summary line with the counts of handles and URLs rewritten."
+  - path: scripts/check-drift.mjs
+    do: Write the raw capture to a temporary path outside the workspace upload set and leave
+      sanitisation to the workflow step, or sanitise in-process before writing drift-dom.html. Either
+      way no unsanitised DOM may exist at drift-dom.html at any point.
+  - path: .github/workflows/drift-monitor.yml
+    do: "Add a sanitise step between the check and the upload that runs the loose sanitiser, then the
+      verification one-liner, and deletes the capture on any non-zero exit. Add a line to both issue
+      bodies stating the attached capture is sanitised: handles replaced with @accountNN, hostnames
+      replaced with example.invalid, post text replaced."
+  - path: tests/unit/scripts/sanitise-fixture.test.ts
+    do: "Create: assert loose mode scrubs a page containing no article elements, assert the same
+      handle maps to the same synthetic handle across both text and attributes, assert every URL host
+      becomes example.invalid, and assert default mode still throws on a page with no posts."
+  - path: docs/decision-log.md
+    do: Record that drift issues are filed in the main public repository and that the capture is
+      sanitised on the runner before upload.
+verify:
+  - assert: Loose mode scrubs a post-free page, default mode still throws, and handle mapping is
+      stable across text and attributes.
+    run: npm run test:unit -- tests/unit/scripts/sanitise-fixture.test.ts
+  - assert: A sanitised golden fixture carries no real handle and no host other than example.invalid.
+    run: >-
+      node --input-type=module -e "import fs from 'node:fs';import {execFileSync} from
+      'node:child_process';execFileSync('node',['scripts/sanitise-fixture.mjs','--loose','tests/fixtures/dom/x/timeline-baseline.html','/tmp/sf224.html']);const
+      s=fs.readFileSync('/tmp/sf224.html','utf8');const
+      bad=[...s.matchAll(/@[A-Za-z0-9_]{1,15}/g)].map(m=>m[0]).filter(h=>!/^@account[0-9]+$/.test(h));if(bad.length)throw
+      new Error('unsanitised handles: '+[...new Set(bad)]);const
+      hosts=[...s.matchAll(/https?:[/][/]([^/\s'\"<>]+)/gi)].map(m=>m[1]).filter(h=>h!=='example.invalid');if(hosts.length)throw
+      new Error('unsanitised hosts: '+[...new Set(hosts)]);console.log('ok')"
+  - assert: The workflow uploads no path that could hold an unsanitised capture, and the sanitise step
+      runs before the upload step.
+    run: >-
+      node --input-type=module -e "import fs from 'node:fs';const
+      w=fs.readFileSync('.github/workflows/drift-monitor.yml','utf8');const
+      sanitise=w.indexOf('sanitise-fixture.mjs');if(sanitise<0)throw new Error('no sanitise step in
+      the drift workflow');const
+      uploads=[...w.matchAll(/upload-artifact/g)].map(m=>m.index);if(uploads.some(i=>i<sanitise))throw
+      new Error('every upload step must run after the sanitise step');const
+      caps=[...w.matchAll(/drift-dom\.html/g)].map(m=>m.index);if(caps.some(i=>i<sanitise))throw new
+      Error('drift-dom.html is referenced before it is sanitised');console.log('ok')"
+  - assert: The drift workflow still parses and the monitor exits 2 on a drifted fixture.
+    run: node scripts/check-drift.mjs --target
+      "file://$PWD/tests/fixtures/dom/x/timeline-baseline.html" --out /tmp/sf224-report.json
+  - assert: The full suite is green.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run build:test
+      && npm run test:e2e

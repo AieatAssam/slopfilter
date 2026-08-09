@@ -1,0 +1,91 @@
+id: SF-222
+summary: Replace the zero-shot MNLI classifier with prototype centroids in the already pinned embedder
+depends_on:
+  - SF-220
+  - SF-221
+why: "HD-018, answered 2026-08-09. Xenova/mobilebert-uncased-mnli is the largest single download at
+  26.97MB of the 71.17MB currently committed against a 100MB first-run budget, and zero-shot NLI runs
+  one forward pass per candidate label per post - three passes for the three PRD labels. The same
+  three labels can be scored as cosine distance from the post embedding to a prototype centroid per
+  label, in Xenova/all-MiniLM-L6-v2, which is already downloaded and already embedding the post for
+  Layer 5 and SF-219. That is one pass total instead of three plus a second model, and it takes the
+  first-run download to 44.20MB. The budget it frees is what makes SF-223 fit at all. It depends on
+  SF-221 because a swap of the classifier is exactly the change that must be measured rather than
+  asserted, and on SF-220 because the structural features must already be covering the bait cases
+  before the model behind them changes."
+rules:
+  - "The three labels stay as CONTENT_TYPE_LABELS. This ticket changes how they are scored, not what
+    they are. HD-008 is untouched."
+  - "Prototypes are committed text, not weights. Each label carries a documented set of example
+    phrasings, embedded at load and mean-pooled into one centroid. Committing the example text keeps
+    the decision auditable and keeps the extension inside the PRD non-goal 'training or publishing
+    custom models' - nothing is fitted."
+  - "At least 12 examples per label, each with a one-line note on which real pattern it represents.
+    Fewer than that and the centroid is one person's phrasing."
+  - "Cosine similarity is not a probability. Do not reuse CONTENT_TYPE_CONFIDENCE_THRESHOLD 0.80.
+    Set CENTROID_SIMILARITY_THRESHOLD provisionally at 0.62 under HD-005 and calibrate it against the
+    SF-221 corpus before the ticket closes."
+  - "Ship only if SF-221 says so. The recorded false-positive rate at default settings must not be
+    worse after the swap than the number SF-221 recorded before it. If it is worse, stop and report
+    rather than retuning until it passes."
+  - "Remove the classifier fully: the model id, the pipeline kind, the download progress entry, and
+    the 'classifier' branch in the offscreen worker. A dead 26.97MB pin that nothing loads is worse
+    than either state."
+  - Reason copy is unchanged from SF-102 and SF-220. The labels already state observable content
+    patterns and no string may start naming models.
+  - Fail open. No embedder means the content-type model contribution is absent, and SF-220's
+    structural score still carries the layer.
+changes:
+  - path: src/core/signals/contentType.ts
+    do: "Add CONTENT_TYPE_PROTOTYPES as an exported table of {label, examples[], note} and
+      scoreContentCentroid(embedding, centroids, config) returning a SignalResult whose detail
+      carries the per-label cosine values. Keep scoreContentType for the shipped ClassifierOutput
+      shape only until the worker branch is gone, then delete it."
+  - path: src/offscreen/models.ts
+    do: Delete the classifier entry from MODEL_IDS, the 'classifier' loadPipeline overload, and the
+      zero-shot pipeline call. MODEL_IDS keeps embedder and imageForensics only.
+  - path: src/offscreen/inference.worker.ts
+    do: Replace the zero-shot call with centroid scoring over the embedding the worker already
+      computes, embedding each prototype set once at load and caching the centroids.
+  - path: src/offscreen/download.ts
+    do: Drop the classifier from the download set and its progress accounting.
+  - path: src/shared/messages.ts
+    do: Retire the classifier-output message shape and carry the per-label cosine detail instead.
+  - path: src/ui/onboarding/onboarding.ts
+    do: Update the download size and model count shown on first run.
+  - path: src/ui/options/options.html
+    do: Update the content-type layer help text so it no longer describes a separate classifier
+      download.
+  - path: tests/fixtures/posts/contentCentroid.ts
+    do: "Calibration table, each row carrying a written derivation: a giveaway post scores above
+      threshold on the giveaway centroid; a generic motivational post scores above threshold on that
+      centroid; a technical post about crypto infrastructure scores below threshold on all three; a
+      terse post returns no data; a post with no embedding returns no data."
+  - path: tests/unit/core/signals/contentType.test.ts
+    do: Drive the calibration table, assert every prototype set has at least 12 examples and a note,
+      and assert the structural score still carries the layer when no embedding exists.
+  - path: tests/unit/offscreen/models.test.ts
+    do: Assert MODEL_IDS contains exactly embedder and imageForensics and that no zero-shot pipeline
+      is constructed.
+  - path: plan/index.yaml
+    do: "Record the post-swap first-run download total and the SF-221 false-positive rate measured
+      after the swap, with the date. Also amend provisional HD-007 to drop the classifier half
+      outright rather than leave it describing a model that no longer exists in MODEL_IDS, and drop
+      the provisional HD-007 marker from the SF-101 done entry if nothing else in that entry still
+      depends on it."
+verify:
+  - assert: Every calibration row reaches its documented outcome.
+    run: npm run test:unit -- tests/unit/core/signals/contentType.test.ts
+  - assert: The classifier is gone from MODEL_IDS, the worker, and the download set.
+    run: npm run test:unit -- tests/unit/offscreen/models.test.ts
+  - assert: No reference to the retired model id survives anywhere in src.
+    run: node --input-type=module -e "import fs from 'node:fs';import path from 'node:path';const
+      walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);const
+      hits=walk('src').filter(f=>fs.readFileSync(f,'utf8').includes('mobilebert'));if(hits.length)throw
+      new Error('retired classifier still referenced in '+hits.join(', '));console.log('ok')"
+  - assert: The false-positive rate at default settings is no worse than the number SF-221 recorded
+      before the swap.
+    run: npm run calibration
+  - assert: The full suite is green.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run build:test
+      && npm run test:e2e

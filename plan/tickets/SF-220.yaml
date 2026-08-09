@@ -1,0 +1,84 @@
+id: SF-220
+summary: Score engagement-bait post structure from observable formatting features, with no model and
+  no download
+depends_on:
+  - SF-214
+why: "The Layer 3 content-type signal is gated behind CONTENT_TYPE_CANDIDATE_PATTERN and a zero-shot
+  MNLI model, so a post scores 0 whenever the model has not loaded, is disabled, or the lexical gate
+  misses - which is most of the first session. The formats that carry engagement bait are, however,
+  visible in the markup itself and need no inference at all: an explicit reply-or-repost call to
+  action, a numbered or emoji-bulleted list under a one-line hook, hashtag stuffing, an opening hook
+  that promises a list and delivers a thread, and low lexical diversity across a padded post. These
+  are structural facts about the post, quotable verbatim in a reason label, and they cost zero bytes
+  of download against a first-run budget that already commits roughly 71MB of weights out of 100MB.
+  Depends on SF-214 because the shipped weighted-mean scorePost dilutes loud layers with every added
+  contribution."
+rules:
+  - "Zero model, zero download, zero network. Pure string and structural analysis in src/core/, and
+    it must run when every model layer is off."
+  - "Extend the existing content-type layer rather than adding a sixth LayerId. The layer becomes:
+    structural score always available, model score when the classifier is loaded, combined by taking
+    the stronger of the two so a loaded model never dilutes a confident structural fire."
+  - "Every feature is individually named, individually scored, and individually reported. A single
+    opaque 'looks like bait' number is not acceptable - the SF-213 inspector must show which features
+    fired and their raw counts."
+  - "Graded and capped. One feature alone must not cross the hide threshold; the signal is intended to
+    accumulate across features."
+  - "No feature may depend on the language being English. Hashtag count, list structure, emoji-bullet
+    runs, mention count, and link count are language-neutral. Any keyword list is a separate, clearly
+    marked, lower-weighted feature, and must be data in one exported constant, never inline literals."
+  - "Reason copy quotes the structure only, for example 'asks for reposts and follows' or '11
+    hashtags'. Never AI, bot, model, generated, or authored, per PRD section 8."
+  - Thresholds and feature weights are exported constants recorded as provisional under HD-005.
+  - "Fail open on unusual input: empty text, media-only posts, and quote-posts return no data rather
+    than a fire."
+changes:
+  - path: src/core/signals/contentType.ts
+    do: "Add CONTENT_FORMAT_FEATURES as an exported table of {id, detect, weight, reason} covering
+      call-to-action phrasing, hashtag count above a threshold, mention stuffing, emoji-bullet or
+      numbered list runs, hook-then-list shape, all-caps opener, and link-shortener presence; add
+      scoreContentFormat(text, config) returning a SignalResult with a detail listing the fired
+      feature ids and their raw counts; and add combineContentType(structural, model) taking the
+      stronger of the two."
+  - path: src/core/scoring/weights.ts
+    do: "Add CONTENT_FORMAT_DEFAULTS with a comment naming HD-005: per-feature weights, a
+      hashtagThreshold of 6, a mentionThreshold of 4, a listRunFloor of 3, a linkShortenerHostList,
+      and these per-feature scores: callToAction 0.35, hashtagStuffing 0.30, mentionStuffing 0.25,
+      listRun 0.20, hookThenList 0.25, allCapsOpener 0.15, linkShortener 0.20. Sum the fired features
+      and clamp with formatScoreCap 0.85, which is above hideThreshold 0.6 for three or more features
+      and below it for any single one."
+  - path: src/content/index.ts
+    do: Score the structural features on every post regardless of model state and combine with the
+      classifier result when one exists.
+  - path: src/ui/options/options.html
+    do: Note in the content-type layer help text that structural checks run without the model, so the
+      layer is active before and without any download.
+  - path: tests/fixtures/posts/contentFormat.ts
+    do: "Calibration table, each row carrying a written derivation: a like-and-repost giveaway with 9
+      hashtags fires strongly; a numbered emoji list under a one-line hook fires moderately; a normal
+      post with two hashtags does not fire; a media-only post returns no data; a post in a non-Latin
+      script with the same bait structure fires on the language-neutral features alone."
+  - path: tests/unit/core/signals/contentType.test.ts
+    do: Drive the calibration table, assert the combination takes the stronger of structural and
+      model, assert a loaded model never lowers a confident structural score, and assert one feature
+      alone stays under the hide threshold.
+  - path: e2e/specs/content-format.spec.ts
+    do: "Create: with every model layer disabled in settings, the harness timeline's bait-structured
+      post is affected and the plain post is not, and the reason names the structure."
+verify:
+  - assert: Every calibration row reaches its documented outcome, including the non-Latin-script row.
+    run: npm run test:unit -- tests/unit/core/signals/contentType.test.ts
+  - assert: The combined layer takes the stronger of the structural and model scores, and one feature
+      alone stays under the hide threshold.
+    run: npm run test:unit -- tests/unit/core/signals/contentType.test.ts
+  - assert: The signal fires end to end with every model layer disabled.
+    run: npm run build:test && npm run test:e2e -- e2e/specs/content-format.spec.ts
+  - assert: No content-format reason string mentions AI, bots, models, or authorship.
+    run: node --input-type=module -e "import fs from 'node:fs';const
+      s=fs.readFileSync('src/core/signals/contentType.ts','utf8');if(/\b(ai|bot|generated|synthetic|authored)\b/i.test(s.replace(/[A-Za-z]*[Mm]odel[A-Za-z]*/g,'')))throw
+      new Error('content-format copy must state observed facts only');console.log('ok')"
+  - assert: Scoring stays inside the 100ms per 10-post budget.
+    run: npm run build:test && npm run bench:scoring
+  - assert: The full suite is green.
+    run: npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run build:test
+      && npm run test:e2e

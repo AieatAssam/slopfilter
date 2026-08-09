@@ -12,6 +12,17 @@ export const LAYER_IDS: readonly LayerId[] = [
   'taste',
 ];
 
+// Weights shipped before SF-214 recalibrated scoring from a weighted mean to an additive sum.
+// Stored weights still equal to these are migrated to the new defaults; anything else is a
+// user-modified profile and stays untouched.
+export const LEGACY_DEFAULT_WEIGHTS: Record<LayerId, number> = {
+  behavioural: 0.4,
+  provenance: 0.1,
+  'content-type': 0.2,
+  'image-forensics': 0.1,
+  taste: 0.2,
+};
+
 export interface Settings {
   hideThreshold: number;
   hideAds: boolean;
@@ -74,9 +85,20 @@ export const repairSettings = (stored: unknown): Settings => {
   return {
     hideThreshold: readThreshold(record.hideThreshold),
     hideAds: readHideAds(record.hideAds),
-    weights: readWeights(record.weights),
+    weights: readWeights(migrateWeights(record.weights)),
     enabledLayers: readEnabledLayers(record.enabledLayers),
   };
+};
+
+// SF-214: if the stored weights are exactly the pre-additive defaults, they were never tuned by
+// the user; move them to the recalibrated defaults. Any deviation means a user profile.
+const migrateWeights = (value: unknown): unknown => {
+  if (typeof value !== 'object' || value === null) return value;
+  const stored = value as Record<string, unknown>;
+  const matchesLegacy = LAYER_IDS.every(
+    (layerId) => stored[layerId] === LEGACY_DEFAULT_WEIGHTS[layerId],
+  );
+  return matchesLegacy ? DEFAULT_SETTINGS.weights : stored;
 };
 
 export async function loadSettings(): Promise<Settings> {

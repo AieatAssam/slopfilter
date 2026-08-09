@@ -70,6 +70,67 @@ const resetControl = (id: string) => {
   persistCurrentSettings();
 };
 
+const wireInfoTips = () => {
+  const closeTips = (except?: Element) => {
+    for (const tip of document.querySelectorAll<HTMLElement>('.info-tip.is-open')) {
+      if (tip !== except) {
+        tip.classList.remove('is-open');
+        tip.setAttribute('aria-expanded', 'false');
+      }
+    }
+  };
+
+  let tipId = 0;
+  for (const tip of document.querySelectorAll<HTMLElement>('.info-tip')) {
+    const message = tip.getAttribute('title') ?? '';
+    if (!message) continue;
+    const id = `slopfilter-tip-${++tipId}-help`;
+    tip.removeAttribute('title');
+    tip.setAttribute('role', 'button');
+    tip.setAttribute('tabindex', '0');
+    tip.setAttribute('aria-expanded', 'false');
+    tip.setAttribute('aria-controls', id);
+    tip.setAttribute('aria-label', message);
+
+    const bubble = document.createElement('span');
+    bubble.id = id;
+    bubble.className = 'info-bubble';
+    bubble.setAttribute('role', 'note');
+    bubble.setAttribute('aria-label', message);
+    bubble.textContent = message;
+    tip.appendChild(bubble);
+
+    const toggle = () => {
+      if (tip.classList.contains('is-open')) {
+        tip.classList.remove('is-open');
+        tip.setAttribute('aria-expanded', 'false');
+      } else {
+        closeTips(tip);
+        tip.classList.add('is-open');
+        tip.setAttribute('aria-expanded', 'true');
+      }
+    };
+
+    tip.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggle();
+    });
+    tip.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggle();
+      } else if (event.key === 'Escape') {
+        tip.classList.remove('is-open');
+        tip.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('.info-tip')) closeTips();
+  });
+};
+
 const wireConfigIo = () => {
   document.getElementById('export-settings')?.addEventListener('click', () => {
     void exportConfig()
@@ -127,6 +188,7 @@ const start = async () => {
   for (const reset of document.querySelectorAll<HTMLButtonElement>('[data-reset]')) {
     reset.addEventListener('click', () => resetControl(reset.dataset.reset ?? ''));
   }
+  wireInfoTips();
   wireConfigIo();
 };
 
