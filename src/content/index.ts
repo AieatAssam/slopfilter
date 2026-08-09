@@ -1,3 +1,4 @@
+import type { ProfileStats } from '@/adapters/types';
 import { xAdapter } from '@/adapters/x/adapter';
 import { collapsePost, restorePost } from '@/content/collapse';
 import { attachFeedbackControls } from '@/content/feedback';
@@ -6,10 +7,15 @@ import type { Post } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoreBreakdown, SignalResult } from '@/core/scoring/types';
 import { DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
-import { deriveAuthorActivity, scoreBehavioural } from '@/core/signals/behavioural';
+import {
+  deriveAuthorActivity,
+  deriveAuthorActivityFromCache,
+  scoreBehavioural,
+} from '@/core/signals/behavioural';
 import { logger } from '@/shared/logger';
 import { isExtensionMessage } from '@/shared/messages';
 import { applyAccountOverride, getAccountState } from '@/storage/accounts';
+import { recordSightings } from '@/storage/authorActivity';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -78,6 +84,55 @@ const pauseFiltering = (failedSelectorIds: readonly string[] = []) => {
   logger.warn('filtering paused');
 };
 
+let profileStats: ProfileStats | null = null;
+let profileStatsRead = false;
+
+// SF-215: sightings persist across sessions; scoring reads the cache. Opportunistic profile stats are
+// read once per profile navigation and never on the timeline, so a feed pass adds no DOM reads.
+const captureProfileStats = (): ProfileStats | null => {
+  if (profileStatsRead) return profileStats;
+  profileStatsRead = true;
+  try {
+    const profile = xAdapter.readProfileStats?.(document) ?? null;
+    profileStats =
+      profile &&
+      profile.handle.length > 0 &&
+      (profile.joinDate !== null || profile.postCount !== null)
+        ? profile
+        : null;
+  } catch {
+    profileStats = null;
+  }
+  return profileStats;
+};
+
+const recordBatch = async (
+  batch: readonly { element: HTMLElement; post: Post }[],
+): Promise<Map<string, ReturnType<typeof deriveAuthorActivityFromCache>>> => {
+  const sightingsByHandle = new Map<string, { postId: string; timestamp: number }[]>();
+  for (const { post } of batch) {
+    if (!post.postedAt) continue;
+    const timestamp = Date.parse(post.postedAt);
+    if (!Number.isFinite(timestamp)) continue;
+    const list = sightingsByHandle.get(post.author.handle) ?? [];
+    list.push({ postId: post.id, timestamp });
+    sightingsByHandle.set(post.author.handle, list);
+  }
+
+  const profile = captureProfileStats();
+  const now = Date.now();
+  const result = new Map<string, ReturnType<typeof deriveAuthorActivityFromCache>>();
+  for (const [handle, sightings] of sightingsByHandle) {
+    const profileForHandle =
+      profile && profile.handle === handle
+        ? { joinDate: profile.joinDate, postCount: profile.postCount }
+        : undefined;
+    const record = await recordSightings(handle, sightings, profileForHandle);
+    result.set(handle, record ? deriveAuthorActivityFromCache(record, now) : null);
+  }
+  return result;
+};
+
 const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]) => {
   try {
     const stored = await chrome.storage.local.get('exclusions');
@@ -89,13 +144,16 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
     const modelResultsPromise = requestModelSignals(batch.map(({ post }) => post));
     const renderBatch = async (
       modelResults: ReadonlyMap<string, readonly SignalResult[]>,
+      activityByHandle: Map<string, ReturnType<typeof deriveAuthorActivityFromCache>> | null,
       recordStats: boolean,
     ) => {
       const stats: { hidden: boolean; reasons: readonly string[] }[] = [];
       for (const { element, post } of batch) {
         if (!recordStats) element.dataset.slopfilterModelProcessed = 'true';
         seenPosts.set(post.id, post);
-        const activity = deriveAuthorActivity([...seenPosts.values()], post.author.handle);
+        const activity =
+          activityByHandle?.get(post.author.handle) ??
+          deriveAuthorActivity([...seenPosts.values()], post.author.handle);
         const signal = scoreBehavioural(post, activity, DEFAULT_THRESHOLDS);
         const signals = [signal, ...(modelResults.get(post.id) ?? [])].filter(
           (result) => settings.enabledLayers[result.layerId],
@@ -116,6 +174,8 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
         const overridden = exclusions.has(post.id)
           ? { ...breakdown, hidden: false, reasons: [] }
           : applyAccountOverride(post, breakdown, await getAccountState(post.author.handle));
+        const previous = lastBreakdowns.get(post.id);
+        const decisionChanged = !previous || previous.hidden !== overridden.hidden;
         lastBreakdowns.set(post.id, overridden);
         const theme = themeForPlatform(xAdapter.platform);
         const feedbackOptions = {
@@ -143,20 +203,22 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
           attachVisibleFeedback();
         };
         stats.push({ hidden: overridden.hidden, reasons: overridden.reasons });
-        if (overridden.hidden) {
-          collapsePost(element, overridden, theme, restoreAndAttachFeedback);
-          const placeholder = element.nextElementSibling;
-          if (placeholder instanceof HTMLElement) {
-            attachFeedbackControls(placeholder, post, {
-              breakdown: overridden,
-              theme,
-              onWrongCall: restoreAndAttachFeedback,
-              ...feedbackOptions,
-            });
+        if (decisionChanged) {
+          if (overridden.hidden) {
+            collapsePost(element, overridden, theme, restoreAndAttachFeedback);
+            const placeholder = element.nextElementSibling;
+            if (placeholder instanceof HTMLElement) {
+              attachFeedbackControls(placeholder, post, {
+                breakdown: overridden,
+                theme,
+                onWrongCall: restoreAndAttachFeedback,
+                ...feedbackOptions,
+              });
+            }
+          } else {
+            if (element.dataset.slopfilterCollapsed === 'true') restorePost(element);
+            attachVisibleFeedback();
           }
-        } else {
-          if (element.dataset.slopfilterCollapsed === 'true') restorePost(element);
-          attachVisibleFeedback();
         }
       }
       if (!recordStats) return;
@@ -167,10 +229,15 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
         // Stats are optional; a missing service worker must not affect filtering.
       }
     };
-    await renderBatch(new Map(), true);
-    void modelResultsPromise.then((modelResults) => {
-      if (modelResults.size > 0) void renderBatch(modelResults, false).catch(() => undefined);
-    });
+    await renderBatch(new Map(), null, true);
+    const activityPromise = recordBatch(batch);
+    void Promise.all([activityPromise, modelResultsPromise]).then(
+      ([activityByHandle, modelResults]) => {
+        if (activityByHandle.size > 0 || modelResults.size > 0) {
+          void renderBatch(modelResults, activityByHandle, false).catch(() => undefined);
+        }
+      },
+    );
   } catch {
     pauseFiltering();
   }
@@ -273,7 +340,6 @@ const start = async () => {
       })
       .catch(() => undefined);
   });
-  logger.debug('content script loaded');
   startAfterSelfTest();
 };
 

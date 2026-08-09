@@ -201,6 +201,9 @@ decisions:
       the provisional constants added by SF-219 through SF-223. Deliberately left provisional
       2026-08-09: review once SF-221 has measured them rather than guessing again."
 done:
+  - id: SF-215
+    did: Derive the posting rate from a persistent cross-session per-author observation cache, with
+      recent and lifetime rate as separate sub-signals and opportunistic profile capture
   - id: SF-214
     did: Replace the weighted-mean composite with a clamped additive sum and provisionally recalibrate
       weights and threshold so a single strong layer can hide a post

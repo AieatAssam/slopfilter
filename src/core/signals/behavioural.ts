@@ -1,10 +1,19 @@
 import type { Post } from '@/core/post';
 import type { SignalResult } from '@/core/scoring/types';
 
+// A rate extrapolated from a span shorter than this is no-data, never a hide. Extrapolating
+// 3 posts in 4 minutes to 1080 per day is how false positives happen.
+export const MIN_OBSERVATION_SPAN_HOURS = 1;
+
 export interface AuthorActivity {
   postsPerDay: number | null;
   observedPostCount: number;
   observationWindowHours: number;
+  // SF-215: cache-derived observations carried alongside the in-viewport estimate.
+  observedSpanHours: number | null;
+  distinctPostCount: number;
+  lifetimePostsPerDay: number | null;
+  accountAgeDays: number | null;
 }
 
 export interface BehaviouralThresholds {
@@ -13,36 +22,121 @@ export interface BehaviouralThresholds {
   meaningfulEngagementFloor: number;
 }
 
+export interface AuthorActivityCacheInput {
+  firstSeen: number;
+  lastSeen: number;
+  posts: Readonly<Record<string, number>>;
+  profileJoinDate: number | null;
+  profilePostCount: number | null;
+}
+
+const DAY_MS = 86_400_000;
+const HOUR_MS = 3_600_000;
+
 const validTimestamp = (post: Post): number | null => {
   if (!post.postedAt) return null;
   const timestamp = Date.parse(post.postedAt);
   return Number.isFinite(timestamp) ? timestamp : null;
 };
 
-export function deriveAuthorActivity(
-  posts: readonly Post[],
-  handle: string,
-): AuthorActivity | null {
-  const timestamps = posts
-    .filter((post) => post.author.handle === handle)
-    .map(validTimestamp)
+const distinctTimestamps = (posts: readonly Post[], handle: string): number[] =>
+  Array.from(
+    new Map(
+      posts
+        .filter((post) => post.author.handle === handle)
+        .map((post) => [post.id, validTimestamp(post)] as const),
+    ).values(),
+  )
     .filter((timestamp): timestamp is number => timestamp !== null)
     .sort((left, right) => left - right);
-  if (timestamps.length === 0) return null;
 
+const activityFromTimestamps = (
+  timestamps: readonly number[],
+  profile: { joinDate: number | null; postCount: number | null; now: number },
+): AuthorActivity | null => {
+  if (timestamps.length === 0) return null;
   const first = timestamps[0];
   const last = timestamps.at(-1);
   if (first === undefined || last === undefined) return null;
-  const observationWindowHours = (last - first) / 3_600_000;
+  const observedSpanHours = (last - first) / HOUR_MS;
   const postsPerDay =
-    timestamps.length > 1 && observationWindowHours > 0
-      ? ((timestamps.length - 1) / observationWindowHours) * 24
+    timestamps.length > 1 && observedSpanHours >= MIN_OBSERVATION_SPAN_HOURS
+      ? ((timestamps.length - 1) / observedSpanHours) * 24
+      : null;
+  const accountAgeDays =
+    profile.joinDate !== null && profile.now > profile.joinDate
+      ? (profile.now - profile.joinDate) / DAY_MS
+      : null;
+  const lifetimePostsPerDay =
+    accountAgeDays !== null &&
+    accountAgeDays > 0 &&
+    profile.postCount !== null &&
+    Number.isFinite(profile.postCount)
+      ? profile.postCount / accountAgeDays
       : null;
 
   return {
     postsPerDay,
     observedPostCount: timestamps.length,
-    observationWindowHours,
+    observationWindowHours: observedSpanHours,
+    observedSpanHours,
+    distinctPostCount: timestamps.length,
+    lifetimePostsPerDay,
+    accountAgeDays,
+  };
+};
+
+export function deriveAuthorActivity(
+  posts: readonly Post[],
+  handle: string,
+): AuthorActivity | null {
+  return activityFromTimestamps(distinctTimestamps(posts, handle), {
+    joinDate: null,
+    postCount: null,
+    now: Date.now(),
+  });
+}
+
+export function deriveAuthorActivityFromCache(
+  input: AuthorActivityCacheInput,
+  now: number,
+): AuthorActivity | null {
+  const timestamps = Object.values(input.posts)
+    .filter((timestamp) => Number.isFinite(timestamp) && timestamp > 0)
+    .sort((left, right) => left - right);
+  const first = input.firstSeen > 0 ? input.firstSeen : timestamps[0];
+  const last = input.lastSeen > 0 ? input.lastSeen : timestamps.at(-1);
+  if (typeof first !== 'number' || typeof last !== 'number') return null;
+  const spanTimestamps = [first, last, ...timestamps].filter((timestamp): timestamp is number =>
+    Number.isFinite(timestamp),
+  );
+  const spanFirst = Math.min(...spanTimestamps);
+  const spanLast = Math.max(...spanTimestamps);
+  const observedSpanHours = (spanLast - spanFirst) / HOUR_MS;
+  const postsPerDay =
+    timestamps.length > 1 && observedSpanHours >= MIN_OBSERVATION_SPAN_HOURS
+      ? ((timestamps.length - 1) / observedSpanHours) * 24
+      : null;
+  const accountAgeDays =
+    input.profileJoinDate !== null && now > input.profileJoinDate
+      ? (now - input.profileJoinDate) / DAY_MS
+      : null;
+  const lifetimePostsPerDay =
+    accountAgeDays !== null &&
+    accountAgeDays > 0 &&
+    input.profilePostCount !== null &&
+    Number.isFinite(input.profilePostCount)
+      ? input.profilePostCount / accountAgeDays
+      : null;
+
+  return {
+    postsPerDay,
+    observedPostCount: timestamps.length,
+    observationWindowHours: observedSpanHours,
+    observedSpanHours,
+    distinctPostCount: timestamps.length,
+    lifetimePostsPerDay,
+    accountAgeDays,
   };
 }
 
@@ -89,14 +183,27 @@ export function scoreBehavioural(
   const scores: number[] = [];
   const reasons: string[] = [];
   const frequencyThreshold = Math.max(0, thresholds.postsPerDayThreshold);
-  if (
-    activity.postsPerDay !== null &&
-    Number.isFinite(activity.postsPerDay) &&
-    activity.postsPerDay > frequencyThreshold
-  ) {
-    const excess = (activity.postsPerDay - frequencyThreshold) / Math.max(frequencyThreshold, 1);
+  const recentRate = activity.postsPerDay ?? null;
+  if (recentRate !== null && Number.isFinite(recentRate) && recentRate > frequencyThreshold) {
+    const excess = (recentRate - frequencyThreshold) / Math.max(frequencyThreshold, 1);
     scores.push(clamped(0.6 + excess * 0.4));
-    reasons.push(`posts ${Math.round(activity.postsPerDay)}+ times per day`);
+    reasons.push(`posts ${Math.round(recentRate)}+ times per day`);
+  }
+
+  const lifetimeRate = activity.lifetimePostsPerDay ?? null;
+  const ageDays = activity.accountAgeDays ?? null;
+  if (
+    lifetimeRate !== null &&
+    Number.isFinite(lifetimeRate) &&
+    lifetimeRate > frequencyThreshold &&
+    ageDays !== null &&
+    ageDays > 0
+  ) {
+    const excess = (lifetimeRate - frequencyThreshold) / Math.max(frequencyThreshold, 1);
+    scores.push(clamped(0.6 + excess * 0.4));
+    reasons.push(
+      `posts ${Math.round(lifetimeRate)}/day across a ${Math.round(ageDays)}-day-old account`,
+    );
   }
 
   const ratio = engagementRatio(post);
@@ -113,9 +220,13 @@ export function scoreBehavioural(
   }
 
   const values: Record<string, number | string | boolean | null> = {
-    postsPerDay: activity.postsPerDay,
+    postsPerDay: recentRate,
     observedPostCount: activity.observedPostCount,
     observationWindowHours: activity.observationWindowHours,
+    observedSpanHours: activity.observedSpanHours ?? null,
+    distinctPostCount: activity.distinctPostCount,
+    lifetimePostsPerDay: lifetimeRate,
+    accountAgeDays: ageDays,
     engagementRatio: ratio,
     engagementStrength: engagementStrength(post),
   };

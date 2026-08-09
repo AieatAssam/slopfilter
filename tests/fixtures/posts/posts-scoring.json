@@ -6,12 +6,29 @@
       "permalink": null,
       "text": "ordinary post",
       "postedAt": "2026-08-05T10:00:00.000Z",
-      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
-      "engagement": { "replies": 1, "reposts": 2, "likes": 7, "views": 1000 },
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 1,
+        "reposts": 2,
+        "likes": 7,
+        "views": 1000
+      },
       "imageUrls": [],
       "hasVideo": false
     },
-    "authorActivity": { "postsPerDay": 20, "observedPostCount": 2, "observationWindowHours": 1 },
+    "authorActivity": {
+      "postsPerDay": 20,
+      "observedPostCount": 2,
+      "observationWindowHours": 1,
+      "observedSpanHours": 1,
+      "distinctPostCount": 2,
+      "lifetimePostsPerDay": null,
+      "accountAgeDays": null
+    },
     "expectedScore": 0,
     "expectedHidden": false,
     "expectedReasonIds": [],
@@ -24,12 +41,29 @@
       "permalink": null,
       "text": "frequent post",
       "postedAt": "2026-08-05T10:00:00.000Z",
-      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
-      "engagement": { "replies": null, "reposts": null, "likes": null, "views": null },
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": null,
+        "reposts": null,
+        "likes": null,
+        "views": null
+      },
       "imageUrls": [],
       "hasVideo": false
     },
-    "authorActivity": { "postsPerDay": 80, "observedPostCount": 4, "observationWindowHours": 0.9 },
+    "authorActivity": {
+      "postsPerDay": 80,
+      "observedPostCount": 4,
+      "observationWindowHours": 0.9,
+      "observedSpanHours": 0.9,
+      "distinctPostCount": 4,
+      "lifetimePostsPerDay": null,
+      "accountAgeDays": null
+    },
     "expectedScore": 0.6,
     "expectedHidden": true,
     "expectedReasonIds": ["frequency"],
@@ -42,12 +76,29 @@
       "permalink": null,
       "text": "quiet post",
       "postedAt": "2026-08-05T10:00:00.000Z",
-      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
-      "engagement": { "replies": 0, "reposts": 0, "likes": 0, "views": 1000 },
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 0,
+        "reposts": 0,
+        "likes": 0,
+        "views": 1000
+      },
       "imageUrls": [],
       "hasVideo": false
     },
-    "authorActivity": { "postsPerDay": 20, "observedPostCount": 2, "observationWindowHours": 1 },
+    "authorActivity": {
+      "postsPerDay": 20,
+      "observedPostCount": 2,
+      "observationWindowHours": 1,
+      "observedSpanHours": 1,
+      "distinctPostCount": 2,
+      "lifetimePostsPerDay": null,
+      "accountAgeDays": null
+    },
     "expectedScore": 0.6,
     "expectedHidden": true,
     "expectedReasonIds": ["engagement"],
@@ -60,12 +111,29 @@
       "permalink": null,
       "text": "frequent quiet post",
       "postedAt": "2026-08-05T10:00:00.000Z",
-      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
-      "engagement": { "replies": 0, "reposts": 0, "likes": 0, "views": 1000 },
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 0,
+        "reposts": 0,
+        "likes": 0,
+        "views": 1000
+      },
       "imageUrls": [],
       "hasVideo": false
     },
-    "authorActivity": { "postsPerDay": 80, "observedPostCount": 4, "observationWindowHours": 0.9 },
+    "authorActivity": {
+      "postsPerDay": 80,
+      "observedPostCount": 4,
+      "observationWindowHours": 0.9,
+      "observedSpanHours": 0.9,
+      "distinctPostCount": 4,
+      "lifetimePostsPerDay": null,
+      "accountAgeDays": null
+    },
     "expectedScore": 0.6,
     "expectedHidden": true,
     "expectedReasonIds": ["frequency", "engagement"],
@@ -78,8 +146,17 @@
       "permalink": null,
       "text": "unknown activity",
       "postedAt": "2026-08-05T10:00:00.000Z",
-      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
-      "engagement": { "replies": 1, "reposts": 2, "likes": 7, "views": 1000 },
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 1,
+        "reposts": 2,
+        "likes": 7,
+        "views": 1000
+      },
       "imageUrls": [],
       "hasVideo": false
     },
@@ -96,12 +173,29 @@
       "permalink": null,
       "text": "borderline engagement",
       "postedAt": "2026-08-05T10:00:00.000Z",
-      "author": { "handle": "@account01", "displayName": "Account 01", "profileUrl": null },
-      "engagement": { "replies": 0, "reposts": 0, "likes": 4, "views": 1000 },
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 0,
+        "reposts": 0,
+        "likes": 4,
+        "views": 1000
+      },
       "imageUrls": [],
       "hasVideo": false
     },
-    "authorActivity": { "postsPerDay": 20, "observedPostCount": 2, "observationWindowHours": 1 },
+    "authorActivity": {
+      "postsPerDay": 20,
+      "observedPostCount": 2,
+      "observationWindowHours": 1,
+      "observedSpanHours": 1,
+      "distinctPostCount": 2,
+      "lifetimePostsPerDay": null,
+      "accountAgeDays": null
+    },
     "expectedScore": 0.36,
     "expectedHidden": false,
     "expectedReasonIds": ["engagement"],

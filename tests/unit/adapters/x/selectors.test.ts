@@ -10,7 +10,7 @@ import {
 describe('selector contract', () => {
   test('accepts the shipped contract', () => {
     expect(validateSelectorContract(selectorContract).ok).toBe(true);
-    expect(selectorContract.entries).toHaveLength(18);
+    expect(selectorContract.entries).toHaveLength(20);
   });
 
   test('theme probes exist and are optional', () => {

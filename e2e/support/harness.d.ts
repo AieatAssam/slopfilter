@@ -1,13 +1,16 @@
 declare global {
   interface Window {
     __slopfilterHarness: {
-      appendPost(post: {
-        id: string;
-        authorHandle: string;
-        text: string;
-        postedAt: string;
-        imageUrl?: string;
-      }): void;
+      appendPost(
+        post: {
+          id: string;
+          authorHandle: string;
+          text: string;
+          postedAt: string;
+          imageUrl?: string;
+        },
+        persist?: boolean,
+      ): void;
       collapseFirstPost(reasons: string[]): void;
       restoreArticle(articleId: string): void;
       attachFeedback(articleId: string): void;

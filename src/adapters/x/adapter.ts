@@ -1,4 +1,4 @@
-import type { PlatformAdapter, SelectorCheckResult } from '@/adapters/types';
+import type { PlatformAdapter, ProfileStats, SelectorCheckResult } from '@/adapters/types';
 import type { Post, PostAuthor, PostEngagement } from '@/core/post';
 import { getEntry, resolveSelector, type SelectorEntry, selectorContract } from './selectors';
 import { runSelfTest } from './selftest';
@@ -45,6 +45,9 @@ const hasAdLabel = (root: ParentNode): boolean =>
       textOf(element).toLowerCase() === 'ad' &&
       !element.closest('[data-testid="User-Name"], [data-testid="tweetText"]'),
   );
+
+const PROFILE_JOIN_DATE_RE = /joined\s+([A-Za-z]+)\s+(\d{4})/i;
+const PROFILE_POST_COUNT_RE = /(\d[\d,.]*(?:\s*[km])?)\s*posts?/i;
 
 export const xAdapter: PlatformAdapter = {
   platform: 'x',
@@ -110,5 +113,45 @@ export const xAdapter: PlatformAdapter = {
   selfTest(root): SelectorCheckResult {
     const result = runSelfTest(root);
     return { ok: result.ok, failedSelectorIds: result.failedSelectorIds };
+  },
+
+  readProfileStats(root): ProfileStats | null {
+    try {
+      const joinDateElement = firstMatch(root, getEntry('profile-join-date'));
+      const postCountElement = firstMatch(root, getEntry('profile-post-count'));
+      if (!joinDateElement && !postCountElement) return null;
+
+      const handleAnchor = firstMatch(root, getEntry('author-handle'))?.closest(
+        '[data-testid="User-Name"]',
+      );
+      if (!handleAnchor) return null;
+      const handle = Array.from(handleAnchor.querySelectorAll('div[dir="ltr"]'))
+        .map(textOf)
+        .find((value) => value.startsWith('@'));
+      if (!handle) return null;
+
+      let joinDate: number | null = null;
+      const datetime = joinDateElement?.getAttribute('datetime');
+      if (datetime) {
+        const parsed = Date.parse(datetime);
+        if (Number.isFinite(parsed)) joinDate = parsed;
+      }
+      if (joinDate === null) {
+        const joinText = joinDateElement ? textOf(joinDateElement) : '';
+        const match = joinText.match(PROFILE_JOIN_DATE_RE);
+        if (match) {
+          const parsed = Date.parse(`${match[1]} ${match[2]}`);
+          if (Number.isFinite(parsed)) joinDate = parsed;
+        }
+      }
+
+      const postCountText = postCountElement ? textOf(postCountElement) : '';
+      const countMatch = postCountText.match(PROFILE_POST_COUNT_RE);
+      const postCount = countMatch ? parseCompactCount(countMatch[1] ?? null) : null;
+
+      return { handle, joinDate, postCount };
+    } catch {
+      return null;
+    }
   },
 };

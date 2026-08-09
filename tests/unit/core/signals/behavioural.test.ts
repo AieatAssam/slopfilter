@@ -29,6 +29,10 @@ const activity = (overrides: Partial<AuthorActivity> = {}): AuthorActivity => ({
   postsPerDay: null,
   observedPostCount: 1,
   observationWindowHours: 0,
+  observedSpanHours: null,
+  distinctPostCount: 1,
+  lifetimePostsPerDay: null,
+  accountAgeDays: null,
   ...overrides,
 });
 
@@ -45,6 +49,10 @@ describe('deriveAuthorActivity', () => {
       postsPerDay: 24,
       observedPostCount: 3,
       observationWindowHours: 2,
+      observedSpanHours: 2,
+      distinctPostCount: 3,
+      lifetimePostsPerDay: null,
+      accountAgeDays: null,
     });
   });
 

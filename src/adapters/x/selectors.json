@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.3.0",
+  "contractVersion": "1.4.0",
   "entries": [
     {
       "id": "primary-column",
@@ -113,6 +113,21 @@
       "id": "theme-separator",
       "description": "A timeline cell edge whose background approximates X's separator colour.",
       "selectors": ["[data-testid=\"cellInnerDiv\"] > div", "article[data-testid=\"tweet\"]"],
+      "required": false
+    },
+    {
+      "id": "profile-join-date",
+      "description": "The join date shown on an author profile page. Required false: a profile markup change can never pause timeline filtering.",
+      "selectors": ["[data-testid=\"UserProfileHeader_Items\"] time[datetime]"],
+      "required": false
+    },
+    {
+      "id": "profile-post-count",
+      "description": "The total post count shown on an author profile page. Required false: a profile markup change can never pause timeline filtering.",
+      "selectors": [
+        "[data-testid=\"UserProfileHeader_Items\"] a[href*=\"/status\"]",
+        "[data-testid=\"UserProfileHeader_Items\"] span"
+      ],
       "required": false
     }
   ]
