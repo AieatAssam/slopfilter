@@ -15,6 +15,12 @@
       "js": ["content/index.js"],
       "css": ["content/styles.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content/interceptor.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "action": {

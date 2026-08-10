@@ -5,6 +5,9 @@ import type { SignalResult } from '@/core/scoring/types';
 // 3 posts in 4 minutes to 1080 per day is how false positives happen.
 export const MIN_OBSERVATION_SPAN_HOURS = 1;
 
+// SF-216: an account younger than this is itself a slop signal, independent of any rate.
+export const YOUNG_ACCOUNT_DAYS = 30;
+
 export interface AuthorActivity {
   postsPerDay: number | null;
   observedPostCount: number;
@@ -191,19 +194,26 @@ export function scoreBehavioural(
   }
 
   const lifetimeRate = activity.lifetimePostsPerDay ?? null;
-  const ageDays = activity.accountAgeDays ?? null;
-  if (
-    lifetimeRate !== null &&
-    Number.isFinite(lifetimeRate) &&
-    lifetimeRate > frequencyThreshold &&
-    ageDays !== null &&
-    ageDays > 0
-  ) {
+  if (lifetimeRate !== null && Number.isFinite(lifetimeRate) && lifetimeRate > frequencyThreshold) {
     const excess = (lifetimeRate - frequencyThreshold) / Math.max(frequencyThreshold, 1);
     scores.push(clamped(0.6 + excess * 0.4));
-    reasons.push(
-      `posts ${Math.round(lifetimeRate)}/day across a ${Math.round(ageDays)}-day-old account`,
-    );
+    reasons.push(`posts ${Math.round(lifetimeRate)}/day across the account lifetime`);
+  }
+
+  // SF-216: a young account is its own signal, not just the denominator of the lifetime rate.
+  // Posting heavily while young makes it a much stronger slop indicator than either fact alone.
+  const ageDays = activity.accountAgeDays ?? null;
+  if (ageDays !== null && Number.isFinite(ageDays) && ageDays > 0 && ageDays < YOUNG_ACCOUNT_DAYS) {
+    const young = Math.round(ageDays);
+    const heavyLifetime =
+      lifetimeRate !== null && Number.isFinite(lifetimeRate) && lifetimeRate > frequencyThreshold;
+    if (heavyLifetime) {
+      scores.push(0.8);
+      reasons.push(`account only ${young} days old posting ${Math.round(lifetimeRate)}/day`);
+    } else {
+      scores.push(0.35);
+      reasons.push(`account only ${young} days old`);
+    }
   }
 
   const ratio = engagementRatio(post);

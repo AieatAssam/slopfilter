@@ -5,13 +5,105 @@ import { chromium } from '@playwright/test';
 const args = process.argv.slice(2);
 const targetIndex = args.indexOf('--target');
 const target = targetIndex >= 0 ? args[targetIndex + 1] : undefined;
+const fixtureIndex = args.indexOf('--fixture');
+const fixturePath = fixtureIndex >= 0 ? args[fixtureIndex + 1] : undefined;
+const breakIndex = args.indexOf('--break');
+const breakEntryId = breakIndex >= 0 ? args[breakIndex + 1] : undefined;
 const outIndex = args.indexOf('--out');
 const reportPath = resolve(
   outIndex >= 0 ? (args[outIndex + 1] ?? 'drift-report.json') : 'drift-report.json',
 );
-if (!target) {
-  console.error('usage: node scripts/check-drift.mjs --target <url> [--out <path>]');
+
+const SEGMENT_RE = /^([^[]+)(\[])?$/;
+
+const resolvePath = (root, path) => {
+  const segments = path.split('.');
+  let values = [root];
+  for (const raw of segments) {
+    const match = SEGMENT_RE.exec(raw);
+    if (!match) return [];
+    const key = match[1];
+    const iterate = match[2] === '[]';
+    const next = [];
+    for (const value of values) {
+      if (typeof value !== 'object' || value === null) continue;
+      const child = value[key];
+      if (!iterate) {
+        if (child !== undefined) next.push(child);
+        continue;
+      }
+      if (Array.isArray(child)) next.push(...child);
+    }
+    values = next;
+    if (values.length === 0) return [];
+  }
+  return values;
+};
+
+const resolveEntry = (context, entry) => {
+  for (const path of entry.paths) {
+    const hits = resolvePath(context, path);
+    if (hits.length > 0) return hits;
+  }
+  return [];
+};
+
+const payloadFailures = (contract, fixture, brokenId) => {
+  const byId = (id) => contract.entries.find((c) => c.id === id);
+  const entries =
+    byId('entries') !== undefined ? resolveEntry(fixture, byId('entries')) : [fixture];
+  const tweets = entries.flatMap((entry) =>
+    byId('tweet') !== undefined ? resolveEntry(entry, byId('tweet')) : [],
+  );
+  const users = tweets.flatMap((tweet) =>
+    byId('user') !== undefined ? resolveEntry(tweet, byId('user')) : [],
+  );
+  const contexts = { entry: entries, tweet: tweets, user: users };
+
+  const failures = [];
+  for (const entry of contract.entries) {
+    if (!entry.required) continue;
+    let resolved = false;
+    if (entry.context === 'document') {
+      resolved = resolveEntry(fixture, entry).length > 0;
+    } else if (contexts[entry.context] !== undefined) {
+      resolved = contexts[entry.context].some(
+        (candidate) => resolveEntry(candidate, entry).length > 0,
+      );
+    }
+    if (brokenId === entry.id) resolved = false;
+    if (!resolved) failures.push(entry.id);
+  }
+  return failures;
+};
+
+if (!target && !fixturePath) {
+  console.error(
+    'usage: node scripts/check-drift.mjs --target <url> [--fixture <payload.json>] [--break <entryId>] [--out <path>]',
+  );
   process.exitCode = 1;
+} else if (fixturePath) {
+  const contract = JSON.parse(readFileSync('src/adapters/x/payloadContract.json', 'utf8'));
+  const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'));
+  const failures = payloadFailures(contract, fixture, breakEntryId);
+  const report = {
+    contractVersion: contract.contractVersion,
+    fixture: fixturePath,
+    status: failures.length === 0 ? 'ok' : 'drift',
+    entries: contract.entries.map((entry) => ({
+      id: entry.id,
+      required: entry.required,
+      ok: !failures.includes(entry.id),
+    })),
+  };
+  writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  if (failures.length > 0) {
+    console.log(`drift status=drift failed=${failures.join(',')} fixture=${fixturePath}`);
+    process.exitCode = 2;
+  } else {
+    console.log(`drift status=ok failed=0 fixture=${fixturePath}`);
+    process.exitCode = 0;
+  }
 } else {
   const contract = JSON.parse(readFileSync('src/adapters/x/selectors.json', 'utf8'));
   const timestamp = new Date().toISOString();

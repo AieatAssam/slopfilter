@@ -1,9 +1,10 @@
 import type { ProfileStats } from '@/adapters/types';
 import { xAdapter } from '@/adapters/x/adapter';
+import { isPayloadRelayMessage } from '@/adapters/x/payload';
 import { collapsePost, restorePost } from '@/content/collapse';
 import { attachFeedbackControls } from '@/content/feedback';
 import { createTimelineObserver, type TimelineObserverHandle } from '@/content/observer';
-import type { Post } from '@/core/post';
+import type { Post, PostEngagement } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoreBreakdown, SignalResult } from '@/core/scoring/types';
 import { DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
@@ -15,7 +16,7 @@ import {
 import { logger } from '@/shared/logger';
 import { isExtensionMessage } from '@/shared/messages';
 import { applyAccountOverride, getAccountState } from '@/storage/accounts';
-import { recordSightings } from '@/storage/authorActivity';
+import { recordSightings, updateAuthorProfile } from '@/storage/authorActivity';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -26,6 +27,7 @@ import { applyThemeTokens, observeTheme, themeForPlatform } from './themes';
 
 const seenPosts = new Map<string, Post>();
 const lastBreakdowns = new Map<string, ScoreBreakdown>();
+const payloadEngagement = new Map<string, PostEngagement>();
 const SELF_TEST_TIMEOUT_MS = 3_000;
 let settings: Settings = DEFAULT_SETTINGS;
 let paused = false;
@@ -36,6 +38,58 @@ let selfTestObserver: MutationObserver | null = null;
 let selfTestTimer: number | null = null;
 let requestSequence = 0;
 let _themeDisconnect: (() => void) | null = null;
+
+// SF-216: exact engagement from the HomeTimeline payload supersedes the compact-count DOM parse.
+// Payload numbers are plain integers; keep them keyed by post id so a post scored after the relay
+// arrives prefers the exact value. The map holds only numbers, never post text.
+const preferExactEngagement = (post: Post): Post => {
+  const exact = payloadEngagement.get(post.id);
+  if (!exact) return post;
+  return {
+    ...post,
+    engagement: {
+      replies: exact.replies ?? post.engagement.replies,
+      reposts: exact.reposts ?? post.engagement.reposts,
+      likes: exact.likes ?? post.engagement.likes,
+      views: exact.views ?? post.engagement.views,
+    },
+  };
+};
+
+// Isolated world listener for the MAIN-world interceptor relay. Origin and shape are both checked;
+// anything malformed is dropped without a throw. Only the derived numbers named in the payload
+// contract are persisted.
+const handlePayloadRelay = async (event: MessageEvent) => {
+  if (event.source !== window) return;
+  if (event.origin !== window.location.origin) return;
+  if (!isPayloadRelayMessage(event.data)) return;
+  const observedAt = Date.now();
+  const writes = event.data.authors.map((author) =>
+    updateAuthorProfile(
+      author.handle,
+      { joinDate: author.accountCreatedAt, postCount: author.totalPosts },
+      observedAt,
+    ).catch(() => null),
+  );
+  for (const tweet of event.data.engagement) {
+    if (tweet.postId) {
+      payloadEngagement.set(tweet.postId, {
+        replies: tweet.replies,
+        reposts: tweet.reposts,
+        likes: tweet.likes,
+        views: tweet.views,
+      });
+    }
+  }
+  try {
+    // The flag is a harness observability hook; the writes above are awaited first so a test that
+    // reads the attribute can rely on the activity cache already holding the payload stats.
+    await Promise.all(writes);
+    document.documentElement.dataset.slopfilterPayloadSeen = 'true';
+  } catch {
+    // Failing to set the flag must not break anything; the payload already passed through.
+  }
+};
 
 const requestModelSignals = async (posts: readonly Post[]) => {
   if (posts.length === 0) return new Map<string, readonly SignalResult[]>();
@@ -148,7 +202,8 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
       recordStats: boolean,
     ) => {
       const stats: { hidden: boolean; reasons: readonly string[] }[] = [];
-      for (const { element, post } of batch) {
+      for (const { element, post: rawPost } of batch) {
+        const post = preferExactEngagement(rawPost);
         if (!recordStats) element.dataset.slopfilterModelProcessed = 'true';
         seenPosts.set(post.id, post);
         const activity =
@@ -342,6 +397,10 @@ const start = async () => {
   });
   startAfterSelfTest();
 };
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('message', handlePayloadRelay);
+}
 
 if (typeof chrome !== 'undefined') {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

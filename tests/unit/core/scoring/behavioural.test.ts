@@ -137,26 +137,58 @@ describe('scoreBehavioural sub-signals', () => {
       activity({
         postsPerDay: null,
         lifetimePostsPerDay: 80,
-        accountAgeDays: 3,
+        accountAgeDays: 100,
         distinctPostCount: 2,
       }),
       thresholds,
     );
 
     expect(result.score).toBe(1);
-    expect(result.reason).toContain('80/day across a 3-day-old account');
+    expect(result.reason).toContain('posts 80/day across the account lifetime');
     expect(result.reason).not.toContain('times per day');
+    expect(result.reason).not.toContain('days old');
+  });
+
+  test('emits a young account as its own sub-signal with its own reason', () => {
+    const result = scoreBehavioural(
+      NO_MATCH_ENGAGEMENT_POST,
+      activity({
+        postsPerDay: null,
+        lifetimePostsPerDay: 80,
+        accountAgeDays: 3,
+        distinctPostCount: 2,
+      }),
+      thresholds,
+    );
+
+    expect(result.reason).toContain('account only 3 days old posting 80/day');
+  });
+
+  test('emits account age alone when the account is young but not posting heavily', () => {
+    const result = scoreBehavioural(
+      NO_MATCH_ENGAGEMENT_POST,
+      activity({
+        postsPerDay: null,
+        lifetimePostsPerDay: 5,
+        accountAgeDays: 2,
+        distinctPostCount: 2,
+      }),
+      thresholds,
+    );
+
+    expect(result.reason).toContain('account only 2 days old');
+    expect(result.reason).not.toContain('/day across the account lifetime');
   });
 
   test('never lets one sub-signal stand in for the other', () => {
     const result = scoreBehavioural(
       NO_MATCH_ENGAGEMENT_POST,
-      activity({ postsPerDay: 80, lifetimePostsPerDay: 60, accountAgeDays: 2 }),
+      activity({ postsPerDay: 80, lifetimePostsPerDay: 60, accountAgeDays: 100 }),
       thresholds,
     );
 
     expect(result.reason).toContain('posts 80+ times per day');
-    expect(result.reason).toContain('/day across a 2-day-old account');
+    expect(result.reason).toContain('posts 60/day across the account lifetime');
   });
 
   test('reports no-data values when the cache is empty', () => {

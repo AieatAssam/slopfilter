@@ -1,0 +1,125 @@
+{
+  "contractVersion": "1.0.0",
+  "operation": "HomeTimeline",
+  "entries": [
+    {
+      "id": "entries",
+      "description": "The instruction entries array that carries tweets on the home timeline.",
+      "context": "document",
+      "paths": ["data.home.home_timeline_urt.instructions[].entries[]"],
+      "required": true
+    },
+    {
+      "id": "tweet",
+      "description": "A tweet result carried by an entry.",
+      "context": "entry",
+      "paths": ["content.itemContent.tweet_results.result"],
+      "required": true
+    },
+    {
+      "id": "user",
+      "description": "The author user result carried by a tweet.",
+      "context": "tweet",
+      "paths": ["core.user_results.result"],
+      "required": true
+    },
+    {
+      "id": "tweet-id",
+      "description": "The tweet's stable id, aligned with the DOM post status id.",
+      "context": "tweet",
+      "paths": ["rest_id", "legacy.id_str"],
+      "required": true
+    },
+    {
+      "id": "user-screen-name",
+      "description": "The author's screen name; matched against the DOM @handle.",
+      "context": "user",
+      "paths": ["core.screen_name", "legacy.screen_name"],
+      "required": true
+    },
+    {
+      "id": "user-created-at",
+      "description": "Account creation timestamp, RFC 1123 style. Feeds account age and the lifetime rate.",
+      "context": "user",
+      "paths": ["core.created_at", "legacy.created_at"],
+      "required": true
+    },
+    {
+      "id": "user-post-count",
+      "description": "Lifetime post count. Renamed from the old flat legacy.statuses_count; the legacy path is the trailing fallback.",
+      "context": "user",
+      "paths": ["tweet_counts.tweets", "legacy.statuses_count"],
+      "required": true
+    },
+    {
+      "id": "user-media-post-count",
+      "description": "Lifetime media post count.",
+      "context": "user",
+      "paths": ["tweet_counts.media_tweets"],
+      "required": false
+    },
+    {
+      "id": "user-followers",
+      "description": "Follower count.",
+      "context": "user",
+      "paths": ["relationship_counts.followers", "legacy.followers_count"],
+      "required": false
+    },
+    {
+      "id": "user-following",
+      "description": "Following count.",
+      "context": "user",
+      "paths": ["relationship_counts.following", "legacy.friends_count"],
+      "required": false
+    },
+    {
+      "id": "user-verified",
+      "description": "Verified flag.",
+      "context": "user",
+      "paths": ["verification.verified", "legacy.verified"],
+      "required": false
+    },
+    {
+      "id": "tweet-engagement-likes",
+      "description": "Exact like count, replacing the lossy compact-count DOM parse.",
+      "context": "tweet",
+      "paths": ["legacy.favorite_count"],
+      "required": false
+    },
+    {
+      "id": "tweet-engagement-reposts",
+      "description": "Exact repost count.",
+      "context": "tweet",
+      "paths": ["legacy.retweet_count"],
+      "required": false
+    },
+    {
+      "id": "tweet-engagement-replies",
+      "description": "Exact reply count.",
+      "context": "tweet",
+      "paths": ["legacy.reply_count"],
+      "required": false
+    },
+    {
+      "id": "tweet-engagement-quotes",
+      "description": "Exact quote count.",
+      "context": "tweet",
+      "paths": ["legacy.quote_count"],
+      "required": false
+    },
+    {
+      "id": "tweet-engagement-bookmarks",
+      "description": "Exact bookmark count.",
+      "context": "tweet",
+      "paths": ["legacy.bookmark_count"],
+      "required": false
+    },
+    {
+      "id": "tweet-views",
+      "description": "The tweet view count, a numeric string.",
+      "context": "tweet",
+      "paths": ["views.count"],
+      "required": false
+    }
+  ]
+}

@@ -18,6 +18,23 @@ const mimeTypes: Record<string, string> = {
 const serveFixtures = (): Plugin => ({
   name: 'harness-serve-fixtures',
   configureServer(server) {
+    server.middlewares.use('/api/graphql', async (req, res, next) => {
+      // SF-216: stand in for X's own /i/api/graphql/<queryId>/HomeTimeline response. The
+      // interceptor matches on the trailing operation name, so the query id segment is content-free.
+      const pathname = decodeURIComponent(new URL(req.url ?? '', 'http://localhost').pathname);
+      if (!pathname.endsWith('/HomeTimeline')) {
+        next();
+        return;
+      }
+      try {
+        const filePath = normalize(join(fixturesDir, 'payload/x/home-timeline.json'));
+        const body = await readFile(filePath);
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.end(body);
+      } catch {
+        next();
+      }
+    });
     server.middlewares.use('/fixtures', async (req, res, next) => {
       try {
         const pathname = decodeURIComponent(new URL(req.url ?? '', 'http://localhost').pathname);

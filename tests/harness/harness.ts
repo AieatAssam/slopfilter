@@ -145,6 +145,13 @@ type HarnessPost = {
   text: string;
   postedAt: string;
   imageUrl?: string;
+  // SF-216: compact-count controls as X renders them, so the payload-vs-DOM supersession is testable.
+  engagement?: {
+    likes?: string;
+    reposts?: string;
+    replies?: string;
+    views?: string;
+  };
 };
 
 const STORED_POSTS_KEY = 'slopfilter-harness-posts';
@@ -156,6 +163,7 @@ const createPostElement = (post: HarnessPost): HTMLElement => {
   article.dataset.postId = post.id;
   article.dataset.testid = 'tweet';
   article.dataset.harnessAppended = 'true';
+  const { likes, reposts, replies, views } = post.engagement ?? {};
   article.innerHTML = `
     <div data-testid="User-Name">
       <div dir="ltr">Account</div>
@@ -164,6 +172,10 @@ const createPostElement = (post: HarnessPost): HTMLElement => {
     <div data-testid="tweetText"></div>
     ${post.imageUrl ? `<div data-testid="tweetPhoto"><img alt="Benchmark image" src="${post.imageUrl}" /></div>` : ''}
     <time datetime="${post.postedAt}"></time>
+    ${replies ? `<button data-testid="reply" aria-label="${replies} replies. Reply"></button>` : ''}
+    ${reposts ? `<button data-testid="retweet" aria-label="${reposts} reposts. Repost"></button>` : ''}
+    ${likes ? `<button data-testid="like" aria-label="${likes} Likes. Like"></button>` : ''}
+    ${views ? `<a href="/${post.authorHandle.slice(1)}/status/${post.id}/analytics" aria-label="${views} views. View post analytics"></a>` : ''}
   `;
   article.querySelector('[data-testid="tweetText"]')?.append(post.text);
   return article;

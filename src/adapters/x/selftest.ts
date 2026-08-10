@@ -1,3 +1,4 @@
+import { payloadContract, validatePayloadContract } from './payload';
 import { resolveSelector, selectorContract } from './selectors';
 
 export interface SelfTestResult {
@@ -5,6 +6,23 @@ export interface SelfTestResult {
   failedSelectorIds: readonly string[];
   optionalFailures: readonly string[];
   contractVersion: string;
+}
+
+export interface PayloadHealth {
+  ok: boolean;
+  contractVersion: string;
+  operation: string;
+  errors: readonly string[];
+}
+
+export function payloadHealth(): PayloadHealth {
+  const validation = validatePayloadContract(payloadContract);
+  return {
+    ok: validation.ok,
+    contractVersion: validation.ok ? payloadContract.contractVersion : 'invalid',
+    operation: validation.ok ? payloadContract.operation : '',
+    errors: validation.errors,
+  };
 }
 
 export function runSelfTest(root: ParentNode): SelfTestResult {

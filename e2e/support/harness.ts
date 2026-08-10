@@ -6,10 +6,24 @@ export type HarnessPost = {
   text: string;
   postedAt: string;
   imageUrl?: string;
+  engagement?: {
+    likes?: string;
+    reposts?: string;
+    replies?: string;
+    views?: string;
+  };
 };
 
 export const uniqueRunId = (testInfo: TestInfo) =>
   `${testInfo.workerIndex}-${testInfo.testId}-${Date.now()}`;
+
+// SF-216: issue the page's own HomeTimeline request against the harness stub. The MAIN-world
+// interceptor observes it, so the relay reaches the content script without the test touching
+// extension internals.
+export const fetchHomeTimeline = (page: Page): Promise<void> =>
+  page.evaluate(() =>
+    window.fetch('/api/graphql/unused-query-id/HomeTimeline').then(() => undefined),
+  );
 
 export const appendPost = async (page: Page, post: HarnessPost) => {
   await page.evaluate((value) => window.__slopfilterHarness.appendPost(value), post);

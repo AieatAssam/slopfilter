@@ -8,6 +8,12 @@ declare global {
           text: string;
           postedAt: string;
           imageUrl?: string;
+          engagement?: {
+            likes?: string;
+            reposts?: string;
+            replies?: string;
+            views?: string;
+          };
         },
         persist?: boolean,
       ): void;

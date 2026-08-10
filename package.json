@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build:main": "vite build",
-    "build:content": "vite build --config vite.content.config.ts",
+    "build:content": "vite build --config vite.content.config.ts && vite build --config vite.interceptor.config.ts",
     "build": "SLOPFILTER_BUILD_TARGET=production npm run build:main && SLOPFILTER_BUILD_TARGET=production npm run build:content && SLOPFILTER_BUILD_TARGET=production node scripts/build-manifest.mjs",
     "build:test": "SLOPFILTER_BUILD_TARGET=test npm run build:main && SLOPFILTER_BUILD_TARGET=test npm run build:content && SLOPFILTER_BUILD_TARGET=test node scripts/build-manifest.mjs",
     "lint": "biome check .",

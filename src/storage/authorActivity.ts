@@ -17,6 +17,8 @@ export interface AuthorActivityRecord {
   posts: Record<string, number>;
   profileJoinDate: number | null;
   profilePostCount: number | null;
+  // SF-216: when the HomeTimeline payload supplied the profile, keep the observation time.
+  profileObservedAt: number | null;
 }
 
 type TransactionSetup<T> = (transaction: IDBTransaction, setResult: (result: T) => void) => void;
@@ -89,6 +91,7 @@ const createRecord = (
   posts: Readonly<Record<string, number>>,
   profileJoinDate: number | null,
   profilePostCount: number | null,
+  profileObservedAt: number | null = null,
 ): AuthorActivityRecord => {
   const timestamps = Object.values(posts);
   return {
@@ -98,6 +101,7 @@ const createRecord = (
     posts: posts as Record<string, number>,
     profileJoinDate,
     profilePostCount,
+    profileObservedAt,
   };
 };
 
@@ -172,7 +176,13 @@ export const recordSightings = (
           profile?.postCount !== undefined
             ? (profile.postCount ?? null)
             : (existing?.profilePostCount ?? null);
-        const record = createRecord(key, posts, joined, postCount);
+        const record = createRecord(
+          key,
+          posts,
+          joined,
+          postCount,
+          existing?.profileObservedAt ?? null,
+        );
         const putRequest = store.put(record);
         putRequest.onsuccess = () => pruneAuthorCap(store, setResult, record);
       };
@@ -189,6 +199,39 @@ export const getActivity = (handle: string): Promise<AuthorActivityRecord | null
     (transaction, setResult) => {
       const request = transaction.objectStore(AUTHORS_STORE).get(key);
       request.onsuccess = () => setResult((request.result as AuthorActivityRecord | null) ?? null);
+    },
+  );
+};
+
+// SF-216: write derived author stats from an intercepted timeline payload. Only the numbers named
+// in the payload contract are persisted; the raw response and post text never touch storage.
+export const updateAuthorProfile = (
+  handle: string,
+  profile: { joinDate: number | null; postCount: number | null },
+  observedAt: number,
+): Promise<AuthorActivityRecord | null> => {
+  const key = handle.trim();
+  if (!key) throw new Error('account handle is required');
+  return transact<AuthorActivityRecord | null>(
+    [AUTHORS_STORE],
+    'readwrite',
+    (transaction, setResult) => {
+      const store = transaction.objectStore(AUTHORS_STORE);
+      const getRequest = store.get(key);
+      getRequest.onsuccess = () => {
+        const existing = (getRequest.result as AuthorActivityRecord | null) ?? null;
+        const joinDate = profile.joinDate ?? existing?.profileJoinDate ?? null;
+        const postCount = profile.postCount ?? existing?.profilePostCount ?? null;
+        const record = createRecord(
+          key,
+          existing?.posts ?? {},
+          joinDate,
+          postCount,
+          existing?.profileObservedAt ?? observedAt,
+        );
+        const putRequest = store.put(record);
+        putRequest.onsuccess = () => pruneAuthorCap(store, setResult, record);
+      };
     },
   );
 };

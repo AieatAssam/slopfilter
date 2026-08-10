@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { runSelfTest } from '@/adapters/x/selftest';
+import { payloadHealth, runSelfTest } from '@/adapters/x/selftest';
 
 const readFixture = (name: string): string => readFileSync(`tests/fixtures/dom/x/${name}`, 'utf8');
 const load = (name: string): Document => {
@@ -34,5 +34,16 @@ describe('runSelfTest', () => {
     expect(result.ok).toBe(true);
     expect(result.failedSelectorIds).toEqual([]);
     expect(result.optionalFailures).toContain('post-images');
+  });
+});
+
+describe('payloadHealth', () => {
+  test('reports the payload contract as healthy when it validates', () => {
+    const result = payloadHealth();
+
+    expect(result.ok).toBe(true);
+    expect(result.contractVersion).toBeTruthy();
+    expect(result.operation).toBe('HomeTimeline');
+    expect(result.errors).toEqual([]);
   });
 });
