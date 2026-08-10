@@ -17,6 +17,28 @@ Filtering, settings, and statistics stay on the device. Runtime network access i
 - `npm run test:unit` — run unit tests.
 - `npm run build:test` — build the harness-enabled extension; required before E2E.
 - `npm run test:e2e` — run the Playwright end-to-end suite.
+- `npm run bench:commits -- --scenario bench/commit-evaluation.example.json` — run one declared
+  check against clean archives of a pre-change and shipped commit.
+
+## Commit evaluations
+
+The commit evaluator runs the same shell check in two temporary Git archives, so neither copy has
+`.git` history. It prints deterministic JSON containing each exit outcome, normalized diagnostics,
+and whether the baseline outcome differs from the shipped outcome. The shipped check must pass for
+the command to exit zero.
+
+Use a scenario file or pass the three values directly:
+
+```sh
+npm run bench:commits -- \
+  --baseline 753eea7 \
+  --shipped a583807 \
+  --command 'test -f scripts/check-drift.mjs'
+```
+
+The example scenario checks the drift monitor and page-load benchmark introduced by `a583807`.
+Future evaluations should add one scenario per behavior and keep the command deterministic; this is
+not an agent runner or a replacement for the existing unit, E2E, and performance checks.
 
 Implementation state, constraints, and open work live in [`plan/index.yaml`](plan/index.yaml).
 

@@ -1,0 +1,6 @@
+{
+  "name": "drift-monitor-added",
+  "baseline": "753eea732d4b2b0be282ce6dccaeee415e8d2853",
+  "shipped": "a583807",
+  "command": "test ! -e .git && test -f scripts/check-drift.mjs && test -f bench/page-load.bench.ts"
+}

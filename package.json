@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "bench:commits": "node scripts/commit-eval.mjs",
     "bench:scoring": "playwright test --config playwright.bench.config.ts bench/scoring-latency.bench.ts",
     "bench:pageload": "playwright test --config playwright.bench.config.ts"
   },
