@@ -1,5 +1,5 @@
 import { expect, test } from '../support/extension';
-import { appendPost, resetHarness, uniqueRunId } from '../support/harness';
+import { appendPost, resetHarness, uniqueRunId, waitForScoringSettled } from '../support/harness';
 
 test.afterEach(async ({ page }) => {
   await resetHarness(page);
@@ -8,6 +8,7 @@ test.afterEach(async ({ page }) => {
 test('collapses high-frequency posts with an evidence-based reason', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
   await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
+  await waitForScoringSettled(page);
 
   const placeholders = page.getByTestId('slopfilter-placeholder');
   await expect(placeholders.first()).toBeVisible();
@@ -27,6 +28,7 @@ test('a single loud layer reaches the additive threshold while the other layers 
 }) => {
   await page.goto('/?fixture=high-frequency');
   await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
+  await waitForScoringSettled(page);
 
   const placeholders = page.getByTestId('slopfilter-placeholder');
   await expect(placeholders.first()).toBeVisible();

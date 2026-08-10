@@ -1,6 +1,6 @@
 import { expect, test } from '../support/extension';
 import type { HarnessPost } from '../support/harness';
-import { fetchHomeTimeline } from '../support/harness';
+import { fetchHomeTimeline, waitForScoringSettled } from '../support/harness';
 
 const appendEphemeralPost = (page: import('@playwright/test').Page, post: HarnessPost) =>
   page.evaluate((value) => window.__slopfilterHarness.appendPost(value, false), post);
@@ -63,6 +63,7 @@ test('intercepted author account age and post count reach the author record and 
     text: 'post from a payload-scored author',
     postedAt: '2026-08-10T08:00:00.000Z',
   });
+  await waitForScoringSettled(page);
 
   const inspector = await openInspectorFor(page, '1900000000000010696');
   await expect(inspector).toContainText('account only');
@@ -88,6 +89,7 @@ test('exact payload engagement supersedes the compact-count DOM parse for the sa
     postedAt: '2026-08-10T08:00:00.000Z',
     engagement: { likes: '600', reposts: '0', replies: '0', views: '100' },
   });
+  await waitForScoringSettled(page);
 
   const inspector = await openInspectorFor(page, '1900000000000026740');
   await expect(inspector).toContainText('high views with weak absolute engagement');

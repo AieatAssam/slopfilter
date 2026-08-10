@@ -15,6 +15,13 @@ export function collapsePost(
   element.dataset.slopfilterCollapsed = 'true';
   element.style.display = 'none';
 
+  // A post that was visible gets its feedback controls attached to the article. Once it is hidden
+  // the placeholder becomes the sole holder, so the article's controls must go too: otherwise both
+  // mount a menu with the same slopfilter-menu-<postId> id and popovertarget resolves to the first
+  // (hidden) one, opening a popover over a zero-sized element.
+  const staleAnchor = element.querySelector<HTMLElement>('[data-testid="slopfilter-anchor"]');
+  staleAnchor?.remove();
+
   const placeholder = document.createElement('div');
   placeholder.className = `slopfilter-placeholder ${themeClass(theme)}`;
   placeholder.dataset.testid = placeholderTestId;

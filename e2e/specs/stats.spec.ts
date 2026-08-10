@@ -1,5 +1,5 @@
 import { expect, test } from '../support/extension';
-import { resetHarness } from '../support/harness';
+import { resetHarness, waitForScoringSettled } from '../support/harness';
 
 test.afterEach(async ({ page }) => {
   if (page.url().startsWith('http://localhost:5174')) await resetHarness(page);
@@ -11,6 +11,7 @@ test('the popup reports non-zero counts after filtering and clears them', async 
   extensionId,
 }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   await expect(page.getByTestId('slopfilter-placeholder').first()).toBeVisible();
 
   const popup = await context.newPage();

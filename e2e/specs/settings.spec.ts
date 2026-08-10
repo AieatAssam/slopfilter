@@ -1,5 +1,5 @@
 import { expect, test } from '../support/extension';
-import { resetHarness } from '../support/harness';
+import { resetHarness, waitForScoringSettled } from '../support/harness';
 
 test.afterEach(async ({ page }) => {
   await resetHarness(page);
@@ -11,6 +11,7 @@ test('changing the hide threshold changes which posts are collapsed', async ({
   extensionId,
 }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   const placeholders = page.getByTestId('slopfilter-placeholder');
   expect(await placeholders.count()).toBeGreaterThan(0);
 

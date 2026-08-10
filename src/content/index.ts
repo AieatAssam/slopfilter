@@ -91,6 +91,18 @@ const handlePayloadRelay = async (event: MessageEvent) => {
   }
 };
 
+// Test-build-only observability: fires once a scoring pass has fully rendered its decisions onto
+// the DOM. E2E specs gate interactions on this so a decision-changed collapse (pass 2 re-scoring a
+// post the first pass left visible) can never land between a locator resolving and its click.
+const notifyBatchScored = () => {
+  if (!__SLOPFILTER_TEST_BUILD__) return;
+  try {
+    window.dispatchEvent(new CustomEvent('slopfilter-batch-scored'));
+  } catch {
+    // Test-only observability must never affect scoring.
+  }
+};
+
 const requestModelSignals = async (posts: readonly Post[]) => {
   if (posts.length === 0) return new Map<string, readonly SignalResult[]>();
   try {
@@ -287,10 +299,13 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
     await renderBatch(new Map(), null, true);
     const activityPromise = recordBatch(batch);
     void Promise.all([activityPromise, modelResultsPromise]).then(
-      ([activityByHandle, modelResults]) => {
-        if (activityByHandle.size > 0 || modelResults.size > 0) {
-          void renderBatch(modelResults, activityByHandle, false).catch(() => undefined);
+      async ([activityByHandle, modelResults]) => {
+        try {
+          await renderBatch(modelResults, activityByHandle, false);
+        } catch {
+          // A re-score failure is non-fatal; the first pass already rendered.
         }
+        notifyBatchScored();
       },
     );
   } catch {

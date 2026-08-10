@@ -17,6 +17,35 @@ export type HarnessPost = {
 export const uniqueRunId = (testInfo: TestInfo) =>
   `${testInfo.workerIndex}-${testInfo.testId}-${Date.now()}`;
 
+// Scoring is two-phase: pass 1 collapses from behavioural signals alone, pass 2 re-scores after the
+// activity cache and model resolve and may collapse additional posts. A test that starts clicking
+// before both passes land can race a collapse. The content script fires slopfilter-batch-scored only
+// after pass 2 has rendered every decision (collapses included), so the DOM is final once every tweet
+// carries data-slopfilter-model-processed.
+export const waitForScoringSettled = (page: Page): Promise<void> =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const check = () => {
+          const articles = Array.from(
+            document.querySelectorAll<HTMLElement>('article[data-testid="tweet"]'),
+          );
+          if (articles.length === 0) {
+            resolve();
+            return true;
+          }
+          const done = articles.every(
+            (element) =>
+              element.dataset.slopfilterProcessed === 'true' &&
+              element.dataset.slopfilterModelProcessed === 'true',
+          );
+          if (done) resolve();
+          return done;
+        };
+        if (!check()) window.addEventListener('slopfilter-batch-scored', check);
+      }),
+  );
+
 // SF-216: issue the page's own HomeTimeline request against the harness stub. The MAIN-world
 // interceptor observes it, so the relay reaches the content script without the test touching
 // extension internals.

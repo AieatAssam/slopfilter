@@ -1,7 +1,9 @@
 import { expect, test } from '../support/extension';
+import { waitForScoringSettled } from '../support/harness';
 
 test('shows the behavioural layer in the collapsed-post breakdown', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   await expect(page.getByTestId('slopfilter-placeholder').first()).toBeVisible();
 
   const panel = page.getByTestId('slopfilter-breakdown-panel');
@@ -23,6 +25,7 @@ test('shows the behavioural layer in the collapsed-post breakdown', async ({ pag
 
 test('collapses the breakdown again on a second activation', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   const toggle = page.getByRole('button', { name: 'Why was this hidden?' }).first();
   await expect(toggle).toBeVisible();
 

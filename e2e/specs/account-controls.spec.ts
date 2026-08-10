@@ -1,5 +1,5 @@
 import { expect, test } from '../support/extension';
-import { appendPost, resetHarness, uniqueRunId } from '../support/harness';
+import { appendPost, resetHarness, uniqueRunId, waitForScoringSettled } from '../support/harness';
 
 test.afterEach(async ({ page }) => {
   await resetHarness(page);
@@ -35,6 +35,7 @@ test('muting an account collapses its posts and trusting restores them', async (
 
 test('trust keeps high-frequency posts visible', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   await expect(page.getByTestId('slopfilter-placeholder').first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Account options' }).first().click();

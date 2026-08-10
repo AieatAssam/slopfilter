@@ -1,5 +1,5 @@
 import { expect, test } from '../support/extension';
-import { resetHarness } from '../support/harness';
+import { resetHarness, waitForScoringSettled } from '../support/harness';
 
 test.afterEach(async ({ page }) => {
   if (page.url().startsWith('http://localhost:5174')) await resetHarness(page);
@@ -7,6 +7,7 @@ test.afterEach(async ({ page }) => {
 
 test('wrong-call restores a hidden post and excludes it after reload', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   const placeholder = page.getByTestId('slopfilter-placeholder').first();
   await expect(placeholder).toBeVisible();
   const hiddenPostId = await placeholder.evaluate((element) =>
@@ -24,6 +25,7 @@ test('wrong-call restores a hidden post and excludes it after reload', async ({ 
 
 test('show anyway restores the post with injected feedback controls', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   const placeholder = page.getByTestId('slopfilter-placeholder').first();
   const postId = await placeholder.evaluate((element) =>
     element.previousElementSibling?.getAttribute('data-post-id'),

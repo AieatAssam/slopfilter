@@ -1,5 +1,5 @@
 import { expect, test } from '../support/extension';
-import { resetHarness } from '../support/harness';
+import { resetHarness, waitForScoringSettled } from '../support/harness';
 
 test.afterEach(async ({ page }) => {
   if (page.url().startsWith('http://localhost:5174')) await resetHarness(page);
@@ -32,6 +32,7 @@ test('a collapsed post opens the inspector whose totals match the placeholder re
   page,
 }) => {
   await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
   const placeholder = page.getByTestId('slopfilter-placeholder').first();
   await expect(placeholder).toBeVisible();
   const reason = await placeholder.locator('.slopfilter-reason').textContent();
