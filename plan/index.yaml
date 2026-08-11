@@ -206,6 +206,10 @@ done:
       across floor..ceiling times a recency ramp over a 180-day cutoff window), fed by the payload
       profile inputs, tunable in options, failing open to no-data and never crossing the hide
       threshold on its own
+  - id: SF-216
+    did: Read author account age, post count, and exact engagement from X's own HomeTimeline response
+      via a MAIN-world interceptor with a versioned payload contract, zero new requests, and fail-open
+      extraction
   - id: SF-215
     did: Derive the posting rate from a persistent cross-session per-author observation cache, with
       recent and lifetime rate as separate sub-signals and opportunistic profile capture
@@ -295,22 +299,6 @@ done:
   - id: SF-207
     did: Add the onboarding flow, the privacy page, and the store-listing copy
 open_tickets:
-  - id: SF-214
-    file: plan/tickets/SF-214.yaml
-    depends_on: [SF-213]
-    summary: Fix the scoring combination so a single strong layer can hide a post, per PRD section 4
-  - id: SF-215
-    file: plan/tickets/SF-215.yaml
-    depends_on: [SF-213]
-    summary: Derive posting rate from a persistent cross-session author observation cache instead of one viewport
-  - id: SF-216
-    file: plan/tickets/SF-216.yaml
-    depends_on: [SF-215]
-    summary: "Read author account age, post count, and exact engagement from X's own HomeTimeline response (payload verified 2026-08-08, 35 of 35 authors)"
-  - id: SF-217
-    file: plan/tickets/SF-217.yaml
-    depends_on: [SF-216]
-    summary: Score recently created accounts that post at high volume as a graded behavioural sub-signal
   - id: SF-219
     file: plan/tickets/SF-219.yaml
     depends_on: [SF-214]
