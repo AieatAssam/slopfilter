@@ -201,6 +201,11 @@ decisions:
       the provisional constants added by SF-219 through SF-223. Deliberately left provisional
       2026-08-09: review once SF-221 has measured them rather than guessing again."
 done:
+  - id: SF-217
+    did: Score recently created high-volume accounts as a graded cohort sub-signal (volume ramp
+      across floor..ceiling times a recency ramp over a 180-day cutoff window), fed by the payload
+      profile inputs, tunable in options, failing open to no-data and never crossing the hide
+      threshold on its own
   - id: SF-215
     did: Derive the posting rate from a persistent cross-session per-author observation cache, with
       recent and lifetime rate as separate sub-signals and opportunistic profile capture
