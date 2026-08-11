@@ -78,6 +78,9 @@ describe('settings', () => {
     const settings = {
       hideThreshold: 0.8,
       hideAds: false,
+      cohortCutoff: '2023-06-15',
+      cohortVolumeFloor: 15,
+      cohortVolumeCeiling: 90,
       weights: { ...DEFAULT_SETTINGS.weights, behavioural: 0.4 },
       enabledLayers: { ...DEFAULT_SETTINGS.enabledLayers, taste: false },
     };
@@ -85,6 +88,31 @@ describe('settings', () => {
     await saveSettings(settings);
 
     await expect(loadSettings()).resolves.toEqual(settings);
+  });
+
+  test('clamps a cohort cutoff earlier than the documented minimum', async () => {
+    stored = { cohortCutoff: '2010-01-01' };
+
+    expect((await loadSettings()).cohortCutoff).toBe('2015-01-01');
+  });
+
+  test('repairs unparseable cohort values to the documented defaults', async () => {
+    stored = { cohortCutoff: 'not a date', cohortVolumeFloor: -3, cohortVolumeCeiling: 'many' };
+
+    const settings = await loadSettings();
+
+    expect(settings.cohortCutoff).toBe(DEFAULT_SETTINGS.cohortCutoff);
+    expect(settings.cohortVolumeFloor).toBe(DEFAULT_SETTINGS.cohortVolumeFloor);
+    expect(settings.cohortVolumeCeiling).toBe(DEFAULT_SETTINGS.cohortVolumeCeiling);
+  });
+
+  test('raises a stored ceiling below the floor up to the floor', async () => {
+    stored = { cohortVolumeFloor: 30, cohortVolumeCeiling: 10 };
+
+    const settings = await loadSettings();
+
+    expect(settings.cohortVolumeFloor).toBe(30);
+    expect(settings.cohortVolumeCeiling).toBe(30);
   });
 
   test('derives the default threshold from the scoring config', () => {

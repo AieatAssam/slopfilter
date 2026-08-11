@@ -1,17 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import type { Post } from '@/core/post';
+import { DEFAULT_SCORING_CONFIG, DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
 import {
   type AuthorActivity,
   deriveAuthorActivityFromCache,
   MIN_OBSERVATION_SPAN_HOURS,
+  scoreAccountCohort,
   scoreBehavioural,
 } from '@/core/signals/behavioural';
+import { COHORT_ROWS } from '../../../fixtures/posts/cohort';
 
-const thresholds = {
-  postsPerDayThreshold: 40,
-  engagementRatioThreshold: 0.01,
-  meaningfulEngagementFloor: 50,
-};
+const thresholds = DEFAULT_THRESHOLDS;
 
 const post = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',
@@ -37,6 +36,8 @@ const activity = (overrides: Partial<AuthorActivity> = {}): AuthorActivity => ({
   distinctPostCount: 0,
   lifetimePostsPerDay: null,
   accountAgeDays: null,
+  accountCreatedAt: null,
+  profilePostCount: null,
   ...overrides,
 });
 
@@ -210,5 +211,70 @@ describe('scoreBehavioural sub-signals', () => {
 
     expect(result.score).toBeGreaterThanOrEqual(0);
     expect(result.score).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('scoreAccountCohort calibration', () => {
+  test.each(COHORT_ROWS)('$id reaches its documented outcome', (row) => {
+    const result = scoreAccountCohort(row.stats, thresholds.cohort);
+
+    if (row.outcome === 'no-data') {
+      expect(result.score).toBe(0);
+      expect(result.reason).toBeNull();
+      expect(result.detail?.status).toBe('no-data');
+      return;
+    }
+    if (row.outcome === 'no-fire') {
+      expect(result.score).toBe(0);
+      expect(result.reason).toBeNull();
+      expect(result.detail?.status).toBe('below-cutoff');
+      return;
+    }
+    if (row.outcome === 'strong') {
+      expect(result.score).toBeGreaterThanOrEqual(0.2);
+      expect(result.reason).not.toBeNull();
+      return;
+    }
+    expect(result.score).toBeGreaterThan(0);
+    expect(result.score).toBeLessThan(0.2);
+    expect(result.reason).not.toBeNull();
+  });
+
+  test('records which rate was chosen in the detail', () => {
+    for (const row of COHORT_ROWS) {
+      if (row.outcome === 'no-data') continue;
+      const result = scoreAccountCohort(row.stats, thresholds.cohort);
+      expect(result.detail?.values?.rateSource, row.id).toBe(row.chosenSource);
+    }
+  });
+
+  test('ramps symmetrically across the cutoff so a day either side differs only marginally', () => {
+    const before = COHORT_ROWS.find((row) => row.id === 'cutoff-ramp-one-day-before');
+    const after = COHORT_ROWS.find((row) => row.id === 'cutoff-ramp-one-day-after');
+    if (!before || !after) throw new Error('ramp calibration rows missing');
+
+    const beforeScore = scoreAccountCohort(before.stats, thresholds.cohort).score;
+    const afterScore = scoreAccountCohort(after.stats, thresholds.cohort).score;
+
+    expect(Math.abs(beforeScore - afterScore)).toBeLessThanOrEqual(0.01);
+    expect(beforeScore).toBeGreaterThan(0);
+    expect(afterScore).toBeGreaterThan(0);
+  });
+
+  test('a single maximal cohort fire does not on its own cross the hide threshold', () => {
+    const maximal = scoreAccountCohort(
+      activity({
+        accountAgeDays: 200,
+        accountCreatedAt: thresholds.cohort.cutoff + 500 * 86_400_000,
+        profilePostCount: 1_000_000,
+        lifetimePostsPerDay: 200,
+      }),
+      thresholds.cohort,
+    );
+
+    expect(maximal.score).toBe(thresholds.cohort.weight);
+    expect(maximal.score * DEFAULT_SCORING_CONFIG.weights.behavioural).toBeLessThan(
+      DEFAULT_SCORING_CONFIG.hideThreshold,
+    );
   });
 });

@@ -174,6 +174,38 @@ label {
 .setting-control-range {
   min-width: 330px;
 }
+.cohort-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+.cohort-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.cohort-field {
+  display: grid;
+  gap: 5px;
+  color: #5c7280;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cohort-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #bfd0d9;
+  border-radius: 8px;
+  color: #142936;
+  background: #fff;
+  font: inherit;
+}
+.cohort-field input:focus {
+  outline: 3px solid rgb(29 155 240 / 30%);
+  outline-offset: 2px;
+}
 output {
   min-width: 42px;
   color: #1176b0;
@@ -333,6 +365,9 @@ input[type="file"]:focus-visible {
   }
   .setting-control-range {
     min-width: 0;
+  }
+  .cohort-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   input[type="range"] {
     flex: 1;

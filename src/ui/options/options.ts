@@ -21,6 +21,9 @@ const render = (settings: Settings) => {
   const output = document.getElementById('hide-threshold-value');
   if (output) output.textContent = settings.hideThreshold.toFixed(2);
   input('hide-ads').checked = settings.hideAds;
+  input('cohort-cutoff').value = settings.cohortCutoff;
+  input('cohort-volume-floor').value = String(settings.cohortVolumeFloor);
+  input('cohort-volume-ceiling').value = String(settings.cohortVolumeCeiling);
 
   for (const layerId of LAYER_IDS) {
     input(`weight-${layerId}`).value = String(settings.weights[layerId]);
@@ -31,6 +34,9 @@ const render = (settings: Settings) => {
 const read = (): Settings => ({
   hideThreshold: Number(input('hide-threshold').value),
   hideAds: input('hide-ads').checked,
+  cohortCutoff: input('cohort-cutoff').value,
+  cohortVolumeFloor: Number(input('cohort-volume-floor').value),
+  cohortVolumeCeiling: Number(input('cohort-volume-ceiling').value),
   weights: Object.fromEntries(
     LAYER_IDS.map((layerId) => [layerId, Number(input(`weight-${layerId}`).value)]),
   ) as Settings['weights'],
@@ -59,6 +65,12 @@ const resetControl = (id: string) => {
     input(id).value = String(DEFAULT_SETTINGS.hideThreshold);
   } else if (id === 'hide-ads') {
     input(id).checked = DEFAULT_SETTINGS.hideAds;
+  } else if (id === 'cohort-cutoff') {
+    input(id).value = DEFAULT_SETTINGS.cohortCutoff;
+  } else if (id === 'cohort-volume-floor') {
+    input(id).value = String(DEFAULT_SETTINGS.cohortVolumeFloor);
+  } else if (id === 'cohort-volume-ceiling') {
+    input(id).value = String(DEFAULT_SETTINGS.cohortVolumeCeiling);
   } else if (id.startsWith('weight-')) {
     const layerId = id.slice('weight-'.length) as keyof Settings['weights'];
     input(id).value = String(DEFAULT_SETTINGS.weights[layerId]);

@@ -55,6 +55,66 @@ test('resets an individual layer setting to its documented default', async ({
   await options.close();
 });
 
+test('cohort settings persist a custom cutoff and volume endpoints across reload', async ({
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  const cutoff = options.getByLabel('Cutoff date');
+  const floor = options.getByLabel('Floor');
+  const ceiling = options.getByLabel('Ceiling');
+
+  await cutoff.fill('2020-05-01');
+  await floor.fill('25');
+  await ceiling.fill('120');
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+
+  await options.reload();
+
+  await expect(cutoff).toHaveValue('2020-05-01');
+  await expect(floor).toHaveValue('25');
+  await expect(ceiling).toHaveValue('120');
+  await options.close();
+});
+
+test('cohort resets restore the documented defaults', async ({ context, extensionId }) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  await options.getByLabel('Cutoff date').fill('2018-08-08');
+  await options.getByLabel('Floor').fill('7');
+  await options.getByLabel('Ceiling').fill('60');
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+
+  await options.getByRole('button', { name: 'Reset cutoff' }).click();
+  await options.getByRole('button', { name: 'Reset floor' }).click();
+  await options.getByRole('button', { name: 'Reset ceiling' }).click();
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+
+  await expect(options.getByLabel('Cutoff date')).toHaveValue('2022-11-30');
+  await expect(options.getByLabel('Floor')).toHaveValue('20');
+  await expect(options.getByLabel('Ceiling')).toHaveValue('100');
+  await options.close();
+});
+
+test('raises a stored cohort ceiling that sits below its floor', async ({
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+  await options.evaluate(() =>
+    chrome.storage.local.set({ cohortVolumeFloor: 30, cohortVolumeCeiling: 10 }),
+  );
+  await options.reload();
+
+  await expect(options.getByLabel('Floor')).toHaveValue('30');
+  await expect(options.getByLabel('Ceiling')).toHaveValue('30');
+  await options.close();
+});
+
 test('advertisement hiding is on by default and can be switched off', async ({
   page,
   context,

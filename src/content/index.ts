@@ -7,7 +7,7 @@ import { createTimelineObserver, type TimelineObserverHandle } from '@/content/o
 import type { Post, PostEngagement } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoreBreakdown, SignalResult } from '@/core/scoring/types';
-import { DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
+import { behaviouralThresholds } from '@/core/scoring/weights';
 import {
   deriveAuthorActivity,
   deriveAuthorActivityFromCache,
@@ -234,7 +234,7 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
         const activity =
           activityByHandle?.get(post.author.handle) ??
           deriveAuthorActivity([...seenPosts.values()], post.author.handle);
-        const signal = scoreBehavioural(post, activity, DEFAULT_THRESHOLDS);
+        const signal = scoreBehavioural(post, activity, behaviouralThresholds(settings));
         const signals = [signal, ...(modelResults.get(post.id) ?? [])].filter(
           (result) => settings.enabledLayers[result.layerId],
         );

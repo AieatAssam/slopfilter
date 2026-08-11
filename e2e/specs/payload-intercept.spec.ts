@@ -70,6 +70,28 @@ test('intercepted author account age and post count reach the author record and 
   await expect(inspector).toContainText('day across the account lifetime');
 });
 
+test('payload account creation and post count feed the account-cohort sub-signal', async ({
+  page,
+}) => {
+  await page.goto(fixtureNowUrl());
+  await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
+
+  await fetchHomeTimeline(page);
+  await expect(page.locator('html')).toHaveAttribute('data-slopfilter-payload-seen', 'true');
+
+  await appendEphemeralPost(page, {
+    id: '1900000000000026741',
+    authorHandle: '@account01',
+    text: 'post scored with the account-cohort signal',
+    postedAt: '2026-08-10T08:00:00.000Z',
+  });
+  await waitForScoringSettled(page);
+
+  const inspector = await openInspectorFor(page, '1900000000000026741');
+  await expect(inspector).toContainText('account created February 2025');
+  await expect(inspector).toContainText('posts 75 times per day');
+});
+
 test('exact payload engagement supersedes the compact-count DOM parse for the same post', async ({
   page,
 }) => {

@@ -17,12 +17,31 @@ export interface AuthorActivity {
   distinctPostCount: number;
   lifetimePostsPerDay: number | null;
   accountAgeDays: number | null;
+  // SF-217: the payload profile inputs that make the cohort sub-signal computable. Null means the
+  // payload did not carry them, and the cohort signal must fail open.
+  accountCreatedAt: number | null;
+  profilePostCount: number | null;
+}
+
+// SF-217: configures the graded account-cohort sub-signal. The cutoff is the account-creation date
+// that separates the cohort from older accounts; the ramp makes that boundary continuous, and the
+// volume floor/ceiling shape how much a high posting rate contributes. weight caps the sub-signal so
+// a single maximal fire can never cross the hide threshold on its own.
+export interface CohortConfig {
+  cutoff: number;
+  rampDays: number;
+  volumeFloorPerDay: number;
+  volumeCeilingPerDay: number;
+  minAccountAgeDays: number;
+  minPostCount: number;
+  weight: number;
 }
 
 export interface BehaviouralThresholds {
   postsPerDayThreshold: number;
   engagementRatioThreshold: number;
   meaningfulEngagementFloor: number;
+  cohort: CohortConfig;
 }
 
 export interface AuthorActivityCacheInput {
@@ -86,6 +105,8 @@ const activityFromTimestamps = (
     distinctPostCount: timestamps.length,
     lifetimePostsPerDay,
     accountAgeDays,
+    accountCreatedAt: profile.joinDate,
+    profilePostCount: profile.postCount,
   };
 };
 
@@ -140,6 +161,8 @@ export function deriveAuthorActivityFromCache(
     distinctPostCount: timestamps.length,
     lifetimePostsPerDay,
     accountAgeDays,
+    accountCreatedAt: input.profileJoinDate,
+    profilePostCount: input.profilePostCount,
   };
 }
 
@@ -160,6 +183,92 @@ const engagementStrength = (post: Post): number =>
   (post.engagement.replies ?? 0) * 3;
 
 const clamped = (value: number): number => Math.max(0, Math.min(1, value));
+
+const round = (value: number, digits = 1): number => {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+};
+
+const round3 = (value: number): number => round(value, 3);
+
+// SF-217: a graded cohort-plus-volume sub-signal. A young account posting at industrial volume is the
+// shape most content-farm output takes; neither fact alone carries it. The score is a volume ramp
+// across the floor..ceiling range multiplied by a recency ramp across the cutoff window, so both the
+// guards and the boundary are continuous. Unknown inputs, an account younger than the age floor, or a
+// post count below the count floor all yield no-data: the signal fails open rather than guessing.
+// The chosen rate is the higher of the SF-215 recent rate and the SF-216 lifetime rate, and the detail
+// records which one was used.
+export function scoreAccountCohort(stats: AuthorActivity, config: CohortConfig): SignalResult {
+  const base = {
+    layerId: 'behavioural' as const,
+    ok: true,
+    score: 0,
+    reason: null,
+  };
+  const { accountAgeDays: ageDays, accountCreatedAt: createdAt, profilePostCount } = stats;
+  if (ageDays == null || createdAt == null || profilePostCount == null) {
+    return { ...base, detail: { status: 'no-data' } };
+  }
+  if (ageDays < config.minAccountAgeDays) {
+    return { ...base, detail: { status: 'no-data' } };
+  }
+  if (profilePostCount < config.minPostCount) {
+    return { ...base, detail: { status: 'no-data' } };
+  }
+
+  const candidates: { rate: number; source: 'recent' | 'lifetime' }[] = [];
+  if (stats.postsPerDay !== null && Number.isFinite(stats.postsPerDay)) {
+    candidates.push({ rate: stats.postsPerDay, source: 'recent' });
+  }
+  if (stats.lifetimePostsPerDay !== null && Number.isFinite(stats.lifetimePostsPerDay)) {
+    candidates.push({ rate: stats.lifetimePostsPerDay, source: 'lifetime' });
+  }
+  if (candidates.length === 0) {
+    return { ...base, detail: { status: 'no-data' } };
+  }
+  const chosen = candidates.reduce((best, candidate) =>
+    candidate.rate > best.rate ? candidate : best,
+  );
+
+  const span = config.volumeCeilingPerDay - config.volumeFloorPerDay;
+  const volume =
+    span > 0
+      ? clamped((chosen.rate - config.volumeFloorPerDay) / span)
+      : chosen.rate >= config.volumeFloorPerDay
+        ? 1
+        : 0;
+  const rampMs = config.rampDays * DAY_MS;
+  const pastCutoff = createdAt - config.cutoff;
+  const recency = pastCutoff >= 0 ? 1 : clamped(1 + pastCutoff / rampMs);
+
+  const values: Record<string, number | string | boolean | null> = {
+    accountAgeDays: round(ageDays),
+    accountCreatedAt: new Date(createdAt).toISOString(),
+    profilePostCount,
+    recentPostsPerDay: stats.postsPerDay,
+    lifetimePostsPerDay: stats.lifetimePostsPerDay,
+    chosenRate: round(chosen.rate),
+    rateSource: chosen.source,
+    volumeFactor: round3(volume),
+    recencyFactor: round3(recency),
+  };
+
+  if (volume <= 0) {
+    return { ...base, detail: { status: 'below-cutoff', values } };
+  }
+  const score = clamped(volume * recency) * config.weight;
+  const created = new Date(createdAt);
+  const month = created.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+  const year = created.getUTCFullYear();
+  const roundedRate = Math.round(chosen.rate);
+  return {
+    layerId: 'behavioural',
+    ok: true,
+    score,
+    reason: `account created ${month} ${year}, posts ${roundedRate} times per day`,
+    detail: { status: 'scored', values },
+  };
+}
 
 export function scoreBehavioural(
   post: Post,
@@ -216,6 +325,14 @@ export function scoreBehavioural(
     }
   }
 
+  // SF-217: the graded cohort-plus-volume sub-signal. Its weighted score is folded in like any other
+  // sub-signal, and its raw inputs ride in the layer values so the inspector can show why it fired.
+  const cohortResult = scoreAccountCohort(activity, thresholds.cohort);
+  if (cohortResult.score > 0 && cohortResult.reason) {
+    scores.push(cohortResult.score);
+    reasons.push(cohortResult.reason);
+  }
+
   const ratio = engagementRatio(post);
   const engagementThreshold = Math.max(0, thresholds.engagementRatioThreshold);
   const meaningfulEngagementFloor = Math.max(0, thresholds.meaningfulEngagementFloor);
@@ -239,6 +356,7 @@ export function scoreBehavioural(
     accountAgeDays: ageDays,
     engagementRatio: ratio,
     engagementStrength: engagementStrength(post),
+    ...(cohortResult.detail?.values ?? {}),
   };
   const score =
     scores.length === 0 ? 0 : clamped(scores.reduce((total, s) => total + s, 0) / scores.length);

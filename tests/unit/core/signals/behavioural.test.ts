@@ -1,17 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import type { Post } from '@/core/post';
+import { DEFAULT_THRESHOLDS } from '@/core/scoring/weights';
 import {
   type AuthorActivity,
-  type BehaviouralThresholds,
   deriveAuthorActivity,
   scoreBehavioural,
 } from '@/core/signals/behavioural';
 
-const thresholds: BehaviouralThresholds = {
-  postsPerDayThreshold: 40,
-  engagementRatioThreshold: 0.01,
-  meaningfulEngagementFloor: 50,
-};
+const thresholds = DEFAULT_THRESHOLDS;
 
 const post = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',
@@ -33,6 +29,8 @@ const activity = (overrides: Partial<AuthorActivity> = {}): AuthorActivity => ({
   distinctPostCount: 1,
   lifetimePostsPerDay: null,
   accountAgeDays: null,
+  accountCreatedAt: null,
+  profilePostCount: null,
   ...overrides,
 });
 
@@ -53,6 +51,8 @@ describe('deriveAuthorActivity', () => {
       distinctPostCount: 3,
       lifetimePostsPerDay: null,
       accountAgeDays: null,
+      accountCreatedAt: null,
+      profilePostCount: null,
     });
   });
 

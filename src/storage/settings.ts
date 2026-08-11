@@ -1,8 +1,12 @@
 import type { LayerId } from '@/core/scoring/types';
-import { DEFAULT_SCORING_CONFIG } from '@/core/scoring/weights';
+import { DEFAULT_COHORT_CONFIG, DEFAULT_SCORING_CONFIG } from '@/core/scoring/weights';
 
 export const THRESHOLD_MIN = 0;
 export const THRESHOLD_MAX = 1;
+
+// SF-217: account-creation cutoffs earlier than this are almost certainly a bad value, so the stored
+// cutoff is clamped to it instead of being trusted.
+export const COHORT_CUTOFF_MIN_ISO = '2015-01-01T00:00:00.000Z';
 
 export const LAYER_IDS: readonly LayerId[] = [
   'behavioural',
@@ -28,6 +32,11 @@ export interface Settings {
   hideAds: boolean;
   weights: Record<LayerId, number>;
   enabledLayers: Record<LayerId, boolean>;
+  // SF-217: the cohort sub-signal's user-tunable inputs. The cutoff is a calendar date describing
+  // when an account was created; the floor and ceiling are the posting-volume ramp endpoints.
+  cohortCutoff: string;
+  cohortVolumeFloor: number;
+  cohortVolumeCeiling: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -38,6 +47,9 @@ export const DEFAULT_SETTINGS: Settings = {
     LayerId,
     boolean
   >,
+  cohortCutoff: new Date(DEFAULT_COHORT_CONFIG.cutoff).toISOString().slice(0, 10),
+  cohortVolumeFloor: DEFAULT_COHORT_CONFIG.volumeFloorPerDay,
+  cohortVolumeCeiling: DEFAULT_COHORT_CONFIG.volumeCeilingPerDay,
 };
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -79,6 +91,35 @@ const readEnabledLayers = (value: unknown): Record<LayerId, boolean> => {
   ) as Record<LayerId, boolean>;
 };
 
+const readCohortCutoff = (value: unknown): string => {
+  if (typeof value !== 'string' || value.trim().length === 0) return DEFAULT_SETTINGS.cohortCutoff;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return DEFAULT_SETTINGS.cohortCutoff;
+  const min = Date.parse(COHORT_CUTOFF_MIN_ISO);
+  return new Date(Math.max(parsed, min)).toISOString().slice(0, 10);
+};
+
+const readNonNegativeNumber = (value: unknown, fallback: number): number =>
+  isFiniteNumber(value) && value >= 0 ? value : fallback;
+
+const readCohortVolumes = (
+  value: unknown,
+): Pick<Settings, 'cohortVolumeFloor' | 'cohortVolumeCeiling'> => {
+  const stored = typeof value === 'object' && value !== null ? value : {};
+  const floor = readNonNegativeNumber(
+    (stored as Record<string, unknown>).cohortVolumeFloor,
+    DEFAULT_SETTINGS.cohortVolumeFloor,
+  );
+  const ceiling = Math.max(
+    floor,
+    readNonNegativeNumber(
+      (stored as Record<string, unknown>).cohortVolumeCeiling,
+      DEFAULT_SETTINGS.cohortVolumeCeiling,
+    ),
+  );
+  return { cohortVolumeFloor: floor, cohortVolumeCeiling: ceiling };
+};
+
 export const repairSettings = (stored: unknown): Settings => {
   const value = typeof stored === 'object' && stored !== null ? stored : {};
   const record = value as Record<string, unknown>;
@@ -87,6 +128,8 @@ export const repairSettings = (stored: unknown): Settings => {
     hideAds: readHideAds(record.hideAds),
     weights: readWeights(migrateWeights(record.weights)),
     enabledLayers: readEnabledLayers(record.enabledLayers),
+    cohortCutoff: readCohortCutoff(record.cohortCutoff),
+    ...readCohortVolumes(record),
   };
 };
 

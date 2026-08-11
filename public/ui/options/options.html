@@ -44,6 +44,24 @@
           </div>
         </section>
 
+        <section class="setting-card cohort-card">
+          <div class="setting-copy">
+            <div class="setting-title-row">
+              <label for="cohort-cutoff">Account cohort cutoff</label>
+              <span class="info-tip" title="A young account posting at very high volume is a slop signal. The cutoff describes when an account was created, not what it posts.">i</span>
+            </div>
+            <p id="cohort-help">Adds a graded signal for accounts created after the cutoff that post at very high volume. The cutoff is the creation date that counts as “young”; the floor and ceiling are the posting-rate ramp endpoints. Default: <strong>2022-11-30</strong>, floor <strong>20</strong>, ceiling <strong>100</strong> posts per day.</p>
+          </div>
+          <div class="cohort-controls">
+            <label class="cohort-field" for="cohort-cutoff">Cutoff date<input id="cohort-cutoff" name="cohort-cutoff" type="date" aria-describedby="cohort-help" /></label>
+            <label class="cohort-field" for="cohort-volume-floor">Floor <input id="cohort-volume-floor" name="cohort-volume-floor" type="number" min="0" step="1" aria-describedby="cohort-help" /></label>
+            <label class="cohort-field" for="cohort-volume-ceiling">Ceiling <input id="cohort-volume-ceiling" name="cohort-volume-ceiling" type="number" min="0" step="1" aria-describedby="cohort-help" /></label>
+            <button class="reset-button" data-reset="cohort-cutoff" type="button">Reset cutoff</button>
+            <button class="reset-button" data-reset="cohort-volume-floor" type="button">Reset floor</button>
+            <button class="reset-button" data-reset="cohort-volume-ceiling" type="button">Reset ceiling</button>
+          </div>
+        </section>
+
         <fieldset class="layers-card">
           <legend>Signals</legend>
           <p class="section-intro">Each signal adds context. Turn one off if it is not useful to you; weights set its influence.</p>

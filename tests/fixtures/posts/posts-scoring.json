@@ -27,7 +27,9 @@
       "observedSpanHours": 1,
       "distinctPostCount": 2,
       "lifetimePostsPerDay": null,
-      "accountAgeDays": null
+      "accountAgeDays": null,
+      "accountCreatedAt": null,
+      "profilePostCount": null
     },
     "expectedScore": 0,
     "expectedHidden": false,
@@ -62,7 +64,9 @@
       "observedSpanHours": 0.9,
       "distinctPostCount": 4,
       "lifetimePostsPerDay": null,
-      "accountAgeDays": null
+      "accountAgeDays": null,
+      "accountCreatedAt": null,
+      "profilePostCount": null
     },
     "expectedScore": 0.6,
     "expectedHidden": true,
@@ -97,7 +101,9 @@
       "observedSpanHours": 1,
       "distinctPostCount": 2,
       "lifetimePostsPerDay": null,
-      "accountAgeDays": null
+      "accountAgeDays": null,
+      "accountCreatedAt": null,
+      "profilePostCount": null
     },
     "expectedScore": 0.6,
     "expectedHidden": true,
@@ -132,7 +138,9 @@
       "observedSpanHours": 0.9,
       "distinctPostCount": 4,
       "lifetimePostsPerDay": null,
-      "accountAgeDays": null
+      "accountAgeDays": null,
+      "accountCreatedAt": null,
+      "profilePostCount": null
     },
     "expectedScore": 0.6,
     "expectedHidden": true,
@@ -194,11 +202,87 @@
       "observedSpanHours": 1,
       "distinctPostCount": 2,
       "lifetimePostsPerDay": null,
-      "accountAgeDays": null
+      "accountAgeDays": null,
+      "accountCreatedAt": null,
+      "profilePostCount": null
     },
     "expectedScore": 0.36,
     "expectedHidden": false,
     "expectedReasonIds": ["engagement"],
     "derivation": "20 <= 40; 4/1000 = 0.004, so (0.01 - 0.004) / 0.01 = 0.6 signal, composite 0.6 * 0.6 = 0.36 which is below the 0.6 threshold, so the post stays visible."
+  },
+  {
+    "id": "cohort-young-early-visible",
+    "post": {
+      "id": "cohort-young-early-visible",
+      "permalink": null,
+      "text": "young account created before the cohort cutoff",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 1,
+        "reposts": 2,
+        "likes": 7,
+        "views": 1000
+      },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": {
+      "postsPerDay": null,
+      "observedPostCount": 2,
+      "observationWindowHours": 1,
+      "observedSpanHours": 1,
+      "distinctPostCount": 2,
+      "lifetimePostsPerDay": 40,
+      "accountAgeDays": 25,
+      "accountCreatedAt": 1652486400000,
+      "profilePostCount": 1000
+    },
+    "expectedScore": 0.21,
+    "expectedHidden": false,
+    "expectedReasonIds": [],
+    "derivation": "25-day account: lifetime 40/day does not exceed the 40 threshold, so only the SF-216 young-account signal fires at 0.35; the cohort ramp is killed because the account predates the cutoff by 200 days, so recency clamps to 0. Composite 0.35 * 0.6 = 0.21 stays visible."
+  },
+  {
+    "id": "cohort-old-moderate-visible",
+    "post": {
+      "id": "cohort-old-moderate-visible",
+      "permalink": null,
+      "text": "old account at a moderate volume",
+      "postedAt": "2026-08-05T10:00:00.000Z",
+      "author": {
+        "handle": "@account01",
+        "displayName": "Account 01",
+        "profileUrl": null
+      },
+      "engagement": {
+        "replies": 1,
+        "reposts": 2,
+        "likes": 7,
+        "views": 1000
+      },
+      "imageUrls": [],
+      "hasVideo": false
+    },
+    "authorActivity": {
+      "postsPerDay": null,
+      "observedPostCount": 2,
+      "observationWindowHours": 1,
+      "observedSpanHours": 1,
+      "distinctPostCount": 2,
+      "lifetimePostsPerDay": 13.7,
+      "accountAgeDays": 2638,
+      "accountCreatedAt": 1583366400000,
+      "profilePostCount": 36193
+    },
+    "expectedScore": 0,
+    "expectedHidden": false,
+    "expectedReasonIds": [],
+    "derivation": "2638-day account at 13.7/day: below the 20/day cohort floor so the volume ramp is 0 and below the 40/day frequency threshold, and the account is well before the cutoff so recency is 0. No sub-signal fires; composite 0."
   }
 ]
