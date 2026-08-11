@@ -17,6 +17,13 @@ export type HarnessPost = {
 export const uniqueRunId = (testInfo: TestInfo) =>
   `${testInfo.workerIndex}-${testInfo.testId}-${Date.now()}`;
 
+// payload_clock: fixture account ages are anchored to FIXTURE_NOW (see scripts/make-payload-fixture.mjs),
+// not the wall clock. A test exercising account-age-derived signals must load the harness with
+// ?sf-now=<FIXTURE_NOW> so the content script derives rates from the fixture clock, not a drifting now.
+export const FIXTURE_NOW_ISO = '2026-08-08T12:00:00.000Z';
+export const fixtureNowUrl = (path = '/'): string =>
+  `${path}${path.includes('?') ? '&' : '?'}sf-now=${encodeURIComponent(FIXTURE_NOW_ISO)}`;
+
 // Scoring is two-phase: pass 1 collapses from behavioural signals alone, pass 2 re-scores after the
 // activity cache and model resolve and may collapse additional posts. A test that starts clicking
 // before both passes land can race a collapse. The content script fires slopfilter-batch-scored only

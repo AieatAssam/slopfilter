@@ -16,6 +16,8 @@ const pendingSelfTestRequests: {
   sendResponse: (response: SelfTestState | null) => void;
 }[] = [];
 let offscreenCreation: Promise<void> | null = null;
+let offscreenReady: Promise<void> | null = null;
+let resolveOffscreenReady: (() => void) | null = null;
 
 const resolvePendingSelfTestRequests = () => {
   for (let index = pendingSelfTestRequests.length - 1; index >= 0; index -= 1) {
@@ -34,8 +36,19 @@ const ensureInferenceDocument = async (): Promise<void> => {
     contextTypes: ['OFFSCREEN_DOCUMENT'],
     documentUrls: [url],
   });
-  if (contexts.length > 0) return;
+  if (contexts.length > 0) {
+    // The document already exists. It either survived a service-worker restart (module ran long
+    // ago, listener live) or was created this session and is still announcing readiness.
+    if (offscreenReady) await offscreenReady;
+    return;
+  }
   if (!offscreenCreation) {
+    // createDocument resolves before the offscreen module has run, so its onMessage listener may
+    // not exist yet. Gate forwarding on the offscreen's own offscreen-ready announcement instead of
+    // assuming the document is reachable the instant it exists.
+    offscreenReady = new Promise<void>((resolve) => {
+      resolveOffscreenReady = resolve;
+    });
     offscreenCreation = chrome.offscreen
       .createDocument({
         url: 'offscreen/offscreen.html',
@@ -47,6 +60,7 @@ const ensureInferenceDocument = async (): Promise<void> => {
       });
   }
   await offscreenCreation;
+  await offscreenReady;
 };
 
 const forwardInferenceMessage = async (message: ExtensionMessage): Promise<unknown> => {
@@ -94,6 +108,11 @@ if (typeof chrome !== 'undefined') {
     void maybeOpenOnboarding().catch(() => undefined);
   });
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (isExtensionMessage(message) && message.type === 'offscreen-ready') {
+      resolveOffscreenReady?.();
+      resolveOffscreenReady = null;
+      return false;
+    }
     if (isExtensionMessage(message) && message.type === 'get-selftest-state') {
       const state = getSelfTestState(message.tabId);
       if (state) sendResponse(state);

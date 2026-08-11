@@ -11,6 +11,7 @@ export interface ModelStatus {
 
 export type ExtensionMessage =
   | { type: 'selftest-result'; ok: boolean; failedSelectorIds: readonly string[] }
+  | { type: 'offscreen-ready' }
   | { type: 'get-selftest-state'; tabId?: number }
   | {
       type: 'score-batch-request';
@@ -39,6 +40,7 @@ export type ExtensionMessage =
 
 const messageTypes = [
   'selftest-result',
+  'offscreen-ready',
   'get-selftest-state',
   'score-batch-request',
   'score-batch-response',

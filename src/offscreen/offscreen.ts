@@ -347,8 +347,16 @@ const handleRuntimeMessage = (
 };
 
 if (typeof chrome !== 'undefined') {
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isExtensionMessage(message)) return false;
+    // runtime.sendMessage broadcasts to every extension context, so the content script and the
+    // popup would reach this host directly and bypass the service worker's offscreen-ready gate.
+    // Accept only service-worker forwards; that single serialized path lets the worker apply
+    // simulateModelFailure before any model-status-request can start a real load.
+    if (sender.url && !sender.url.endsWith('background/service-worker.js')) return false;
     return handleRuntimeMessage(message, sendResponse);
   });
+  // The listener above is the offscreen's only inbound path. Announce readiness only after it is
+  // registered, so the service worker never forwards an inference request into a dead listener.
+  void chrome.runtime.sendMessage({ type: 'offscreen-ready' }).catch(() => undefined);
 }

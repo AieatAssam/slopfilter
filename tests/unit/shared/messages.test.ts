@@ -17,6 +17,8 @@ const variantName = (message: ExtensionMessage): string => {
   switch (message.type) {
     case 'selftest-result':
       return message.type;
+    case 'offscreen-ready':
+      return message.type;
     case 'get-selftest-state':
       return message.type;
     case 'score-batch-request':
@@ -54,6 +56,7 @@ describe('ExtensionMessage', () => {
   test('covers every variant exhaustively', () => {
     const messages: ExtensionMessage[] = [
       { type: 'selftest-result', ok: true, failedSelectorIds: [] },
+      { type: 'offscreen-ready' },
       { type: 'get-selftest-state' },
       { type: 'score-batch-request', requestId: 'request-1', posts: [post] },
       {

@@ -1,6 +1,6 @@
 import { expect, test } from '../support/extension';
 import type { HarnessPost } from '../support/harness';
-import { fetchHomeTimeline, waitForScoringSettled } from '../support/harness';
+import { fetchHomeTimeline, fixtureNowUrl, waitForScoringSettled } from '../support/harness';
 
 const appendEphemeralPost = (page: import('@playwright/test').Page, post: HarnessPost) =>
   page.evaluate((value) => window.__slopfilterHarness.appendPost(value, false), post);
@@ -42,7 +42,7 @@ const readAuthorRecord = (page: import('@playwright/test').Page, handle: string)
 test('intercepted author account age and post count reach the author record and feed the lifetime sub-signal', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto(fixtureNowUrl());
   await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
 
   await fetchHomeTimeline(page);

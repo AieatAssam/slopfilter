@@ -28,6 +28,19 @@ import { applyThemeTokens, observeTheme, themeForPlatform } from './themes';
 const seenPosts = new Map<string, Post>();
 const lastBreakdowns = new Map<string, ScoreBreakdown>();
 const payloadEngagement = new Map<string, PostEngagement>();
+
+// payload_clock: fixture account ages are anchored to FIXTURE_NOW, so any signal that consumes
+// account age must take `now` as an argument and tests must pass FIXTURE_NOW. A signal calling
+// Date.now() directly drifts as the wall clock moves past the fixture date and eventually flips the
+// derived rate across a threshold. In test builds the harness pins `now` via the sf-now URL param.
+const nowForAccountAge = (): number => {
+  if (__SLOPFILTER_TEST_BUILD__) {
+    const pinned = new URLSearchParams(location.search).get('sf-now');
+    const parsed = pinned ? Date.parse(pinned) : Number.NaN;
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return Date.now();
+};
 const SELF_TEST_TIMEOUT_MS = 3_000;
 let settings: Settings = DEFAULT_SETTINGS;
 let paused = false;
@@ -186,7 +199,7 @@ const recordBatch = async (
   }
 
   const profile = captureProfileStats();
-  const now = Date.now();
+  const now = nowForAccountAge();
   const result = new Map<string, ReturnType<typeof deriveAuthorActivityFromCache>>();
   for (const [handle, sightings] of sightingsByHandle) {
     const profileForHandle =
