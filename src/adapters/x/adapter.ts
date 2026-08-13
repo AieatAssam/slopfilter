@@ -57,6 +57,22 @@ export const xAdapter: PlatformAdapter = {
     return firstMatch(root, getEntry('timeline-container'));
   },
 
+  findPostContentColumn(element) {
+    const text = firstMatch(element, getEntry('post-text'));
+    if (!text) return null;
+    for (
+      let candidate = text.parentElement;
+      candidate && candidate !== element;
+      candidate = candidate.parentElement
+    ) {
+      const parent = candidate.parentElement;
+      if (parent && parent.children.length === 2 && candidate === parent.lastElementChild) {
+        return candidate instanceof HTMLElement ? candidate : null;
+      }
+    }
+    return null;
+  },
+
   findPostElements(container) {
     return allMatches(container, getEntry('post-article'));
   },

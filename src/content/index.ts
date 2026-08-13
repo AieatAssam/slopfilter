@@ -70,6 +70,7 @@ let selfTestObserver: MutationObserver | null = null;
 let selfTestTimer: number | null = null;
 let requestSequence = 0;
 let _themeDisconnect: (() => void) | null = null;
+let lastLocationHref = '';
 
 // SF-216: exact engagement from intercepted X payloads supersedes the compact-count DOM parse.
 // Payload numbers are plain integers; keep them keyed by post id so a post scored after the relay
@@ -422,11 +423,22 @@ const scoreBatch = async (
           : applyAccountOverride(post, breakdown, await getAccountState(post.author.handle));
         if (scoreGenerations.get(post.id) !== generations.get(post.id)) continue;
         const previous = lastBreakdowns.get(post.id);
-        const decisionChanged = !previous || previous.hidden !== overridden.hidden;
+        const isCollapsed = element.dataset.slopfilterCollapsed === 'true';
+        const hasFeedback = Boolean(
+          element.querySelector('[data-testid="slopfilter-anchor"]') ||
+            element.nextElementSibling?.querySelector('[data-testid="slopfilter-anchor"]'),
+        );
+        const decisionChanged =
+          !previous ||
+          previous.hidden !== overridden.hidden ||
+          overridden.hidden !== isCollapsed ||
+          (!overridden.hidden && !hasFeedback);
         lastBreakdowns.set(post.id, overridden);
         const theme = themeForPlatform(xAdapter.platform);
         const feedbackOptions = {
           enabledLayers: settings.enabledLayers,
+          findAnchorHost: (element: HTMLElement) =>
+            xAdapter.findPostContentColumn?.(element) ?? null,
           onAccountStateChanged: () => rescoreAuthors?.([post.author.handle]),
           getBreakdown: () =>
             lastBreakdowns.get(post.id) ?? {
@@ -588,13 +600,31 @@ const attachTimeline = () => {
   });
 };
 
+const refreshTimeline = () => {
+  if (paused) return;
+  lastLocationHref = location.href;
+  timelineObserver?.stop();
+  timelineObserver = null;
+  timelineContainer = null;
+  for (const element of document.querySelectorAll<HTMLElement>('[data-slopfilter-processed]')) {
+    delete element.dataset.slopfilterProcessed;
+    delete element.dataset.slopfilterModelProcessed;
+  }
+  attachTimeline();
+};
+
 const watchTimeline = () => {
   attachTimeline();
+  lastLocationHref = location.href;
   const root = document.documentElement;
   if (!root) return;
   pageObserver = new MutationObserver(() => {
     try {
       if (paused) return;
+      if (location.href !== lastLocationHref) {
+        refreshTimeline();
+        return;
+      }
       if (timelineObserver && timelineContainer?.isConnected) return;
       timelineObserver?.stop();
       timelineObserver = null;
@@ -605,6 +635,22 @@ const watchTimeline = () => {
     }
   });
   pageObserver.observe(root, { childList: true, subtree: true });
+
+  const announceNavigation = () => window.dispatchEvent(new Event('slopfilter-navigation'));
+  const rawPushState = history.pushState.bind(history);
+  const rawReplaceState = history.replaceState.bind(history);
+  history.pushState = ((...args: Parameters<History['pushState']>) => {
+    const result = rawPushState(...args);
+    announceNavigation();
+    return result;
+  }) as History['pushState'];
+  history.replaceState = ((...args: Parameters<History['replaceState']>) => {
+    const result = rawReplaceState(...args);
+    announceNavigation();
+    return result;
+  }) as History['replaceState'];
+  window.addEventListener('popstate', refreshTimeline);
+  window.addEventListener('slopfilter-navigation', refreshTimeline);
 };
 
 const start = async () => {

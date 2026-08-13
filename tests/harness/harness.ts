@@ -237,7 +237,10 @@ const insertAnchoredFeedback = (articleId: string) => {
     contributions: [],
     reasons: [],
   };
-  attachFeedbackControls(article, post, { breakdown });
+  attachFeedbackControls(article, post, {
+    breakdown,
+    findAnchorHost: (element) => xAdapter.findPostContentColumn?.(element) ?? null,
+  });
 };
 
 window.__slopfilterHarness = {

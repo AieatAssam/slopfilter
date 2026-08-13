@@ -17,6 +17,7 @@ export interface PlatformAdapter {
   selfTest(root: ParentNode): SelectorCheckResult;
   selfTestFeed(root: ParentNode): SelectorCheckResult;
   findTimelineContainer(root: ParentNode): Element | null;
+  findPostContentColumn?(element: Element): HTMLElement | null;
   findPostElements(container: ParentNode): readonly Element[];
   extractPost(element: Element): Post | null;
   readProfileStats?(root: ParentNode): ProfileStats | null;

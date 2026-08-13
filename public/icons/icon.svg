@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <title>SlopFilter</title>
+  <defs>
+    <linearGradient id="bg" x1="18" y1="12" x2="110" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="60" fill="url(#bg)"/>
+  <path fill="#fff" d="M26 32h76L75 65v25l-22 10V65L26 32Zm17 10 20 26v17l2-1V68l20-26H43Z"/>
+  <path fill="#a5f3fc" d="m96 20 3 9 9 3-9 3-3 9-3-9-9-3 9-3 3-9Z"/>
+</svg>

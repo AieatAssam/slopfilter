@@ -347,9 +347,9 @@ ui_rules:
     settings, not the OS, so prefers-color-scheme is never the theme source. X's accent is
     user-selectable, so no accent literal may appear in a rule."
   - "Type is always `font: inherit`. The extension declares no font-family."
-  - "Position is a function of the article's box, never of its content. Controls hang off the
-    extension's own zero-size .slopfilter-anchor as the article's first child, absolutely
-    positioned, consuming no layout space and never changing article height."
+  - "Position is a function of the article's box, never of its content. Controls are inserted in
+    the post's content column as an in-flow .slopfilter-anchor, consuming only that column's
+    layout space and never creating a sibling column that shrinks the post."
   - "The only inline style the extension writes to an X-owned node is the collapse display toggle.
     Everything else is a rule in public/content/styles.css."
   - "Every CSS rule is scoped under a .slopfilter- class. No bare element selectors, no X class

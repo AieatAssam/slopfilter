@@ -16,41 +16,6 @@ const openGolden = async (context: BrowserContext) => {
   return page;
 };
 
-test('the cluster offset from each articles top-right corner is identical within 2px', async ({
-  context,
-}) => {
-  const page = await openGolden(context);
-  const ids = await goldenVariantIds(page);
-  await restoreVariants(page, ids);
-  for (const id of ids) await attachFeedback(page, id);
-
-  const joins = await page.evaluate((targets) => {
-    return targets.map((id) => {
-      const article = document.getElementById(id);
-      if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${id}`);
-      const cluster = article.querySelector('[data-testid="slopfilter-feedback"]');
-      if (!(cluster instanceof HTMLElement)) throw new Error(`cluster missing: ${id}`);
-      const articleRect = article.getBoundingClientRect();
-      const clusterRect = cluster.getBoundingClientRect();
-      const top = clusterRect.top - articleRect.top;
-      const right = articleRect.right - clusterRect.right;
-      const contained =
-        clusterRect.top >= articleRect.top &&
-        clusterRect.left >= articleRect.left &&
-        clusterRect.bottom <= articleRect.bottom &&
-        clusterRect.right <= articleRect.right;
-      return { top, right, contained };
-    });
-  }, ids);
-
-  const reference = joins[0];
-  if (!reference) throw new Error('no first join');
-  for (const join of joins.slice(1)) {
-    expect(Math.abs(join.top - reference.top)).toBeLessThanOrEqual(2);
-    expect(Math.abs(join.right - reference.right)).toBeLessThanOrEqual(2);
-  }
-});
-
 test('each cluster box is fully contained by its own article box', async ({ context }) => {
   const page = await openGolden(context);
   const ids = await goldenVariantIds(page);
@@ -78,20 +43,60 @@ test('each cluster box is fully contained by its own article box', async ({ cont
   for (const group of groups) expect(group.contained).toBe(true);
 });
 
-test('injection leaves each article offsetHeight unchanged', async ({ context }) => {
+test('injection stays in the post content column and in flow', async ({ context }) => {
   const page = await openGolden(context);
   const ids = await goldenVariantIds(page);
   await restoreVariants(page, ids);
 
-  const before = await page.evaluate((targets) => {
-    return targets.map((id) => document.getElementById(id)?.offsetHeight ?? -1);
-  }, ids);
   for (const id of ids) await attachFeedback(page, id);
-  const after = await page.evaluate((targets) => {
-    return targets.map((id) => document.getElementById(id)?.offsetHeight ?? -1);
+  const positions = await page.evaluate((targets) => {
+    return targets.map((id) => {
+      const article = document.getElementById(id);
+      if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${id}`);
+      const anchor = article.querySelector<HTMLElement>('[data-testid="slopfilter-anchor"]');
+      const cluster = article.querySelector<HTMLElement>('[data-testid="slopfilter-feedback"]');
+      const text = article.querySelector('[data-testid="tweetText"]');
+      if (!anchor || !cluster || !text) throw new Error(`controls missing: ${id}`);
+      return {
+        anchor: getComputedStyle(anchor).position,
+        cluster: getComputedStyle(cluster).position,
+        sameColumn: anchor.parentElement?.contains(text) ?? false,
+        articleDirectChild: anchor.parentElement === article,
+      };
+    });
   }, ids);
 
-  expect(after).toEqual(before);
+  for (const position of positions) {
+    expect(position.anchor).toBe('relative');
+    expect(position.cluster).toBe('static');
+    expect(position.sameColumn).toBe(true);
+    expect(position.articleDirectChild).toBe(false);
+  }
+});
+
+test('clicking a control does not activate the underlying post', async ({ context }) => {
+  const page = await openGolden(context);
+  const id = (await goldenVariantIds(page))[0];
+  if (!id) throw new Error('no golden article');
+  await restoreArticle(page, id);
+  await attachFeedback(page, id);
+
+  const article = page.locator(`[id="${id}"]`);
+  await article.getByRole('button', { name: 'Why this score' }).click();
+  await expect(page.getByTestId('slopfilter-inspector')).toBeVisible();
+  await expect(page).toHaveURL('http://localhost:5174/');
+});
+
+test('controls return after navigating back to the feed', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto('/');
+  await mountGolden(page);
+  await expect(page.getByTestId('slopfilter-feedback').first()).toBeVisible();
+  await page.evaluate(() => history.pushState({}, '', '/account01/status/123'));
+  await page.evaluate(() => history.back());
+  await expect(page).toHaveURL('http://localhost:5174/');
+  await mountGolden(page);
+  await expect(page.getByTestId('slopfilter-feedback').first()).toBeVisible();
 });
 
 test('the cluster never overlaps the native caret control', async ({ context }) => {

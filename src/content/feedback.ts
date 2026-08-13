@@ -10,6 +10,7 @@ import { openInspector } from './inspector';
 export interface FeedbackOptions {
   breakdown: ScoreBreakdown;
   theme?: ContentTheme;
+  findAnchorHost?: (element: HTMLElement) => HTMLElement | null;
   embedText?: (text: string) => Promise<Float32Array | null>;
   onWrongCall?: () => void;
   enabledLayers?: Partial<Record<LayerId, boolean>>;
@@ -62,12 +63,15 @@ export const attachFeedbackControls = (
   post: Post,
   options: FeedbackOptions,
 ): void => {
+  const host = options.findAnchorHost?.(element) ?? element;
   let anchor = element.querySelector<HTMLDivElement>('[data-testid="slopfilter-anchor"]');
   if (!anchor) {
     anchor = document.createElement('div');
     anchor.className = 'slopfilter-anchor';
     anchor.dataset.testid = 'slopfilter-anchor';
-    element.prepend(anchor);
+    if (host === element) host.prepend(anchor);
+    else if (host.firstElementChild) host.firstElementChild.after(anchor);
+    else host.append(anchor);
   }
   if (anchor.querySelector('[data-testid="slopfilter-feedback"]')) return;
   const controls = document.createElement('div');

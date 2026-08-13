@@ -25,6 +25,16 @@ describe('x adapter', () => {
     expect(xAdapter.findPostElements(container)).toHaveLength(expectedPosts.length);
   });
 
+  test('finds the post content column for inline controls', () => {
+    const container = xAdapter.findTimelineContainer(loadBaseline());
+    const article = container ? xAdapter.findPostElements(container)[0] : null;
+    const column = article ? xAdapter.findPostContentColumn?.(article) : null;
+
+    expect(column).not.toBeNull();
+    expect(column?.querySelector('[data-testid="tweetText"]')).not.toBeNull();
+    expect(column?.parentElement?.children.length).toBe(2);
+  });
+
   test('every extracted post satisfies isPost', () => {
     const container = xAdapter.findTimelineContainer(loadBaseline());
     if (!container) throw new Error('timeline container missing');
