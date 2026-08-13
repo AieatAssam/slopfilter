@@ -60,6 +60,20 @@ export const xAdapter: PlatformAdapter = {
   findPostContentColumn(element) {
     const text = firstMatch(element, getEntry('post-text'));
     if (!text) return null;
+    const author = firstMatch(element, getEntry('author-handle'))?.closest(
+      '[data-testid="User-Name"], [data-testid="UserName"]',
+    );
+    if (author) {
+      for (
+        let candidate = text.parentElement;
+        candidate && candidate !== element;
+        candidate = candidate.parentElement
+      ) {
+        if (candidate.contains(author)) {
+          return candidate instanceof HTMLElement ? candidate : null;
+        }
+      }
+    }
     for (
       let candidate = text.parentElement;
       candidate && candidate !== element;

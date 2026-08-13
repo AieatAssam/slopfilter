@@ -49,7 +49,7 @@ test('the not-interested control is keyboard reachable', async ({ page }) => {
   await expect(post.getByTestId('slopfilter-feedback')).toHaveClass(/slopfilter-theme-x/);
   await expect(post.getByRole('button', { name: 'Not interested' })).toHaveCSS(
     'border-radius',
-    '999px',
+    '10px',
   );
   await post.getByRole('button', { name: 'Not interested' }).focus();
   expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('Not interested');

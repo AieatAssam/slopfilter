@@ -35,6 +35,25 @@ describe('x adapter', () => {
     expect(column?.parentElement?.children.length).toBe(2);
   });
 
+  test('uses the author and text common column on detail layouts', () => {
+    document.body.innerHTML = `
+      <article data-testid="tweet">
+        <div class="detail-layout">
+          <div data-testid="sidebar"></div>
+          <div data-testid="content-column">
+            <div data-testid="User-Name"><div dir="ltr">Account</div><div dir="ltr">@account</div></div>
+            <div data-testid="tweetText">A detail post.</div>
+          </div>
+          <div data-testid="actions"></div>
+        </div>
+      </article>
+    `;
+    const article = document.querySelector('article');
+    const column = article ? xAdapter.findPostContentColumn?.(article) : null;
+
+    expect(column?.getAttribute('data-testid')).toBe('content-column');
+  });
+
   test('every extracted post satisfies isPost', () => {
     const container = xAdapter.findTimelineContainer(loadBaseline());
     if (!container) throw new Error('timeline container missing');

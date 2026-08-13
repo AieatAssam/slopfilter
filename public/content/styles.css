@@ -37,23 +37,18 @@
 
 .slopfilter-feedback {
   align-items: center;
-  background: color-mix(
-    in srgb,
-    var(--slopfilter-surface, rgb(255 255 255)) 92%,
-    var(--slopfilter-text-muted, currentColor)
-  );
-  border: 1px solid var(--slopfilter-border, var(--slopfilter-text-muted, currentColor));
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+  background: color-mix(in srgb, var(--slopfilter-accent) 8%, var(--slopfilter-surface));
+  border: 1px solid var(--slopfilter-accent);
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgb(15 20 25 / 14%);
   display: flex;
   font: inherit;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 6px;
   margin-inline-start: auto;
   max-width: 100%;
-  opacity: 1;
+  padding: 4px;
   pointer-events: auto;
-  position: static;
 }
 
 .slopfilter-anchor {
@@ -88,15 +83,24 @@
 
 .slopfilter-feedback button {
   appearance: none;
-  background: transparent;
-  border-radius: 999px;
-  color: var(--slopfilter-text-muted, currentColor);
+  background: var(--slopfilter-surface);
+  border-color: var(--slopfilter-accent);
+  border-radius: 10px;
+  color: var(--slopfilter-text, currentColor);
   cursor: pointer;
   font: inherit;
   font-size: 13px;
+  font-weight: 600;
   line-height: 16px;
   min-height: 40px;
   padding: 0.25rem 0.625rem;
+}
+
+.slopfilter-feedback > button:first-child {
+  background: var(--slopfilter-accent);
+  border-color: var(--slopfilter-accent);
+  color: var(--slopfilter-surface);
+  font-weight: 700;
 }
 
 .slopfilter-feedback button:disabled {
@@ -106,7 +110,7 @@
 }
 
 .slopfilter-feedback button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--slopfilter-text-muted, currentColor) 10%, transparent);
+  background: color-mix(in srgb, var(--slopfilter-accent) 16%, var(--slopfilter-surface));
 }
 
 .slopfilter-feedback button:focus-visible {

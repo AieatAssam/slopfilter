@@ -74,6 +74,39 @@ test('injection stays in the post content column and in flow', async ({ context 
   }
 });
 
+test('detail-page injection stays inside the content column', async ({ context }) => {
+  const page = await openGolden(context);
+  await page.evaluate(() => {
+    const article = document.createElement('article');
+    article.id = 'detail-layout-post';
+    article.dataset.testid = 'tweet';
+    article.innerHTML = `
+      <div data-testid="detail-sidebar"></div>
+      <div data-testid="detail-content">
+        <div data-testid="User-Name"><div dir="ltr">Account</div><div dir="ltr"><a href="/account/status/detail-layout-post">@account</a></div></div>
+        <div data-testid="tweetText">A post opened on its own page.</div>
+      </div>
+      <div data-testid="detail-actions"></div>
+      <time datetime="2026-08-12T20:00:00.000Z"></time>
+    `;
+    document.body.append(article);
+  });
+  await attachFeedback(page, 'detail-layout-post');
+
+  const layout = await page.locator('#detail-layout-post').evaluate((article) => {
+    const anchor = article.querySelector<HTMLElement>('[data-testid="slopfilter-anchor"]');
+    const content = article.querySelector<HTMLElement>('[data-testid="detail-content"]');
+    if (!anchor || !content) throw new Error('detail controls missing');
+    return {
+      sameColumn: anchor.parentElement === content,
+      directChild: anchor.parentElement === article,
+    };
+  });
+
+  expect(layout.sameColumn).toBe(true);
+  expect(layout.directChild).toBe(false);
+});
+
 test('clicking a control does not activate the underlying post', async ({ context }) => {
   const page = await openGolden(context);
   const id = (await goldenVariantIds(page))[0];
