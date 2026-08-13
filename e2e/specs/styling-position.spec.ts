@@ -78,30 +78,20 @@ test('each cluster box is fully contained by its own article box', async ({ cont
   for (const group of groups) expect(group.contained).toBe(true);
 });
 
-test('injection uses an in-flow row for the controls', async ({ context }) => {
+test('injection leaves each article offsetHeight unchanged', async ({ context }) => {
   const page = await openGolden(context);
   const ids = await goldenVariantIds(page);
   await restoreVariants(page, ids);
 
+  const before = await page.evaluate((targets) => {
+    return targets.map((id) => document.getElementById(id)?.offsetHeight ?? -1);
+  }, ids);
   for (const id of ids) await attachFeedback(page, id);
-  const positions = await page.evaluate(
-    (targets) =>
-      targets.map((id) => {
-        const article = document.getElementById(id);
-        const anchor = article?.querySelector<HTMLElement>('[data-testid="slopfilter-anchor"]');
-        const cluster = article?.querySelector<HTMLElement>('[data-testid="slopfilter-feedback"]');
-        return {
-          anchor: anchor ? getComputedStyle(anchor).position : '',
-          cluster: cluster ? getComputedStyle(cluster).position : '',
-        };
-      }),
-    ids,
-  );
+  const after = await page.evaluate((targets) => {
+    return targets.map((id) => document.getElementById(id)?.offsetHeight ?? -1);
+  }, ids);
 
-  for (const position of positions) {
-    expect(position.anchor).toBe('static');
-    expect(position.cluster).toBe('static');
-  }
+  expect(after).toEqual(before);
 });
 
 test('the cluster never overlaps the native caret control', async ({ context }) => {
