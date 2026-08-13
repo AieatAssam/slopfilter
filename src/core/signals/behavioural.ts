@@ -358,8 +358,7 @@ export function scoreBehavioural(
     engagementStrength: engagementStrength(post),
     ...(cohortResult.detail?.values ?? {}),
   };
-  const score =
-    scores.length === 0 ? 0 : clamped(scores.reduce((total, s) => total + s, 0) / scores.length);
+  const score = scores.length === 0 ? 0 : clamped(Math.max(...scores));
   return {
     layerId: 'behavioural',
     ok: true,

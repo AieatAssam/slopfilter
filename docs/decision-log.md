@@ -7,7 +7,7 @@ defaults that still need owner confirmation.
 
 - HD-001: keep **SlopFilter** as the product and extension name.
 - HD-002: use the **MIT** licence, copyright holder **Aieat Assam**. Confirmed 2026-08-09; `LICENSE` already reads this and needs no change.
-- HD-004: estimate posting rate from **consecutive timestamps already visible in the timeline**. Do not fetch author profiles or use an X API key. Re-opened 2026-08-08 because the in-viewport derivation almost never has two posts by one author; **closed 2026-08-09** — SF-215 (cross-session sightings cache) plus SF-216 (read X's own already-fetched HomeTimeline response) is the answer, and neither adds a request. Authenticated profile or API fetches stay rejected.
+- HD-004: estimate posting rate from **consecutive timestamps already visible in the timeline**. Do not fetch author profiles or use an X API key. Re-opened 2026-08-08 because the in-viewport derivation almost never has two posts by one author; **closed 2026-08-09** — SF-215 (cross-session sightings cache) plus SF-216 (read X's own already-fetched HomeTimeline/detail responses) is the answer, and neither adds a request. Authenticated profile or API fetches stay rejected.
 - HD-003 (2026-08-09): the drift monitor files issues against the **main repository**, `AieatAssam/slopfilter`. Because it is public, SF-224 sanitises the captured DOM on the runner before it reaches an artifact or an issue body, reusing `scripts/sanitise-fixture.mjs`. `drift-report.json` needs no change — it carries only contract version, target, timestamp, status, and selector ids.
 - HD-019 (2026-08-09): ship `trentmkelly/slop-detector-mini-2` as it stands and document the position. The repo declares no licence, so no rights are expressly granted and the base model's Apache-2.0 does not carry to the derivative; the risk is accepted knowingly. Nothing is bundled — the user's browser fetches the model on opt-in. SF-223 records this in `README.md` and a new `LICENSES.md`.
 - HD-014: use plain TypeScript and direct DOM APIs for extension UI.
@@ -26,7 +26,7 @@ defaults that still need owner confirmation.
 - HD-006: the scheduled drift workflow defaults to the committed fixture until an owner-approved live target is supplied through `SLOPFILTER_DRIFT_TARGET`.
 - HD-008: the three PRD content labels use equal treatment and a provisional 0.80 confidence cutoff.
 - HD-009: no hard-veto rules are enabled until the five-layer evidence rules are explicitly approved.
-- HD-007: the classifier/embedder pair and immutable revisions are implemented provisionally; classifier licensing still needs confirmation.
+- HD-007: the embedder and immutable model revisions are implemented provisionally; the retired classifier is no longer part of the model set.
 - HD-012: a shared offscreen document with a dedicated worker is implemented provisionally to avoid one model copy per X tab.
 - HD-013: runtime downloads from `huggingface.co` and its model CDN are implemented provisionally; the pinned models use WASM, WebGPU remains disabled after benchmarking, and the cross-origin-isolated harness measured roughly 1.9–2.1 MB of user-agent memory for the scoring path.
 - HD-010: use `onnx-community/CommunityForensics-DeepfakeDet-ViT-ONNX` at revision `f9fc6516b37cd7d1bec3b94847b3682ce97249f0`, MIT licence, 384px input, and the `q4f16` artifact (~21.2 MB). Image inference is capped at four thumbnails per post.

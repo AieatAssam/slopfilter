@@ -4,14 +4,67 @@ import {
   extractPayload,
   isOperationUrl,
   isPayloadRelayMessage,
+  operationForUrl,
   type PayloadContract,
   payloadContract,
   payloadRelayFromExtract,
+  resolveEntry,
   validatePayloadContract,
 } from '@/adapters/x/payload';
 
 const readFixture = (): unknown =>
   JSON.parse(readFileSync('tests/fixtures/payload/x/home-timeline.json', 'utf8'));
+
+const standaloneTweetFixture = (): unknown => ({
+  data: {
+    tweetResult: {
+      result: {
+        rest_id: '2087272392557007042',
+        core: {
+          user_results: {
+            result: {
+              core: {
+                created_at: 'Sun Apr 27 20:19:25 +0000 2008',
+                screen_name: 'dhh',
+              },
+              tweet_counts: { tweets: 70921 },
+            },
+          },
+        },
+        legacy: {
+          favorite_count: 4765,
+          reply_count: 208,
+          retweet_count: 85,
+          id_str: '2087272392557007042',
+          created_at: 'Tue Aug 11 20:18:12 +0000 2026',
+        },
+      },
+    },
+  },
+});
+
+const threadTweetFixture = (): unknown => {
+  const result = (
+    standaloneTweetFixture() as {
+      data: { tweetResult: { result: Record<string, unknown> } };
+    }
+  ).data.tweetResult.result;
+  return {
+    data: {
+      threaded_conversation_with_injections_v2: {
+        instructions: [
+          {
+            entries: [
+              {
+                content: { itemContent: { tweet_results: { result } } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  };
+};
 
 describe('extractPayload', () => {
   test('walks the fixture and returns per-author stats and per-post engagement', () => {
@@ -53,9 +106,39 @@ describe('extractPayload', () => {
     const extract = extractPayload(readFixture());
     expect(extract.engagement['1900000000000001337']?.views).toBe(412000);
   });
+
+  test('extracts author metadata from a standalone tweet response', () => {
+    const extract = extractPayload(standaloneTweetFixture());
+    const dhh = extract.authors.find((author) => author.handle === '@dhh');
+
+    expect(dhh?.accountCreatedAt).toBe(Date.parse('Sun Apr 27 20:19:25 +0000 2008'));
+    expect(dhh?.totalPosts).toBe(70921);
+    expect(extract.engagement['2087272392557007042']?.likes).toBe(4765);
+  });
+
+  test('extracts the same fields from a TweetDetail thread envelope', () => {
+    const extract = extractPayload(threadTweetFixture());
+    expect(extract.authors[0]?.handle).toBe('@dhh');
+    expect(extract.authors[0]?.totalPosts).toBe(70921);
+  });
 });
 
 describe('fallback chains', () => {
+  test('a null primary value does not block a populated fallback', () => {
+    expect(
+      resolveEntry(
+        { primary: null, fallback: 42 },
+        {
+          id: 'fallback-test',
+          description: 'test fallback',
+          context: 'document',
+          paths: ['primary', 'fallback'],
+          required: true,
+        },
+      ),
+    ).toEqual([42]);
+  });
+
   test('a renamed required user-post-count path resolves via contract fallback', () => {
     const fixture = readFixture() as Record<string, unknown>;
     const renamed = structuredClone(payloadContract);
@@ -108,6 +191,13 @@ describe('isOperationUrl', () => {
 
   test('rejects a non-URL match attempt without throwing', () => {
     expect(isOperationUrl('not a url', 'HomeTimeline')).toBe(false);
+  });
+
+  test('matches the additional already-fetched detail operations', () => {
+    expect(operationForUrl('https://x.com/i/api/graphql/query/TweetResultByRestId')).toBe(
+      'TweetResultByRestId',
+    );
+    expect(operationForUrl('https://x.com/i/api/graphql/query/TweetDetail')).toBe('TweetDetail');
   });
 });
 

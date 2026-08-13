@@ -12,14 +12,12 @@ const openGolden = async (context: BrowserContext) => {
   return { page, ids };
 };
 
-test('at rest the cluster has computed opacity 0 and 1 after hovering its article', async ({
-  context,
-}) => {
+test('at rest the cluster is visible without hovering its article', async ({ context }) => {
   const { page, ids } = await openGolden(context);
   const article = page.locator(`[id="${ids[0]}"]`);
   const cluster = article.locator('[data-testid="slopfilter-feedback"]');
 
-  await expect(cluster).toHaveCSS('opacity', '0');
+  await expect(cluster).toHaveCSS('opacity', '1');
   await expect(cluster).toHaveCount(1);
 
   await article.hover();

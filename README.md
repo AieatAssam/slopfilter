@@ -8,6 +8,10 @@ SlopFilter is a Chrome extension foundation for collapsing low-quality posts in 
 
 Filtering, settings, and statistics stay on the device. Runtime network access is limited to one-time model downloads and visible X thumbnail reads for optional C2PA checks.
 
+## Third-party models
+
+Model files are fetched by the user's browser on demand and are never bundled. The optional text-pattern model is off by default, declares no licence on its source repository, and is downloaded only after opt-in. See [`LICENSES.md`](LICENSES.md).
+
 ## Development
 
 - `npm ci` — install the pinned development dependencies.

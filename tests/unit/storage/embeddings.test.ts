@@ -1,11 +1,14 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, test } from 'vitest';
+import type { RepetitionCorpusEntry } from '@/core/signals/repetition';
 import {
+  addCorpusEntry,
   addEmbedding,
   clearAll,
   countEmbeddings,
   DB_NAME,
   type EmbeddingRecord,
+  listCorpusEntries,
   listEmbeddingIds,
   listEmbeddings,
   loadCentroids,
@@ -16,6 +19,14 @@ const record = (index: number): EmbeddingRecord => ({
   postId: `post-${index}`,
   vector: new Float32Array([index, index + 1]),
   createdAt: index,
+});
+
+const corpusEntry = (index: number): RepetitionCorpusEntry => ({
+  postId: `corpus-${index}`,
+  handle: `@handle-${index}`,
+  embedding: new Float32Array([index, index + 1]),
+  simhash: BigInt(index),
+  observedAt: index,
 });
 
 const resetDatabase = async () => {
@@ -80,5 +91,51 @@ describe('embedding store', () => {
 
     expect(await countEmbeddings()).toBe(0);
     expect(await loadCentroids()).toBeNull();
+  });
+});
+
+describe('repetition corpus store', () => {
+  beforeEach(async () => {
+    await resetDatabase();
+  });
+
+  test('caps the corpus at the documented cap and evicts oldest first', async () => {
+    for (let index = 0; index < 505; index += 1) await addCorpusEntry(corpusEntry(index), 500);
+
+    const entries = await listCorpusEntries();
+
+    expect(entries).toHaveLength(500);
+    expect(entries.map((entry) => entry.postId)).not.toEqual(
+      expect.arrayContaining(['corpus-0', 'corpus-1', 'corpus-2', 'corpus-3', 'corpus-4']),
+    );
+    expect(entries.map((entry) => entry.postId)).toEqual(
+      expect.arrayContaining(['corpus-5', 'corpus-504']),
+    );
+  });
+
+  test('round-trips vectors and hashes without ever persisting post text', async () => {
+    await addCorpusEntry(corpusEntry(1), 500);
+
+    const [stored] = await listCorpusEntries();
+
+    expect(stored).toBeDefined();
+    expect(stored?.postId).toBe('corpus-1');
+    expect(stored?.handle).toBe('@handle-1');
+    expect(stored?.simhash).toBe(BigInt(1));
+    expect(stored?.embedding).toEqual(new Float32Array([1, 2]));
+    expect(stored).not.toHaveProperty('text');
+    expect(stored).not.toHaveProperty('postText');
+  });
+
+  test('clears the corpus alongside the downvote embeddings and centroids', async () => {
+    await addEmbedding(record(1));
+    await saveCentroids([new Float32Array([1])]);
+    await addCorpusEntry(corpusEntry(1), 500);
+
+    await clearAll();
+
+    expect(await countEmbeddings()).toBe(0);
+    expect(await loadCentroids()).toBeNull();
+    expect(await listCorpusEntries()).toEqual([]);
   });
 });

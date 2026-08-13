@@ -15,6 +15,7 @@ export interface PlatformAdapter {
   readonly platform: 'x';
   readonly selectorContractVersion: string;
   selfTest(root: ParentNode): SelectorCheckResult;
+  selfTestFeed(root: ParentNode): SelectorCheckResult;
   findTimelineContainer(root: ParentNode): Element | null;
   findPostElements(container: ParentNode): readonly Element[];
   extractPost(element: Element): Post | null;

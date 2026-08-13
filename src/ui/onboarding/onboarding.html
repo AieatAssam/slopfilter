@@ -3,18 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../page.css" />
     <title>SlopFilter onboarding</title>
   </head>
-  <body>
-    <main>
+  <body class="sf-page">
+    <main class="sf-page-shell">
+      <p class="sf-page-kicker">PERSONAL FILTER / PRIVATE BY DEFAULT</p>
       <h1>SlopFilter</h1>
       <p>SlopFilter collapses low-quality posts in your X timeline using signals computed on your own machine.</p>
-      <h2>What this never does</h2>
-      <p>It never claims how a post was written. Every hidden post cites observable evidence, and you can show it again.</p>
-      <h2>Nothing is deleted</h2>
-      <p>Hidden posts are collapsed, never deleted, and can always be restored with “Show anyway”.</p>
-      <p><a id="privacy-link" href="./privacy.html">Read the privacy details</a></p>
-      <p><a id="settings-link" href="../options/options.html">Adjust settings</a></p>
+      <section class="sf-page-card">
+        <h2>What this never does</h2>
+        <p>It never claims how a post was written. Every hidden post cites observable evidence, and you can show it again.</p>
+      </section>
+      <section class="sf-page-card">
+        <h2>Nothing is deleted</h2>
+        <p>Hidden posts are collapsed, never deleted, and can always be restored with “Show anyway”.</p>
+      </section>
+      <p><a id="privacy-link" href="./privacy.html">Read the privacy details</a> · <a id="settings-link" href="../options/options.html">Adjust settings</a></p>
     </main>
     <script type="module" src="./onboarding.js"></script>
   </body>

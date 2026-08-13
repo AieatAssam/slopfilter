@@ -181,15 +181,24 @@ describe('scoreBehavioural sub-signals', () => {
     expect(result.reason).not.toContain('/day across the account lifetime');
   });
 
-  test('never lets one sub-signal stand in for the other', () => {
-    const result = scoreBehavioural(
+  test('keeps the strongest score when a weaker positive sub-signal corroborates it', () => {
+    const strongest = scoreBehavioural(
+      NO_MATCH_ENGAGEMENT_POST,
+      activity({ postsPerDay: 80, accountAgeDays: 100 }),
+      thresholds,
+    );
+    const corroborated = scoreBehavioural(
       NO_MATCH_ENGAGEMENT_POST,
       activity({ postsPerDay: 80, lifetimePostsPerDay: 60, accountAgeDays: 100 }),
       thresholds,
     );
 
-    expect(result.reason).toContain('posts 80+ times per day');
-    expect(result.reason).toContain('posts 60/day across the account lifetime');
+    expect(corroborated.score).toBe(strongest.score);
+    expect(corroborated.score * DEFAULT_SCORING_CONFIG.weights.behavioural).toBeGreaterThanOrEqual(
+      DEFAULT_SCORING_CONFIG.hideThreshold,
+    );
+    expect(corroborated.reason).toContain('posts 80+ times per day');
+    expect(corroborated.reason).toContain('posts 60/day across the account lifetime');
   });
 
   test('reports no-data values when the cache is empty', () => {

@@ -3,23 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../page.css" />
     <title>SlopFilter</title>
   </head>
-  <body>
-    <h1>SlopFilter</h1>
-    <p data-testid="slopfilter-popup-status"></p>
-    <section data-testid="slopfilter-models" aria-labelledby="slopfilter-models-heading">
-      <h2 id="slopfilter-models-heading">Local models</h2>
-      <p data-testid="slopfilter-model-status">Models have not started loading.</p>
-      <button type="button" data-testid="slopfilter-model-retry" hidden>Retry model download</button>
-    </section>
-    <section data-testid="slopfilter-stats" aria-labelledby="slopfilter-stats-heading">
-      <h2 id="slopfilter-stats-heading">This week</h2>
-      <p data-testid="slopfilter-stats-seen"></p>
-      <p data-testid="slopfilter-stats-hidden"></p>
-      <p data-testid="slopfilter-stats-wrong-rate"></p>
-      <button type="button" data-testid="slopfilter-clear-statistics">Clear statistics</button>
-    </section>
+  <body class="sf-page sf-popup">
+    <main class="sf-page-shell">
+      <p class="sf-page-kicker">LOCAL SIGNALS / X TIMELINE</p>
+      <h1>SlopFilter</h1>
+      <p data-testid="slopfilter-popup-status"></p>
+      <section data-testid="slopfilter-models" aria-labelledby="slopfilter-models-heading">
+        <h2 id="slopfilter-models-heading">Local models</h2>
+        <p data-testid="slopfilter-model-status">Models have not started loading.</p>
+        <button type="button" data-testid="slopfilter-model-retry" hidden>Retry model download</button>
+      </section>
+      <section data-testid="slopfilter-stats" aria-labelledby="slopfilter-stats-heading">
+        <h2 id="slopfilter-stats-heading">This week</h2>
+        <p data-testid="slopfilter-stats-seen"></p>
+        <p data-testid="slopfilter-stats-hidden"></p>
+        <p data-testid="slopfilter-stats-wrong-rate"></p>
+        <button type="button" data-testid="slopfilter-clear-statistics">Clear statistics</button>
+      </section>
+    </main>
     <script type="module" src="./popup.js"></script>
   </body>
 </html>

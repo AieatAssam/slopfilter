@@ -1,12 +1,17 @@
 {
   "contractVersion": "1.0.0",
   "operation": "HomeTimeline",
+  "operations": ["HomeTimeline", "TweetDetail", "TweetResultByRestId"],
   "entries": [
     {
       "id": "entries",
-      "description": "The instruction entries array that carries tweets on the home timeline.",
+      "description": "A tweet-bearing instruction or standalone tweet result in an X response.",
       "context": "document",
-      "paths": ["data.home.home_timeline_urt.instructions[].entries[]"],
+      "paths": [
+        "data.home.home_timeline_urt.instructions[].entries[]",
+        "data.threaded_conversation_with_injections_v2.instructions[].entries[]",
+        "data.tweetResult.result"
+      ],
       "required": true
     },
     {

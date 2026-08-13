@@ -78,18 +78,100 @@ test('each cluster box is fully contained by its own article box', async ({ cont
   for (const group of groups) expect(group.contained).toBe(true);
 });
 
-test('injection leaves each article offsetHeight unchanged', async ({ context }) => {
+test('injection uses an in-flow row for the controls', async ({ context }) => {
   const page = await openGolden(context);
   const ids = await goldenVariantIds(page);
   await restoreVariants(page, ids);
 
-  const before = await page.evaluate((targets) => {
-    return targets.map((id) => document.getElementById(id)?.offsetHeight ?? -1);
-  }, ids);
   for (const id of ids) await attachFeedback(page, id);
-  const after = await page.evaluate((targets) => {
-    return targets.map((id) => document.getElementById(id)?.offsetHeight ?? -1);
+  const positions = await page.evaluate(
+    (targets) =>
+      targets.map((id) => {
+        const article = document.getElementById(id);
+        const anchor = article?.querySelector<HTMLElement>('[data-testid="slopfilter-anchor"]');
+        const cluster = article?.querySelector<HTMLElement>('[data-testid="slopfilter-feedback"]');
+        return {
+          anchor: anchor ? getComputedStyle(anchor).position : '',
+          cluster: cluster ? getComputedStyle(cluster).position : '',
+        };
+      }),
+    ids,
+  );
+
+  for (const position of positions) {
+    expect(position.anchor).toBe('static');
+    expect(position.cluster).toBe('static');
+  }
+});
+
+test('the cluster never overlaps the native caret control', async ({ context }) => {
+  const page = await openGolden(context);
+  const ids = await goldenVariantIds(page);
+  await restoreVariants(page, ids);
+  // Model the real X header caret: a More button pinned to the article's top-right corner. The
+  // captured fixture ships its own caret deep inside a tall article, so the probe is stamped with a
+  // dedicated marker and queried by it — otherwise querySelector resolves to the fixture's stray
+  // caret and the overlap it used to create is never exercised.
+  for (const id of ids) {
+    await page.evaluate((target) => {
+      const article = document.getElementById(target);
+      if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${target}`);
+      const caret = document.createElement('button');
+      caret.type = 'button';
+      caret.dataset.testid = 'caret';
+      caret.dataset.slopfilterCaretProbe = 'true';
+      caret.setAttribute('aria-label', 'More');
+      caret.style.cssText =
+        'position:absolute;top:60px;right:16px;width:20px;height:20px;display:block';
+      article.appendChild(caret);
+    }, id);
+  }
+  for (const id of ids) await attachFeedback(page, id);
+
+  const overlaps = await page.evaluate((targets) => {
+    return targets.map((id) => {
+      const article = document.getElementById(id);
+      if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${id}`);
+      const cluster = article.querySelector('[data-testid="slopfilter-feedback"]');
+      if (!(cluster instanceof HTMLElement)) throw new Error(`cluster missing: ${id}`);
+      const caret = article.querySelector('[data-slopfilter-caret-probe]');
+      if (!(caret instanceof HTMLElement)) throw new Error(`caret probe missing: ${id}`);
+      const clusterRect = cluster.getBoundingClientRect();
+      const caretRect = caret.getBoundingClientRect();
+      return (
+        clusterRect.left < caretRect.right &&
+        clusterRect.right > caretRect.left &&
+        clusterRect.top < caretRect.bottom &&
+        clusterRect.bottom > caretRect.top
+      );
+    });
   }, ids);
 
-  expect(after).toEqual(before);
+  for (const intersects of overlaps) expect(intersects).toBe(false);
+});
+
+test('the visible cluster remains interactive and does not intercept the native caret', async ({
+  context,
+}) => {
+  const page = await openGolden(context);
+  const id = (await goldenVariantIds(page))[0];
+  if (!id) throw new Error('no golden article');
+
+  await page.evaluate((target) => {
+    const article = document.getElementById(target);
+    if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${target}`);
+    const caret = document.createElement('button');
+    caret.type = 'button';
+    caret.dataset.testid = 'caret-click-probe';
+    caret.dataset.slopfilterCaretProbe = 'true';
+    caret.setAttribute('aria-label', 'More');
+    caret.style.cssText =
+      'position:absolute;top:60px;right:16px;width:20px;height:20px;display:block;opacity:1;visibility:visible';
+    article.appendChild(caret);
+  }, id);
+  await attachFeedback(page, id);
+
+  const cluster = page.locator(`[id="${id}"] [data-testid="slopfilter-feedback"]`);
+  await expect(cluster).toHaveCSS('opacity', '1');
+  await expect(cluster).toHaveCSS('pointer-events', 'auto');
 });

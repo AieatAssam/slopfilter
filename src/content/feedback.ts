@@ -1,7 +1,8 @@
 import { type ContentTheme, themeClass } from '@/content/themes';
 import type { Post } from '@/core/post';
 import type { LayerId, ScoreBreakdown } from '@/core/scoring/types';
-import { setAccountState } from '@/storage/accounts';
+import { isExtensionMessage } from '@/shared/messages';
+import { type AccountState, setAccountState } from '@/storage/accounts';
 import { addEmbedding } from '@/storage/embeddings';
 import { LAYER_IDS } from '@/storage/settings';
 import { openInspector } from './inspector';
@@ -13,6 +14,7 @@ export interface FeedbackOptions {
   onWrongCall?: () => void;
   enabledLayers?: Partial<Record<LayerId, boolean>>;
   getBreakdown?: () => ScoreBreakdown;
+  onAccountStateChanged?: (state: AccountState) => void;
 }
 
 const enabledLayersFor = (options: FeedbackOptions): Record<LayerId, boolean> =>
@@ -73,23 +75,45 @@ export const attachFeedbackControls = (
   controls.dataset.testid = 'slopfilter-feedback';
 
   const downvote = addButton('Not interested', 'slopfilter-downvote');
-  downvote.addEventListener('click', () => {
-    if (options.embedText) {
-      void options.embedText(post.text).then((vector) => {
-        if (!vector) return;
-        return addEmbedding({ postId: post.id, vector, createdAt: Date.now() });
-      });
-    }
-    try {
-      const response = chrome.runtime.sendMessage({
-        type: 'downvote-post',
-        postId: post.id,
-        text: post.text,
-      });
-      void response.catch(() => undefined);
-    } catch {
-      // Feedback remains local even when the service worker is unavailable.
-    }
+  downvote.addEventListener('click', async () => {
+    downvote.textContent = 'Saving…';
+    downvote.disabled = true;
+    downvote.setAttribute('aria-label', 'Not interested — saving');
+
+    const localSave = options.embedText
+      ? options
+          .embedText(post.text)
+          .then((vector) =>
+            vector
+              ? addEmbedding({ postId: post.id, vector, createdAt: Date.now() }).then(() => true)
+              : false,
+          )
+          .catch(() => false)
+      : Promise.resolve(false);
+    const remoteSave = Promise.resolve()
+      .then(() =>
+        chrome.runtime.sendMessage({
+          type: 'downvote-post',
+          postId: post.id,
+          text: post.text,
+        }),
+      )
+      .then(
+        (response) =>
+          isExtensionMessage(response) &&
+          response.type === 'downvote-complete' &&
+          response.postId === post.id &&
+          response.ok,
+        () => false,
+      );
+    const saved = (await Promise.all([localSave, remoteSave])).some(Boolean);
+    downvote.textContent = saved ? 'Saved' : 'Try again';
+    downvote.disabled = saved;
+    downvote.setAttribute(
+      'aria-label',
+      saved ? 'Not interested — saved' : 'Not interested — save failed, try again',
+    );
+    downvote.setAttribute('aria-pressed', String(saved));
   });
 
   const why = addButton('Why this score', 'slopfilter-inspector-trigger');
@@ -125,8 +149,16 @@ export const attachFeedbackControls = (
   ] as const) {
     const button = addButton(label);
     button.addEventListener('click', () => {
-      void setAccountState(post.author.handle, state);
-      if (typeof menu.hidePopover === 'function') menu.hidePopover();
+      button.disabled = true;
+      void setAccountState(post.author.handle, state).then(
+        () => {
+          if (typeof menu.hidePopover === 'function') menu.hidePopover();
+          options.onAccountStateChanged?.(state);
+        },
+        () => {
+          button.disabled = false;
+        },
+      );
     });
     menu.append(button);
   }

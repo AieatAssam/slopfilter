@@ -26,6 +26,8 @@ const config: ScoringConfig = {
     'content-type': 0.1,
     'image-forensics': 0.1,
     taste: 0.1,
+    repetition: 0.1,
+    'text-pattern': 0.1,
   },
 };
 

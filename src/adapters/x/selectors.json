@@ -31,7 +31,10 @@
     {
       "id": "author-handle",
       "description": "The author's account handle within the post header.",
-      "selectors": ["[data-testid=\"User-Name\"] div[dir=\"ltr\"]"],
+      "selectors": [
+        "[data-testid=\"User-Name\"] div[dir=\"ltr\"]",
+        "[data-testid=\"UserName\"] div[dir=\"ltr\"]"
+      ],
       "required": true
     },
     {
@@ -118,7 +121,10 @@
     {
       "id": "profile-join-date",
       "description": "The join date shown on an author profile page. Required false: a profile markup change can never pause timeline filtering.",
-      "selectors": ["[data-testid=\"UserProfileHeader_Items\"] time[datetime]"],
+      "selectors": [
+        "[data-testid=\"UserProfileHeader_Items\"] [data-testid=\"UserJoinDate\"]",
+        "[data-testid=\"UserProfileHeader_Items\"] time[datetime]"
+      ],
       "required": false
     },
     {
@@ -126,6 +132,7 @@
       "description": "The total post count shown on an author profile page. Required false: a profile markup change can never pause timeline filtering.",
       "selectors": [
         "[data-testid=\"UserProfileHeader_Items\"] a[href*=\"/status\"]",
+        "h2[role=\"heading\"] + div[dir=\"ltr\"]",
         "[data-testid=\"UserProfileHeader_Items\"] span"
       ],
       "required": false

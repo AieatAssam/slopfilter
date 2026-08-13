@@ -2,9 +2,11 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { JSDOM } from 'jsdom';
 
-const [inputPath, outputPath] = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const loose = rawArgs[0] === '--loose';
+const [inputPath, outputPath] = loose ? rawArgs.slice(1) : rawArgs;
 if (!inputPath || !outputPath) {
-  console.error('usage: node scripts/sanitise-fixture.mjs <input> <output>');
+  console.error('usage: node scripts/sanitise-fixture.mjs [--loose] <input> <output>');
   process.exit(1);
 }
 
@@ -19,6 +21,9 @@ for (const element of document.querySelectorAll('*')) {
 }
 
 const handles = new Map();
+let handlesRewritten = 0;
+let urlsRewritten = 0;
+let textRewritten = 0;
 const syntheticHandle = (handle) => {
   if (/^@account\d+$/.test(handle)) return handle;
   const existing = handles.get(handle.toLowerCase());
@@ -61,12 +66,16 @@ const rewriteValue = (value) => {
         url.hostname = 'example.invalid';
         url.port = '';
         url.search = '';
+        urlsRewritten += 1;
         return url.toString();
       } catch {
         return raw;
       }
     })
-    .replace(/@[A-Za-z0-9_]{1,15}/g, syntheticHandle);
+    .replace(/@[A-Za-z0-9_]{1,15}/g, (handle) => {
+      handlesRewritten += 1;
+      return syntheticHandle(handle);
+    });
   return replaceAccountTokens(value);
 };
 
@@ -81,17 +90,34 @@ for (let node = textWalker.nextNode(); node; node = textWalker.nextNode()) {
 }
 
 const posts = [...document.querySelectorAll('article[data-testid="tweet"]')];
-if (posts.length === 0) {
+if (!loose && posts.length === 0) {
   throw new Error('input contains no article[data-testid="tweet"] post elements');
 }
-for (const post of posts.slice(10)) post.remove();
+if (!loose) for (const post of posts.slice(10)) post.remove();
+
+if (loose) {
+  for (const element of document.querySelectorAll('[data-testid="tweetText"]')) {
+    if (element.textContent?.trim()) {
+      element.textContent = 'Synthetic post text.';
+      textRewritten += 1;
+    }
+  }
+  const looseWalker = document.createTreeWalker(document, NodeFilter.SHOW_TEXT);
+  for (let node = looseWalker.nextNode(); node; node = looseWalker.nextNode()) {
+    const text = node.nodeValue?.trim() ?? '';
+    if (text.length > 40) {
+      node.nodeValue = 'Synthetic page text.';
+      textRewritten += 1;
+    }
+  }
+}
 
 const sensitiveText = [];
 for (const [index, post] of posts.slice(0, 10).entries()) {
   const replacementText = `Synthetic post body ${String(index + 1).padStart(2, '0')}.`;
   for (const text of post.querySelectorAll('[data-testid="tweetText"]')) {
     sensitiveText.push([text.textContent?.trim() ?? '', replacementText]);
-    text.textContent = replacementText;
+    if (!loose) text.textContent = replacementText;
   }
 
   for (const userName of post.querySelectorAll('[data-testid="User-Name"]')) {
@@ -128,5 +154,5 @@ const output = dom.serialize();
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, output);
 console.log(
-  `sanitised ${Math.min(posts.length, 10)} posts (${Buffer.byteLength(output)} bytes) to ${outputPath}`,
+  `sanitised ${Math.min(posts.length, 10)} posts, handles=${handlesRewritten}, urls=${urlsRewritten}, text=${textRewritten} (${Buffer.byteLength(output)} bytes) to ${outputPath}`,
 );

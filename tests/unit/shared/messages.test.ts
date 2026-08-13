@@ -37,6 +37,10 @@ const variantName = (message: ExtensionMessage): string => {
       return message.type;
     case 'model-retry':
       return message.type;
+    case 'text-pattern-download':
+      return message.type;
+    case 'text-pattern-download-complete':
+      return message.type;
     case 'downvote-post':
       return message.type;
     case 'wrong-call':
@@ -62,7 +66,7 @@ describe('ExtensionMessage', () => {
       {
         type: 'score-batch-response',
         requestId: 'request-1',
-        results: [{ postId: post.id, signals: [] }],
+        results: [{ postId: post.id, signals: [], embedding: [] }],
       },
       { type: 'embed-request', requestId: 'embed-1', text: post.text },
       { type: 'embed-response', requestId: 'embed-1', vector: null },
@@ -70,6 +74,8 @@ describe('ExtensionMessage', () => {
       { type: 'model-status-request' },
       { type: 'model-status', status: { state: 'idle', progress: 0, error: null } },
       { type: 'model-retry' },
+      { type: 'text-pattern-download' },
+      { type: 'text-pattern-download-complete', ok: true },
       { type: 'downvote-post', postId: post.id, text: post.text },
       { type: 'wrong-call', postId: post.id, firedLayerIds: [] },
       { type: 'record-stats-batch', entries: [] },

@@ -1,4 +1,7 @@
 import type { BehaviouralThresholds, CohortConfig } from '@/core/signals/behavioural';
+import type { ContentFormatConfig } from '@/core/signals/contentType';
+import type { RepetitionConfig } from '@/core/signals/repetition';
+import type { TextPatternConfig } from '@/core/signals/textPattern';
 import type { ScoringConfig, SignalResult } from './types';
 
 export interface VetoRule {
@@ -48,6 +51,60 @@ export const behaviouralThresholds = (settings: CohortSettingsInput): Behavioura
   };
 };
 
+// Provisional HD-005 (SF-220): structural engagement-bait feature weights and thresholds. The cap is
+// above the 0.6 hide threshold for three or more features and below it for any single one, so the
+// signal accumulates across features but never fires alone.
+export const CONTENT_FORMAT_DEFAULTS: ContentFormatConfig = {
+  hashtagThreshold: 6,
+  mentionThreshold: 4,
+  listRunFloor: 3,
+  hookLineMaxChars: 80,
+  // t.co is X's own rewriter applied to every link, so it is excluded: it is not a distinguishing
+  // feature. The remaining hosts are the common third-party shorteners.
+  linkShortenerHosts: Object.freeze([
+    'bit.ly',
+    'tinyurl.com',
+    'goo.gl',
+    'buff.ly',
+    'lnkd.in',
+    'cutt.ly',
+    'ow.ly',
+    'shorturl.at',
+    'rb.gy',
+    'rebrand.ly',
+  ]),
+  featureWeights: Object.freeze({
+    callToAction: 0.35,
+    hashtagStuffing: 0.3,
+    mentionStuffing: 0.25,
+    listRun: 0.2,
+    hookThenList: 0.25,
+    allCapsOpener: 0.15,
+    linkShortener: 0.2,
+  }),
+  scoreCap: 0.85,
+};
+
+// Provisional HD-005 (SF-219): near-duplicate and templated post thresholds. minTextLength skips
+// short texts before any vector work; the simhash Hamming gate is the cheap prefilter and cosine
+// runs only on the entries that survive it. clusterFloor stops a single near pair from firing, and
+// corpusCap bounds the recent-post corpus with oldest-first eviction.
+export const REPETITION_DEFAULTS: RepetitionConfig = {
+  minTextLength: 60,
+  simhashHammingGate: 12,
+  cosineThreshold: 0.93,
+  clusterFloor: 3,
+  corpusCap: 500,
+};
+
+// Provisional HD-005/HD-017: the optional detector skips short posts and its score is capped by
+// the layer weight below the 0.6 hide threshold. It is disabled for existing and new installs.
+export const TEXT_PATTERN_DEFAULTS: TextPatternConfig & { weightCap: number; enabled: boolean } = {
+  minChars: 180,
+  weightCap: 0.4,
+  enabled: false,
+};
+
 export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
   // Provisional HD-005 recalibration (SF-214): weights are additive contributions toward the
   // threshold, not shares of a mean. Measured 2026-08-08: the old 0.40/0.20/0.10 weights capped a
@@ -61,6 +118,10 @@ export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
     'content-type': 0.5,
     'image-forensics': 0.4,
     taste: 0.5,
+    // SF-219: one maximal repetition fire (1.0 * 0.3 = 0.3) must stay under the 0.6 threshold, so
+    // repetition alone can never hide a post. It exists to lift quiet layers, not to decide alone.
+    repetition: 0.3,
+    'text-pattern': TEXT_PATTERN_DEFAULTS.weightCap,
   },
 };
 

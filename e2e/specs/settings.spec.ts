@@ -27,6 +27,35 @@ test('changing the hide threshold changes which posts are collapsed', async ({
   await options.close();
 });
 
+test('the repetition toggle and weight round-trip like the other layers', async ({
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  const weight = options.getByLabel('Weight Repeated text');
+  const use = options.getByLabel('Use Repeated text signal');
+  const repetition = options.locator('.layer-row').filter({ hasText: 'Repeated text' });
+  await expect(use).toBeChecked();
+  await expect(weight).toHaveValue('0.3');
+
+  await weight.fill('0.45');
+  await use.uncheck();
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+
+  await options.reload();
+  await expect(options.getByLabel('Weight Repeated text')).toHaveValue('0.45');
+  await expect(options.getByLabel('Use Repeated text signal')).not.toBeChecked();
+
+  await repetition.getByRole('button', { name: 'Reset weight' }).click();
+  await repetition.getByRole('button', { name: 'Reset use' }).click();
+  await expect(options.getByTestId('slopfilter-settings-status')).toHaveText('Saved.');
+  await expect(options.getByLabel('Weight Repeated text')).toHaveValue('0.3');
+  await expect(options.getByLabel('Use Repeated text signal')).toBeChecked();
+  await options.close();
+});
+
 test('clamps an out-of-range stored threshold', async ({ page, context, extensionId }) => {
   const options = await context.newPage();
   await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);

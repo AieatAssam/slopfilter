@@ -44,6 +44,16 @@ describe('x adapter', () => {
     expect(actual).toEqual(expectedPosts);
   });
 
+  test('extracts a full article using the current UserName wrapper', () => {
+    const container = xAdapter.findTimelineContainer(loadBaseline());
+    const article = container ? xAdapter.findPostElements(container)[0] : null;
+    const author = article?.querySelector('[data-testid="User-Name"]');
+    if (!article || !author) throw new Error('baseline article missing');
+    author.setAttribute('data-testid', 'UserName');
+
+    expect(xAdapter.extractPost(article)?.author.handle).toBe(expectedPosts[0]?.handle);
+  });
+
   test('recognises the visible Ad label without matching post text', () => {
     const container = xAdapter.findTimelineContainer(loadBaseline());
     if (!container) throw new Error('timeline container missing');
@@ -58,6 +68,22 @@ describe('x adapter', () => {
   test('returns null for an unparseable article instead of throwing', () => {
     expect(() => xAdapter.extractPost(document.createElement('article'))).not.toThrow();
     expect(xAdapter.extractPost(document.createElement('article'))).toBeNull();
+  });
+
+  test('reads the current profile header metadata shape', () => {
+    document.body.innerHTML = `
+      <div data-testid="UserName"><div dir="ltr">DHH</div><div dir="ltr">@dhh</div></div>
+      <h2 role="heading">DHH</h2><div dir="ltr">70.9K posts</div>
+      <div data-testid="UserProfileHeader_Items">
+        <a data-testid="UserJoinDate" href="/dhh/about"><span>Joined April 2008</span></a>
+      </div>
+    `;
+
+    expect(xAdapter.readProfileStats?.(document)).toEqual({
+      handle: '@dhh',
+      joinDate: Date.parse('April 2008'),
+      postCount: 70900,
+    });
   });
 
   test('every declared required selector matches the baseline fixture', () => {

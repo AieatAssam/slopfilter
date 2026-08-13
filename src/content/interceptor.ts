@@ -4,13 +4,13 @@
 // a match failure and never starts a request of its own.
 import {
   extractPayload,
-  isOperationUrl,
+  operationForUrl,
   type PayloadRelayMessage,
   payloadContract,
+  payloadOperations,
   payloadRelayFromExtract,
 } from '@/adapters/x/payload';
 
-const operation = payloadContract.operation;
 const decoder = new TextDecoder();
 
 const absoluteUrl = (candidate: string): string => {
@@ -30,7 +30,7 @@ const fwd = (message: PayloadRelayMessage) => {
   }
 };
 
-const acceptBody = (text: string) => {
+const acceptBody = (text: string, operation: string) => {
   try {
     const parsed = JSON.parse(text) as unknown;
     const extract = extractPayload(parsed, payloadContract);
@@ -51,7 +51,8 @@ const acceptJson = (value: string): string | null => {
 
 const observeFetch = (result: Promise<Response>, url: string) => {
   const candidate = absoluteUrl(url);
-  if (!isOperationUrl(candidate, operation)) return;
+  const operation = operationForUrl(candidate, payloadOperations);
+  if (!operation) return;
   result.then(
     (response) => {
       try {
@@ -60,7 +61,7 @@ const observeFetch = (result: Promise<Response>, url: string) => {
           .text()
           .then((text) => {
             const body = acceptJson(text);
-            if (body) acceptBody(body);
+            if (body) acceptBody(body, operation);
           })
           .catch(() => undefined);
       } catch {
@@ -108,7 +109,8 @@ XMLHttpRequest.prototype.send = function (
 ) {
   // @ts-expect-error runtime extension of the request object (main world observers only)
   const observedUrl: string = absoluteUrl(this.__sf_payload_url ?? '');
-  if (isOperationUrl(observedUrl, operation)) {
+  const operation = operationForUrl(observedUrl, payloadOperations);
+  if (operation) {
     this.addEventListener('loadend', () => {
       let text = '';
       try {
@@ -121,7 +123,7 @@ XMLHttpRequest.prototype.send = function (
         return;
       }
       const body = acceptJson(text);
-      if (body) acceptBody(body);
+      if (body) acceptBody(body, operation);
     });
   }
   return rawSend.call(this, body);

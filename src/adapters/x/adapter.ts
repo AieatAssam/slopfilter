@@ -1,7 +1,7 @@
 import type { PlatformAdapter, ProfileStats, SelectorCheckResult } from '@/adapters/types';
 import type { Post, PostAuthor, PostEngagement } from '@/core/post';
 import { getEntry, resolveSelector, type SelectorEntry, selectorContract } from './selectors';
-import { runSelfTest } from './selftest';
+import { runFeedSelfTest, runSelfTest } from './selftest';
 
 const firstMatch = (root: ParentNode, entry: SelectorEntry): Element | null =>
   resolveSelector(root, entry);
@@ -64,7 +64,7 @@ export const xAdapter: PlatformAdapter = {
   extractPost(element): Post | null {
     try {
       const handleAnchor = firstMatch(element, getEntry('author-handle'))?.closest(
-        '[data-testid="User-Name"]',
+        '[data-testid="User-Name"], [data-testid="UserName"]',
       );
       if (!handleAnchor) return null;
 
@@ -115,6 +115,11 @@ export const xAdapter: PlatformAdapter = {
     return { ok: result.ok, failedSelectorIds: result.failedSelectorIds };
   },
 
+  selfTestFeed(root): SelectorCheckResult {
+    const result = runFeedSelfTest(root);
+    return { ok: result.ok, failedSelectorIds: result.failedSelectorIds };
+  },
+
   readProfileStats(root): ProfileStats | null {
     try {
       const joinDateElement = firstMatch(root, getEntry('profile-join-date'));
@@ -122,7 +127,7 @@ export const xAdapter: PlatformAdapter = {
       if (!joinDateElement && !postCountElement) return null;
 
       const handleAnchor = firstMatch(root, getEntry('author-handle'))?.closest(
-        '[data-testid="User-Name"]',
+        '[data-testid="User-Name"], [data-testid="UserName"]',
       );
       if (!handleAnchor) return null;
       const handle = Array.from(handleAnchor.querySelectorAll('div[dir="ltr"]'))

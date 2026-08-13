@@ -1,5 +1,9 @@
 import type { LayerId } from '@/core/scoring/types';
-import { DEFAULT_COHORT_CONFIG, DEFAULT_SCORING_CONFIG } from '@/core/scoring/weights';
+import {
+  DEFAULT_COHORT_CONFIG,
+  DEFAULT_SCORING_CONFIG,
+  TEXT_PATTERN_DEFAULTS,
+} from '@/core/scoring/weights';
 
 export const THRESHOLD_MIN = 0;
 export const THRESHOLD_MAX = 1;
@@ -14,6 +18,8 @@ export const LAYER_IDS: readonly LayerId[] = [
   'content-type',
   'image-forensics',
   'taste',
+  'repetition',
+  'text-pattern',
 ];
 
 // Weights shipped before SF-214 recalibrated scoring from a weighted mean to an additive sum.
@@ -25,6 +31,8 @@ export const LEGACY_DEFAULT_WEIGHTS: Record<LayerId, number> = {
   'content-type': 0.2,
   'image-forensics': 0.1,
   taste: 0.2,
+  repetition: 0.3,
+  'text-pattern': 0.4,
 };
 
 export interface Settings {
@@ -43,10 +51,10 @@ export const DEFAULT_SETTINGS: Settings = {
   hideThreshold: DEFAULT_SCORING_CONFIG.hideThreshold,
   hideAds: true,
   weights: { ...DEFAULT_SCORING_CONFIG.weights },
-  enabledLayers: Object.fromEntries(LAYER_IDS.map((layerId) => [layerId, true])) as Record<
-    LayerId,
-    boolean
-  >,
+  enabledLayers: {
+    ...Object.fromEntries(LAYER_IDS.map((layerId) => [layerId, true])),
+    'text-pattern': false,
+  } as Record<LayerId, boolean>,
   cohortCutoff: new Date(DEFAULT_COHORT_CONFIG.cutoff).toISOString().slice(0, 10),
   cohortVolumeFloor: DEFAULT_COHORT_CONFIG.volumeFloorPerDay,
   cohortVolumeCeiling: DEFAULT_COHORT_CONFIG.volumeCeilingPerDay,
@@ -71,7 +79,9 @@ const readWeights = (value: unknown): Record<LayerId, number> => {
       return [
         layerId,
         isFiniteNumber(candidate) && candidate >= 0 && candidate <= 1
-          ? candidate
+          ? layerId === 'text-pattern'
+            ? Math.min(candidate, TEXT_PATTERN_DEFAULTS.weightCap)
+            : candidate
           : DEFAULT_SETTINGS.weights[layerId],
       ];
     }),
@@ -133,15 +143,22 @@ export const repairSettings = (stored: unknown): Settings => {
   };
 };
 
-// SF-214: if the stored weights are exactly the pre-additive defaults, they were never tuned by
-// the user; move them to the recalibrated defaults. Any deviation means a user profile.
+// SF-214: stored weights that were never tuned migrate to the recalibrated defaults. Tuning is
+// detected as any layer stored at a value that matches neither the legacy default nor the current
+// default. Exact equality with LEGACY_DEFAULT_WEIGHTS was too strict: real pre-recalibration
+// profiles could miss a layer (a SF-214-era store predates the repetition layer, and an options
+// page save in any era can leave a layer unset), so an all-legacy-but-partial profile kept the
+// stale low weights and a maximal behavioural signal could never cross the threshold.
 const migrateWeights = (value: unknown): unknown => {
   if (typeof value !== 'object' || value === null) return value;
   const stored = value as Record<string, unknown>;
-  const matchesLegacy = LAYER_IDS.every(
-    (layerId) => stored[layerId] === LEGACY_DEFAULT_WEIGHTS[layerId],
+  const tuned = LAYER_IDS.some(
+    (layerId) =>
+      typeof stored[layerId] === 'number' &&
+      stored[layerId] !== LEGACY_DEFAULT_WEIGHTS[layerId] &&
+      stored[layerId] !== DEFAULT_SETTINGS.weights[layerId],
   );
-  return matchesLegacy ? DEFAULT_SETTINGS.weights : stored;
+  return tuned ? stored : DEFAULT_SETTINGS.weights;
 };
 
 export async function loadSettings(): Promise<Settings> {

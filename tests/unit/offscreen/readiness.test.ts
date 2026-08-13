@@ -15,18 +15,26 @@ const post: Post = {
 
 const readyPipelines = {
   scoreBatch: async (posts: readonly Post[]) =>
-    posts.map((item) => ({ postId: item.id, signals: [] })),
+    posts.map((item) => ({ postId: item.id, signals: [], embedding: [] })),
   embed: async () => new Float32Array([1, 0]),
   downvote: async () => true,
 };
 
 describe('inference host readiness', () => {
-  test('answers before readiness with an empty result set', async () => {
-    const load = () => new Promise<typeof readyPipelines>(() => undefined);
+  test('waits for readiness and scores the original batch with its options', async () => {
+    let resolveLoad: ((pipelines: typeof readyPipelines) => void) | undefined;
+    const scoreBatch = vi.fn(readyPipelines.scoreBatch);
+    const load = () =>
+      new Promise<typeof readyPipelines>((resolve) => {
+        resolveLoad = resolve;
+      });
     const host = createInferenceHost({ load });
 
-    await expect(host.scoreBatch([post])).resolves.toEqual([]);
+    const result = host.scoreBatch([post], true);
     expect(host.getStatus().state).toBe('downloading');
+    resolveLoad?.({ ...readyPipelines, scoreBatch });
+    await expect(result).resolves.toEqual([{ postId: post.id, signals: [], embedding: [] }]);
+    expect(scoreBatch).toHaveBeenCalledWith([post], true);
   });
 
   test('scores one result per post once ready', async () => {
@@ -34,7 +42,9 @@ describe('inference host readiness', () => {
     host.start();
     await vi.waitFor(() => expect(host.getStatus().state).toBe('ready'));
 
-    await expect(host.scoreBatch([post])).resolves.toEqual([{ postId: post.id, signals: [] }]);
+    await expect(host.scoreBatch([post])).resolves.toEqual([
+      { postId: post.id, signals: [], embedding: [] },
+    ]);
   });
 
   test('latches load failures and keeps callers fail-open', async () => {

@@ -79,7 +79,9 @@ test.beforeAll(async ({}, testInfo) => {
   });
   await popup.close();
   page = await context.newPage();
-  await page.goto('http://localhost:5174/');
+  // SF-219: run the fresh-timeline latency test with the repetition corpus already at its cap so the
+  // per-post comparison cost is measured honestly instead of against an empty store.
+  await page.goto('http://localhost:5174/?corpus-cap=500');
 });
 
 test.afterAll(async () => {

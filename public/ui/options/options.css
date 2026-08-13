@@ -430,6 +430,7 @@ input[type="file"]:focus-visible {
     border-color: #263d49;
   }
   .weight-control input,
+  .cohort-field input,
   .file-button {
     border-color: #3b5663;
     color: #edf7fb;

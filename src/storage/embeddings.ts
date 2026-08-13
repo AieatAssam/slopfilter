@@ -1,11 +1,17 @@
+import type { RepetitionCorpusEntry } from '@/core/signals/repetition';
+
 export const EMBEDDING_CAP = 1000;
 export const DB_NAME = 'slopfilter-embeddings';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 const EMBEDDINGS_STORE = 'embeddings';
 const CENTROIDS_STORE = 'centroids';
 const CREATED_AT_INDEX = 'createdAt';
 const CENTROIDS_KEY = 'current';
+// SF-219: the recent-post corpus is a separate store from the downvote embeddings so one policy
+// never spills into the other. Entries hold vectors and hashes, never post text.
+const CORPUS_STORE = 'repetition-corpus';
+const CORPUS_CREATED_AT_INDEX = 'createdAt';
 
 export interface EmbeddingRecord {
   postId: string;
@@ -28,6 +34,10 @@ const openDatabase = (): Promise<IDBDatabase> =>
       }
       if (!database.objectStoreNames.contains(CENTROIDS_STORE))
         database.createObjectStore(CENTROIDS_STORE);
+      if (!database.objectStoreNames.contains(CORPUS_STORE)) {
+        const corpus = database.createObjectStore(CORPUS_STORE, { keyPath: 'postId' });
+        corpus.createIndex(CORPUS_CREATED_AT_INDEX, 'observedAt', { unique: false });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('failed to open embedding database'));
@@ -136,8 +146,49 @@ export const loadCentroids = (): Promise<Float32Array[] | null> =>
     };
   });
 
+export const addCorpusEntry = (record: RepetitionCorpusEntry, cap: number): Promise<void> =>
+  transact([CORPUS_STORE], 'readwrite', (transaction) => {
+    const store = transaction.objectStore(CORPUS_STORE);
+    store.put({
+      postId: record.postId,
+      handle: record.handle,
+      embedding: record.embedding,
+      simhash: record.simhash,
+      observedAt: record.observedAt,
+    });
+    const countRequest = store.count();
+    countRequest.onsuccess = () => {
+      let remaining = countRequest.result - cap;
+      if (remaining <= 0) return;
+      const cursorRequest = store.index(CORPUS_CREATED_AT_INDEX).openCursor();
+      cursorRequest.onsuccess = () => {
+        const cursor = cursorRequest.result;
+        if (!cursor || remaining <= 0) return;
+        cursor.delete();
+        remaining -= 1;
+        if (remaining > 0) cursor.continue();
+      };
+    };
+  });
+
+export const listCorpusEntries = (): Promise<RepetitionCorpusEntry[]> =>
+  transact([CORPUS_STORE], 'readonly', (transaction, setResult) => {
+    const request = transaction.objectStore(CORPUS_STORE).index(CORPUS_CREATED_AT_INDEX).getAll();
+    request.onsuccess = () =>
+      setResult(
+        request.result.map((record) => ({
+          postId: record.postId,
+          handle: record.handle,
+          embedding: new Float32Array(record.embedding),
+          simhash: BigInt(record.simhash),
+          observedAt: record.observedAt,
+        })),
+      );
+  });
+
 export const clearAll = (): Promise<void> =>
-  transact([EMBEDDINGS_STORE, CENTROIDS_STORE], 'readwrite', (transaction) => {
+  transact([EMBEDDINGS_STORE, CENTROIDS_STORE, CORPUS_STORE], 'readwrite', (transaction) => {
     transaction.objectStore(EMBEDDINGS_STORE).clear();
     transaction.objectStore(CENTROIDS_STORE).clear();
+    transaction.objectStore(CORPUS_STORE).clear();
   });

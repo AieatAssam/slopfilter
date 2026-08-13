@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { payloadHealth, runSelfTest } from '@/adapters/x/selftest';
+import { payloadHealth, runFeedSelfTest, runSelfTest } from '@/adapters/x/selftest';
 
 const readFixture = (name: string): string => readFileSync(`tests/fixtures/dom/x/${name}`, 'utf8');
 const load = (name: string): Document => {
@@ -34,6 +34,37 @@ describe('runSelfTest', () => {
     expect(result.ok).toBe(true);
     expect(result.failedSelectorIds).toEqual([]);
     expect(result.optionalFailures).toContain('post-images');
+  });
+});
+
+describe('runFeedSelfTest', () => {
+  test('passes on the baseline fixture', () => {
+    const result = runFeedSelfTest(load('timeline-baseline.html'));
+
+    expect(result.ok).toBe(true);
+    expect(result.failedSelectorIds).toEqual([]);
+  });
+
+  test('passes on a timeline-less route that keeps the column and section', () => {
+    const root = load('timeline-baseline.html');
+    for (const element of root.querySelectorAll('article[data-testid="tweet"]')) element.remove();
+    for (const element of root.querySelectorAll('a[href*="/status/"]')) element.remove();
+
+    const result = runFeedSelfTest(root);
+
+    expect(result.ok).toBe(true);
+  });
+
+  test('fails when the feed shell is gone', () => {
+    const root = load('timeline-baseline.html');
+    for (const element of root.querySelectorAll('article[data-testid="tweet"]')) element.remove();
+    for (const element of root.querySelectorAll('a[href*="/status/"]')) element.remove();
+    root.querySelector('section')?.remove();
+
+    const result = runFeedSelfTest(root);
+
+    expect(result.ok).toBe(false);
+    expect(result.failedSelectorIds).toContain('timeline-container');
   });
 });
 

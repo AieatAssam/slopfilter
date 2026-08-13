@@ -120,13 +120,21 @@ if (typeof chrome !== 'undefined') {
       else pendingSelfTestRequests.push({ tabId: message.tabId, sendResponse });
       return true;
     }
+    if (isExtensionMessage(message) && message.type === 'record-stats-batch') {
+      void recordBatch(message.entries).then(
+        () => sendResponse(true),
+        () => sendResponse(false),
+      );
+      return true;
+    }
     if (
       isExtensionMessage(message) &&
       (message.type === 'score-batch-request' ||
         message.type === 'embed-request' ||
         message.type === 'downvote-post' ||
         message.type === 'model-status-request' ||
-        message.type === 'model-retry')
+        message.type === 'model-retry' ||
+        message.type === 'text-pattern-download')
     ) {
       void forwardInferenceMessage(message).then(sendResponse, () => sendResponse(null));
       return true;

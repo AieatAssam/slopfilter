@@ -73,4 +73,26 @@ describe('breakdown panel', () => {
 
     expect(placeholder.textContent).not.toMatch(/\b(ai|generated|synthetic|authored)\b/i);
   });
+
+  test('renders the optional model caveat honestly in its inspector row', () => {
+    const placeholder = setup();
+    const textPatternBreakdown: ScoreBreakdown = {
+      ...breakdown,
+      contributions: [
+        {
+          layerId: 'text-pattern',
+          score: 1,
+          weight: 0.4,
+          weighted: 0.4,
+          reason: null,
+          detail: { status: 'scored', values: { human: 0, llm: 1 } },
+        },
+      ],
+    };
+    placeholder.replaceChildren();
+    attachBreakdown(placeholder, textPatternBreakdown);
+    placeholder.querySelector('button')?.click();
+    expect(placeholder.textContent).toContain('trentmkelly/slop-detector-mini-2');
+    expect(placeholder.textContent).toContain('unreliable on short posts');
+  });
 });

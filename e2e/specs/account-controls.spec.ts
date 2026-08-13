@@ -10,6 +10,7 @@ test('muting an account collapses its posts and trusting restores them', async (
 }, testInfo) => {
   const runId = uniqueRunId(testInfo);
   await page.goto('/');
+  await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
   await appendPost(page, {
     id: `${runId}-post`,
     authorHandle: `@${runId}`,
@@ -18,16 +19,15 @@ test('muting an account collapses its posts and trusting restores them', async (
   });
 
   await expect(page.getByRole('button', { name: 'Account options' }).last()).toBeVisible();
+  await page.locator(`article[data-post-id="${runId}-post"]`).hover();
   await page.getByRole('button', { name: 'Account options' }).last().click();
   await page.getByRole('button', { name: 'Mute this account' }).click();
-  await page.reload();
 
   await expect(page.getByTestId('slopfilter-placeholder').last()).toContainText(
     'you muted this account',
   );
   await page.getByRole('button', { name: 'Account options' }).last().click();
   await page.getByRole('button', { name: 'Always show this account' }).click();
-  await page.reload();
 
   await expect(page.getByText(`body ${runId}`)).toBeVisible();
   expect(await page.getByTestId('slopfilter-placeholder').count()).toBe(0);
@@ -40,8 +40,7 @@ test('trust keeps high-frequency posts visible', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Account options' }).first().click();
   await page.getByRole('button', { name: 'Always show this account' }).click();
-  await page.reload();
 
   await expect(page.locator('article[data-testid="tweet"]')).toHaveCount(10);
-  expect(await page.getByTestId('slopfilter-placeholder').count()).toBe(0);
+  await expect(page.getByTestId('slopfilter-placeholder')).toHaveCount(0);
 });

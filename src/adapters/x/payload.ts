@@ -11,6 +11,7 @@ export interface PayloadEntry {
 export interface PayloadContract {
   contractVersion: string;
   operation: string;
+  operations?: readonly string[];
   entries: readonly PayloadEntry[];
 }
 
@@ -36,6 +37,15 @@ export function validatePayloadContract(value: unknown): ContractValidation {
   }
   if (!isRecord(value) || typeof value.operation !== 'string' || value.operation.length === 0) {
     errors.push('operation must be a non-empty string');
+  }
+  if (
+    isRecord(value) &&
+    value.operations !== undefined &&
+    (!Array.isArray(value.operations) ||
+      value.operations.length === 0 ||
+      !value.operations.every((operation) => typeof operation === 'string' && operation.length > 0))
+  ) {
+    errors.push('operations must be a non-empty array of strings when present');
   }
 
   if (!isRecord(value) || !Array.isArray(value.entries) || value.entries.length === 0) {
@@ -109,7 +119,7 @@ const resolvePath = (root: unknown, path: string): unknown[] => {
 
 export const resolveEntry = (context: unknown, entry: PayloadEntry): unknown[] => {
   for (const path of entry.paths) {
-    const hits = resolvePath(context, path);
+    const hits = resolvePath(context, path).filter((value) => value !== null);
     if (hits.length > 0) return hits;
   }
   return [];
@@ -124,6 +134,13 @@ export function isOperationUrl(url: string, operation: string): boolean {
     return false;
   }
 }
+
+export const payloadOperations = payloadContract.operations ?? [payloadContract.operation];
+
+export const operationForUrl = (
+  url: string,
+  operations: readonly string[] = payloadOperations,
+): string | null => operations.find((operation) => isOperationUrl(url, operation)) ?? null;
 
 const finiteNumber = (value: unknown): number | null => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -180,21 +197,27 @@ export function extractPayload(
   const authors: PayloadAuthorStats[] = [];
   const engagement: Record<string, PayloadTweetEngagement> = {};
   const seenHandles = new Set<string>();
+  const tweetEntry = entry('tweet');
+  const tweetIdEntry = entry('tweet-id');
+  const userEntry = entry('user');
 
   for (const entryValue of entries) {
-    const tweetEntry = entry('tweet');
-    if (!tweetEntry) continue;
-    const tweets = resolveEntry(entryValue, tweetEntry);
+    if (!tweetEntry || !tweetIdEntry) continue;
+    const nestedTweets = resolveEntry(entryValue, tweetEntry);
+    const tweets =
+      nestedTweets.length > 0
+        ? nestedTweets
+        : resolveEntry(entryValue, tweetIdEntry).length > 0
+          ? [entryValue]
+          : [];
     for (const tweet of tweets) {
       if (!isRecord(tweet)) continue;
 
-      const idEntry = entry('tweet-id');
       const postId =
-        idEntry && typeof pick(resolveEntry(tweet, idEntry)) === 'string'
-          ? (pick(resolveEntry(tweet, idEntry)) as string)
+        typeof pick(resolveEntry(tweet, tweetIdEntry)) === 'string'
+          ? (pick(resolveEntry(tweet, tweetIdEntry)) as string)
           : null;
 
-      const userEntry = entry('user');
       const users = userEntry ? resolveEntry(tweet, userEntry) : [];
       for (const user of users) {
         if (!isRecord(user)) continue;

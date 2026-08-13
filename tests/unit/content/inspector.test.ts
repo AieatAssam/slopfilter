@@ -172,9 +172,42 @@ describe('openInspector', () => {
     expect(provenanceRow?.textContent).toContain('disabled');
   });
 
+  test('shows the optional model id, dataset, and caveat honestly', () => {
+    document.body.replaceChildren();
+    openInspector(post, {
+      breakdown: {
+        ...breakdown,
+        contributions: [
+          {
+            layerId: 'text-pattern',
+            score: 1,
+            weight: 0.4,
+            weighted: 0.4,
+            reason: null,
+            detail: { status: 'scored', values: { human: 0, llm: 1 } },
+          },
+        ],
+      },
+      enabledLayers: allEnabled,
+    });
+    const dialog = document.querySelector('[data-testid="slopfilter-inspector"]');
+    expect(dialog?.textContent).toContain('trentmkelly/slop-detector-mini-2');
+    expect(dialog?.textContent).toContain('unreliable on short posts');
+  });
+
   test('totals show a hidden verdict and shortfall for a hidden post', () => {
     const dialog = open();
 
     expect(dialog.textContent).toContain('verdict showed');
+  });
+
+  test('removes a closed inspector from the page', () => {
+    const dialog = open();
+    const close = dialog.querySelector('[data-testid="slopfilter-inspector-close"]');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('close button missing');
+
+    close.click();
+
+    expect(document.querySelector('[data-testid="slopfilter-inspector"]')).toBeNull();
   });
 });

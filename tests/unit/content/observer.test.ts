@@ -18,6 +18,7 @@ const adapterFor = (extractPost: PlatformAdapter['extractPost'] = () => post): P
   platform: 'x',
   selectorContractVersion: '1.2.0',
   selfTest: () => ({ ok: true, failedSelectorIds: [] }),
+  selfTestFeed: () => ({ ok: true, failedSelectorIds: [] }),
   findTimelineContainer: (root) => root.querySelector('div'),
   findPostElements: (container) => Array.from(container.querySelectorAll('article')),
   extractPost,

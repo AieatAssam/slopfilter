@@ -38,18 +38,34 @@ describe('settings', () => {
   });
 
   test('repairs a corrupt store field by field', async () => {
-    stored = { hideThreshold: 'abc', hideAds: 'yes', weights: { behavioural: 0.4 } };
+    stored = { hideThreshold: 'abc', hideAds: 'yes', weights: { behavioural: 0.45 } };
 
     const settings = await loadSettings();
 
     expect(settings.hideThreshold).toBe(DEFAULT_SETTINGS.hideThreshold);
     expect(settings.hideAds).toBe(true);
-    expect(settings.weights.behavioural).toBe(0.4);
+    expect(settings.weights.behavioural).toBe(0.45);
     expect(settings.weights.taste).toBe(DEFAULT_SETTINGS.weights.taste);
   });
 
   test('migrates stored weights matching the old defaults to the recalibrated defaults', async () => {
     stored = { weights: { ...LEGACY_DEFAULT_WEIGHTS } };
+
+    const settings = await loadSettings();
+
+    expect(settings.weights).toEqual(DEFAULT_SETTINGS.weights);
+  });
+
+  test('migrates a legacy profile that predates the repetition layer', async () => {
+    stored = {
+      weights: {
+        behavioural: 0.4,
+        provenance: 0.1,
+        'content-type': 0.2,
+        'image-forensics': 0.1,
+        taste: 0.2,
+      },
+    };
 
     const settings = await loadSettings();
 
@@ -81,7 +97,7 @@ describe('settings', () => {
       cohortCutoff: '2023-06-15',
       cohortVolumeFloor: 15,
       cohortVolumeCeiling: 90,
-      weights: { ...DEFAULT_SETTINGS.weights, behavioural: 0.4 },
+      weights: { ...DEFAULT_SETTINGS.weights, behavioural: 0.45 },
       enabledLayers: { ...DEFAULT_SETTINGS.enabledLayers, taste: false },
     };
 
@@ -117,5 +133,37 @@ describe('settings', () => {
 
   test('derives the default threshold from the scoring config', () => {
     expect(DEFAULT_SETTINGS.hideThreshold).toBe(DEFAULT_SCORING_CONFIG.hideThreshold);
+  });
+
+  test('defaults the repetition layer on, with its documented weight', () => {
+    expect(DEFAULT_SETTINGS.enabledLayers.repetition).toBe(true);
+    expect(DEFAULT_SETTINGS.weights.repetition).toBe(DEFAULT_SCORING_CONFIG.weights.repetition);
+  });
+
+  test('defaults the optional text-pattern layer off and caps its weight', async () => {
+    expect(DEFAULT_SETTINGS.enabledLayers['text-pattern']).toBe(false);
+    stored = { enabledLayers: { 'text-pattern': true }, weights: { 'text-pattern': 1 } };
+    const settings = await loadSettings();
+    expect(settings.enabledLayers['text-pattern']).toBe(true);
+    expect(settings.weights['text-pattern']).toBe(0.4);
+  });
+
+  test('clamps an out-of-range repetition weight to the default', async () => {
+    stored = {
+      weights: {
+        ...DEFAULT_SETTINGS.weights,
+        repetition: 7,
+      },
+    };
+
+    expect((await loadSettings()).weights.repetition).toBe(DEFAULT_SETTINGS.weights.repetition);
+  });
+
+  test('migrates a legacy store onto the current defaults including repetition', async () => {
+    stored = { weights: { ...LEGACY_DEFAULT_WEIGHTS } };
+
+    await expect(loadSettings()).resolves.toMatchObject({
+      weights: DEFAULT_SETTINGS.weights,
+    });
   });
 });

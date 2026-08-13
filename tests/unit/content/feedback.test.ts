@@ -40,7 +40,15 @@ beforeEach(async () => {
   document.body.replaceChildren();
   await resetDatabase();
   vi.stubGlobal('chrome', {
-    runtime: { sendMessage: vi.fn(() => Promise.resolve()) },
+    runtime: {
+      sendMessage: vi.fn((message: { type?: string; postId?: string }) =>
+        Promise.resolve(
+          message.type === 'downvote-post'
+            ? { type: 'downvote-complete', postId: message.postId, ok: true }
+            : undefined,
+        ),
+      ),
+    },
     storage: { local: { get: vi.fn(async () => ({ exclusions: [] })), set: vi.fn() } },
   });
 });
@@ -109,6 +117,36 @@ describe('feedback controls', () => {
     expect(element.querySelector('[data-testid="slopfilter-downvote"]')?.textContent).toBe(
       'Not interested',
     );
+  });
+
+  test('downvoting shows progress, confirms persistence, and prevents duplicate clicks', async () => {
+    const element = document.createElement('div');
+    document.body.append(element);
+    attachFeedbackControls(element, post, { breakdown });
+
+    const button = element.querySelector('[data-testid="slopfilter-downvote"]');
+    if (!(button instanceof HTMLButtonElement)) throw new Error('downvote missing');
+    button.click();
+
+    expect(button.textContent).toBe('Saving…');
+    expect(button.disabled).toBe(true);
+    await vi.waitFor(() => expect(button.textContent).toBe('Saved'));
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  test('downvoting restores a retry when persistence fails', async () => {
+    vi.mocked(chrome.runtime.sendMessage).mockRejectedValueOnce(new Error('worker unavailable'));
+    const element = document.createElement('div');
+    document.body.append(element);
+    attachFeedbackControls(element, post, { breakdown });
+
+    const button = element.querySelector('[data-testid="slopfilter-downvote"]');
+    if (!(button instanceof HTMLButtonElement)) throw new Error('downvote missing');
+    button.click();
+
+    await vi.waitFor(() => expect(button.textContent).toBe('Try again'));
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-pressed')).toBe('false');
   });
 
   test('creates one anchor as the first child and keeps it across attaches', () => {
@@ -197,5 +235,19 @@ describe('feedback controls', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     dispatchToggle('closed');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  test('account changes notify the feed after storage succeeds', async () => {
+    const element = document.createElement('div');
+    document.body.append(element);
+    const onAccountStateChanged = vi.fn();
+    attachFeedbackControls(element, post, { breakdown, onAccountStateChanged });
+
+    const mute = Array.from(element.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Mute this account',
+    );
+    mute?.click();
+
+    await vi.waitFor(() => expect(onAccountStateChanged).toHaveBeenCalledWith('muted'));
   });
 });

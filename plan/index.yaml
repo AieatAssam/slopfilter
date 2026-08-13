@@ -7,14 +7,18 @@ goal: Ship a Manifest V3 Chrome extension that collapses low-quality posts in th
   adapter-provided image-thumbnail fetches for C2PA inspection. No servers, no accounts, no
   authorship claims.
 state:
-  verified_on: 2026-08-08
-  gates_green: lint, typecheck, test:unit (157), build, build:test, test:e2e (29) all exit 0
+  verified_on: 2026-08-12
+  gates_green: lint, typecheck, test:unit (291), build, build:test, test:e2e (69) all exit 0
   shipped: SF-001..SF-207, all 30 tickets. Code is in the repository; do not rebuild it.
-  open_work: "SF-208..SF-224, none blocked. SF-219..SF-221 depend on SF-214; SF-222 then SF-223
-    follow SF-221; SF-224 is independent of all of them."
+  open_work: "none"
   known_defect: "Measured 2026-08-08: scorePost computed a weighted mean, so quiet layers diluted
     loud ones. Fixed by SF-214: composite is now a clamped additive sum of weighted scores, so
     behavioural 1.0 alone scores 0.6 and hides while model layers report zero."
+  calibration_2026-08-12: "SF-221: 122 committed hand-labelled rows (44 slop, 44 hard-negative).
+    Measured at the default 0.6 threshold and again with every model layer disabled: false-positive
+    rate 0.000 over 78 ordinary rows against the 0.05 ceiling (a hard failure when exceeded), recall
+    0.955 (42/44 slop) reported and non-blocking. Model layers produce no signal in this report
+    (HD-005); the two runs coincide."
 protocol:
   - Read this file plus the one plan/tickets/<id>.yaml you are working. Nothing else.
   - "Work open tickets in depends_on order. done[] is a ledger of shipped work: read the code, never
@@ -157,7 +161,7 @@ decisions:
       posts by the same author in one pass, which is rare in For You, so postsPerDay was usually null
       for exactly the accounts the layer exists to catch. Owner confirmed SF-215 plus SF-216 is the
       answer: SF-215 accumulates timeline sightings across sessions, SF-216 reads X's own
-      already-fetched HomeTimeline response, and neither adds a request, so both stay inside the
+      already-fetched HomeTimeline/detail responses, and neither adds a request, so both stay inside the
       original answer of deriving the rate from data the page already has. An authenticated profile
       or API fetch remains rejected: it requires reading the ct0 cookie to forge x-csrf-token, which
       is credential handling, risks the user's account through unusual request patterns, and would
@@ -184,10 +188,10 @@ decisions:
       layer. Acceptance evidence is tests/fixtures/posts/calibration.ts driven from pipeline.test.ts."
     HD-006: Drift workflow targets the committed fixture until SLOPFILTER_DRIFT_TARGET names an
       owner-approved live target.
-    HD-007: "Embedder pinned to an immutable revision. The classifier half is superseded by HD-018:
-      once SF-222 lands, Xenova/mobilebert-uncased-mnli is gone from MODEL_IDS and its unconfirmed
-      licensing is moot. Until SF-222 lands the classifier is still pinned and still unconfirmed."
-    HD-008: Three PRD content labels, equal treatment, 0.80 confidence cutoff.
+    HD-007: Embedder pinned to an immutable revision; the retired classifier is no longer part of the
+      model set.
+    HD-008: Three PRD content labels, equal treatment; centroid similarity cutoff is provisional under
+      HD-005 at 0.62.
     HD-009: No hard-veto rules are enabled until the evidence rules are approved.
     HD-010: onnx-community/CommunityForensics-DeepfakeDet-ViT-ONNX @
       f9fc6516b37cd7d1bec3b94847b3682ce97249f0, q4f16, 384px, max 4 thumbnails per post.
@@ -201,13 +205,36 @@ decisions:
       the provisional constants added by SF-219 through SF-223. Deliberately left provisional
       2026-08-09: review once SF-221 has measured them rather than guessing again."
 done:
+  - id: SF-221
+    did: Commit a 122-row hand-labelled calibration corpus (44 slop, 44 hard-negative) drawn only from
+      the golden DOM and payload fixtures, and gate the pipeline on a hard false-positive ceiling
+      (measured 0.000 at a 0.05 ceiling; recall 0.955 reported, non-blocking) under both default and
+      models-disabled settings via npm run calibration
+  - id: SF-222
+    did: Replace the zero-shot classifier with auditable prototype centroids in the pinned embedder,
+      removing the retired model and leaving calibration at 0.000 false positives and 0.955 recall
+  - id: SF-223
+    did: Add the optional, capped, reasonless text-pattern signal with lazy opt-in model loading,
+      honest inspector caveat, licensing documentation, and end-to-end fail-safe coverage
+  - id: SF-224
+    did: Sanitize drift DOM captures in loose mode before public artifact upload, verify synthetic
+      handles and hosts, and fail closed by deleting unsafe captures
+  - id: SF-220
+    did: Score engagement-bait post structure from observable formatting features (numbered lists,
+      hashtag stuffing, shout-outs, call-to-action copy) as a structural-with-model Layer 3 so the
+      layer is never silent before the classifier loads
+  - id: SF-219
+    did: Score near-duplicate and templated posts against a bounded recent-post corpus using the
+      pinned embedder, with a character 5-gram SimHash and length floor ahead of cosine and separate
+      author-self and cross-account sub-signals, never a veto and never persisting post text
   - id: SF-217
     did: Score recently created high-volume accounts as a graded cohort sub-signal (volume ramp
       across floor..ceiling times a recency ramp over a 180-day cutoff window), fed by the payload
       profile inputs, tunable in options, failing open to no-data and never crossing the hide
       threshold on its own
   - id: SF-216
-    did: Read author account age, post count, and exact engagement from X's own HomeTimeline response
+    did: Read author account age, post count, and exact engagement from X's own already-fetched
+      HomeTimeline/detail responses
       via a MAIN-world interceptor with a versioned payload contract, zero new requests, and fail-open
       extraction
   - id: SF-215
@@ -298,38 +325,6 @@ done:
     did: Add the model download progress UX and offline behaviour
   - id: SF-207
     did: Add the onboarding flow, the privacy page, and the store-listing copy
-open_tickets:
-  - id: SF-219
-    file: plan/tickets/SF-219.yaml
-    depends_on: [SF-214]
-    summary: Score near-duplicate and templated posts against the observed timeline using the already
-      pinned embedder, with no new download
-  - id: SF-220
-    file: plan/tickets/SF-220.yaml
-    depends_on: [SF-214]
-    summary: Score engagement-bait post structure from observable formatting features, with no model,
-      so Layer 3 is no longer silent before the classifier loads
-  - id: SF-221
-    file: plan/tickets/SF-221.yaml
-    depends_on: [SF-214, SF-219, SF-220]
-    summary: Add a labelled calibration corpus and an asymmetric false-positive gate over the combined
-      pipeline
-  - id: SF-222
-    file: plan/tickets/SF-222.yaml
-    depends_on: [SF-220, SF-221]
-    summary: Replace the zero-shot MNLI classifier with prototype centroids in the already pinned
-      embedder, taking first-run download from 71.17MB to 44.20MB
-  - id: SF-223
-    file: plan/tickets/SF-223.yaml
-    depends_on: [SF-221, SF-222]
-    summary: Add the text-pattern detector as a capped, reasonless, opt-in contribution that can never
-      hide a post on its own
-  - id: SF-224
-    file: plan/tickets/SF-224.yaml
-    depends_on: []
-    summary: Sanitise the captured drift DOM on the runner before upload, so drift issues can be filed
-      in the public main repository
-
 fixtures:
   dom: "tests/fixtures/dom/x/*.html - real captured X markup, sanitised. Class names and inline
     colours are real; X injects its CSS at runtime so the capture carries no stylesheet."
@@ -340,6 +335,10 @@ fixtures:
     JSON by hand."
   payload_clock: "Account ages are relative to FIXTURE_NOW 2026-08-08T12:00:00Z. Any signal consuming
     account age takes `now` as an argument and tests pass FIXTURE_NOW. Never Date.now()."
+  corpus: "tests/fixtures/posts/corpus.json - SF-221's 122 committed, hand-labelled rows (44 slop, 44
+    hard-negative) drawn only from the golden DOM and payload fixtures, with a written rationale per
+    row. Scored by scripts/calibration-scorer.ts through the real pipeline under both configurations;
+    per-author feed cadence is encoded in author.cadenceMinutes."
 
 # Standing rules for any injected UI, not only the open tickets above.
 ui_rules:

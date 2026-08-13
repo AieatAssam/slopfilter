@@ -193,6 +193,15 @@ const start = async () => {
   });
   form?.addEventListener('change', () => {
     persistCurrentSettings();
+    if (input('enable-text-pattern').checked) {
+      void chrome.runtime
+        .sendMessage({ type: 'text-pattern-download' })
+        .then((response) => {
+          if (response?.type === 'text-pattern-download-complete' && !response.ok)
+            setStatus('Could not download the optional text-pattern model.');
+        })
+        .catch(() => setStatus('Could not download the optional text-pattern model.'));
+    }
   });
   form?.addEventListener('input', () => {
     persistCurrentSettings();

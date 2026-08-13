@@ -17,7 +17,7 @@ export interface AuthorActivityRecord {
   posts: Record<string, number>;
   profileJoinDate: number | null;
   profilePostCount: number | null;
-  // SF-216: when the HomeTimeline payload supplied the profile, keep the observation time.
+  // SF-216: when an intercepted X payload supplied the profile, keep the observation time.
   profileObservedAt: number | null;
 }
 
@@ -168,14 +168,8 @@ export const recordSightings = (
           setResult(null);
           return;
         }
-        const joined =
-          profile?.joinDate !== undefined
-            ? (profile.joinDate ?? null)
-            : (existing?.profileJoinDate ?? null);
-        const postCount =
-          profile?.postCount !== undefined
-            ? (profile.postCount ?? null)
-            : (existing?.profilePostCount ?? null);
+        const joined = profile?.joinDate ?? existing?.profileJoinDate ?? null;
+        const postCount = profile?.postCount ?? existing?.profilePostCount ?? null;
         const record = createRecord(
           key,
           posts,
@@ -203,7 +197,7 @@ export const getActivity = (handle: string): Promise<AuthorActivityRecord | null
   );
 };
 
-// SF-216: write derived author stats from an intercepted timeline payload. Only the numbers named
+// SF-216: write derived author stats from an intercepted X payload. Only the numbers named
 // in the payload contract are persisted; the raw response and post text never touch storage.
 export const updateAuthorProfile = (
   handle: string,

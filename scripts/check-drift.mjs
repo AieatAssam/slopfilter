@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 
 const args = process.argv.slice(2);
@@ -170,10 +170,15 @@ if (!target && !fixturePath) {
       writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 
       if (failures.length > 0) {
+        const rawCapturePath = resolve(
+          process.env.RUNNER_TEMP ?? '/tmp',
+          'slopfilter-drift-dom.html',
+        );
         writeFileSync(
-          resolve(dirname(reportPath), 'drift-dom.html'),
+          rawCapturePath,
           (await page.locator('html').evaluate((element) => element.outerHTML)).slice(0, 200_000),
         );
+        console.log(`raw_capture=${rawCapturePath}`);
         console.log(`drift status=drift failed=${failures.join(',')} target=${target}`);
         process.exitCode = 2;
       } else {

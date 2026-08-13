@@ -1,4 +1,11 @@
-export type LayerId = 'behavioural' | 'provenance' | 'content-type' | 'image-forensics' | 'taste';
+export type LayerId =
+  | 'behavioural'
+  | 'provenance'
+  | 'content-type'
+  | 'image-forensics'
+  | 'taste'
+  | 'repetition'
+  | 'text-pattern';
 
 export type SignalDetailStatus =
   | 'scored'

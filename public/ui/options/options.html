@@ -72,7 +72,7 @@
                 <label for="weight-behavioural">Posting behaviour</label>
                 <span class="info-tip" title="Looks at posting pace and engagement balance visible in your timeline.">i</span>
               </div>
-              <p id="help-behavioural">Finds unusually frequent posting and weak response. Default weight: <strong>0.40</strong>. On by default.</p>
+              <p id="help-behavioural">Finds unusually frequent posting and weak response. Default weight: <strong>0.60</strong>. On by default.</p>
             </div>
             <div class="layer-controls">
               <label class="toggle-control" for="enable-behavioural"><input id="enable-behavioural" type="checkbox" aria-describedby="help-behavioural" /><span>Use</span></label>
@@ -88,7 +88,7 @@
                 <label for="weight-provenance">Content credentials</label>
                 <span class="info-tip" title="Checks whether an image declares verifiable content credentials.">i</span>
               </div>
-              <p id="help-provenance">Gives a small signal to images with no readable credentials. Default weight: <strong>0.10</strong>. On by default.</p>
+              <p id="help-provenance">Gives a small signal to images with no readable credentials. Default weight: <strong>0.20</strong>. On by default.</p>
             </div>
             <div class="layer-controls">
               <label class="toggle-control" for="enable-provenance"><input id="enable-provenance" type="checkbox" aria-describedby="help-provenance" /><span>Use</span></label>
@@ -104,7 +104,7 @@
                 <label for="weight-content-type">Content patterns</label>
                 <span class="info-tip" title="Recognises patterns such as engagement bait and giveaway spam in post text.">i</span>
               </div>
-              <p id="help-content-type">Adds context for common low-value post patterns. Default weight: <strong>0.20</strong>. On by default.</p>
+              <p id="help-content-type">Adds context for common low-value post patterns. Structural checks run without any model download, so the layer is active from the start. Default weight: <strong>0.50</strong>. On by default.</p>
             </div>
             <div class="layer-controls">
               <label class="toggle-control" for="enable-content-type"><input id="enable-content-type" type="checkbox" aria-describedby="help-content-type" /><span>Use</span></label>
@@ -120,7 +120,7 @@
                 <label for="weight-image-forensics">Image evidence</label>
                 <span class="info-tip" title="Looks for visual artefacts in thumbnails when the local image signal is available.">i</span>
               </div>
-              <p id="help-image-forensics">Adds a bounded image signal without downloading full-resolution media. Default weight: <strong>0.10</strong>. On by default.</p>
+              <p id="help-image-forensics">Adds a bounded image signal without downloading full-resolution media. Default weight: <strong>0.40</strong>. On by default.</p>
             </div>
             <div class="layer-controls">
               <label class="toggle-control" for="enable-image-forensics"><input id="enable-image-forensics" type="checkbox" aria-describedby="help-image-forensics" /><span>Use</span></label>
@@ -136,13 +136,44 @@
                 <label for="weight-taste">Your taste</label>
                 <span class="info-tip" title="Learns from posts you mark Not interested, using only local history.">i</span>
               </div>
-              <p id="help-taste">Moves the filter toward patterns you have rejected. Default weight: <strong>0.20</strong>. On by default.</p>
+              <p id="help-taste">Moves the filter toward patterns you have rejected. Default weight: <strong>0.50</strong>. On by default.</p>
             </div>
             <div class="layer-controls">
               <label class="toggle-control" for="enable-taste"><input id="enable-taste" type="checkbox" aria-describedby="help-taste" /><span>Use</span></label>
               <label class="weight-control" for="weight-taste">Weight <input id="weight-taste" type="number" min="0" max="1" step="0.05" aria-describedby="help-taste" /></label>
               <button class="reset-button" data-reset="weight-taste" type="button">Reset weight</button>
               <button class="reset-button" data-reset="enable-taste" type="button">Reset use</button>
+            </div>
+          </div>
+
+          <div class="layer-row">
+            <div class="setting-copy">
+              <div class="setting-title-row">
+                <label for="weight-repetition">Repeated text</label>
+                <span class="info-tip" title="Flags posts that repeat near-identical wording across the accounts you have seen in this feed.">i</span>
+              </div>
+              <p id="help-repetition">Calls out the same wording appearing across the posts you have already seen, using the locally computed text signal. Default weight: <strong>0.30</strong>. On by default.</p>
+            </div>
+            <div class="layer-controls">
+              <label class="toggle-control" for="enable-repetition"><input id="enable-repetition" type="checkbox" aria-describedby="help-repetition" aria-label="Use Repeated text signal" /><span>Use</span></label>
+              <label class="weight-control" for="weight-repetition">Weight <input id="weight-repetition" aria-label="Weight Repeated text" type="number" min="0" max="1" step="0.05" aria-describedby="help-repetition" /></label>
+              <button class="reset-button" data-reset="weight-repetition" type="button">Reset weight</button>
+              <button class="reset-button" data-reset="enable-repetition" type="button">Reset use</button>
+            </div>
+          </div>
+          <div class="layer-row">
+            <div class="setting-copy">
+              <div class="setting-title-row">
+                <label for="weight-text-pattern">Optional text pattern</label>
+                <span class="info-tip" title="Downloads a separate statistical text-pattern model only when you opt in; it is unreliable on short posts and biased against non-native English writing.">i</span>
+              </div>
+              <p id="help-text-pattern">Adds a capped statistical text-pattern score for posts of at least 180 characters. Default weight: <strong>0.40</strong>. Off by default. The model is downloaded only after you opt in; see LICENSES.md.</p>
+            </div>
+            <div class="layer-controls">
+              <label class="toggle-control" for="enable-text-pattern"><input id="enable-text-pattern" type="checkbox" aria-label="Use Optional text pattern signal" aria-describedby="help-text-pattern" /><span>Use</span></label>
+              <label class="weight-control" for="weight-text-pattern">Weight <input id="weight-text-pattern" type="number" min="0" max="1" step="0.05" aria-describedby="help-text-pattern" /></label>
+              <button class="reset-button" data-reset="weight-text-pattern" type="button">Reset weight</button>
+              <button class="reset-button" data-reset="enable-text-pattern" type="button">Reset use</button>
             </div>
           </div>
         </fieldset>

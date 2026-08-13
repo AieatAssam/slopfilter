@@ -43,6 +43,15 @@ jobs:
 
       - name: Upload drift report
         if: always()
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.monitor.outputs.exit_code }}" = "2" ]; then
+            if ! node scripts/sanitise-fixture.mjs --loose "$RUNNER_TEMP/slopfilter-drift-dom.html" drift-dom.html; then rm -f drift-dom.html "$RUNNER_TEMP/slopfilter-drift-dom.html"; exit 1; fi
+            if ! node --input-type=module -e 'import fs from "node:fs";const s=fs.readFileSync("drift-dom.html","utf8");const bad=[...s.matchAll(/@[A-Za-z0-9_]{1,15}/g)].map(m=>m[0]).filter(h=>!/^@account[0-9]+$/.test(h));if(bad.length)throw new Error("unsanitised handles: "+[...new Set(bad)]);const hosts=[...s.matchAll(/https?:[/][/]([^/\\s\x27\"<>]+)/gi)].map(m=>m[1]).filter(h=>h!=="example.invalid");if(hosts.length)throw new Error("unsanitised hosts: "+[...new Set(hosts)]);console.log("sanitised capture verified")'; then rm -f drift-dom.html "$RUNNER_TEMP/slopfilter-drift-dom.html"; exit 1; fi
+          fi
+
+      - name: Upload sanitised drift report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: selector-drift-report
@@ -74,7 +83,7 @@ jobs:
               repo: context.repo.repo,
               title,
               labels: ['drift-monitor'],
-              body: `The selector contract no longer matches the configured target.\n\n\`\`\`json\n${report}\n\`\`\``,
+              body: `The selector contract no longer matches the configured target. The attached DOM capture is sanitised: handles are replaced with @accountNN, hostnames with example.invalid, and post text with synthetic text.\n\n\`\`\`json\n${report}\n\`\`\``,
             });
 
       - name: File unreachable-target issue
@@ -99,5 +108,5 @@ jobs:
               repo: context.repo.repo,
               title,
               labels: ['drift-monitor'],
-              body: `The configured drift target could not be reached.\n\n\`\`\`json\n${report}\n\`\`\``,
+              body: `The configured drift target could not be reached. Any attached DOM capture is sanitised: handles are replaced with @accountNN, hostnames with example.invalid, and post text with synthetic text.\n\n\`\`\`json\n${report}\n\`\`\``,
             });

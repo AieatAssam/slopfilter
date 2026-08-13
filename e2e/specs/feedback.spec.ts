@@ -7,17 +7,19 @@ test.afterEach(async ({ page }) => {
 
 test('wrong-call restores a hidden post and excludes it after reload', async ({ page }) => {
   await page.goto('/?fixture=high-frequency');
+  await expect(page.locator('article[data-testid="tweet"]')).toHaveCount(10);
   await waitForScoringSettled(page);
   const placeholder = page.getByTestId('slopfilter-placeholder').first();
   await expect(placeholder).toBeVisible();
   const hiddenPostId = await placeholder.evaluate((element) =>
     element.previousElementSibling?.getAttribute('data-post-id'),
   );
-  const placeholderCount = await page.getByTestId('slopfilter-placeholder').count();
-
   await placeholder.getByRole('button', { name: 'This was wrong' }).click();
-  await expect(page.getByTestId('slopfilter-placeholder')).toHaveCount(placeholderCount - 1);
-  await expect(page.locator(`article[data-post-id="${hiddenPostId}"]`)).toBeVisible();
+  const post = page.locator(`article[data-post-id="${hiddenPostId}"]`);
+  await expect(post).toBeVisible();
+  await expect(
+    post.locator('xpath=following-sibling::*[1][@data-testid="slopfilter-placeholder"]'),
+  ).toHaveCount(0);
   await page.reload();
 
   await expect(page.locator('article[data-post-id="high-frequency-0"]')).toBeVisible();
@@ -51,4 +53,14 @@ test('the not-interested control is keyboard reachable', async ({ page }) => {
   );
   await post.getByRole('button', { name: 'Not interested' }).focus();
   expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('Not interested');
+});
+
+test('not interested shows immediate progress while feedback is saved', async ({ page }) => {
+  await page.goto('/');
+  const button = page.locator('article[data-testid="tweet"]').first().getByRole('button', {
+    name: 'Not interested',
+  });
+  await button.click({ noWaitAfter: true });
+  await expect(button).toHaveText(/Saving…|Saved/);
+  await expect(button).toBeDisabled();
 });

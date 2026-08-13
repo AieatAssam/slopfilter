@@ -4,6 +4,10 @@ const panelTestId = 'slopfilter-breakdown-panel';
 const rowTestId = 'slopfilter-breakdown-row';
 
 const value = (number: number): string => number.toFixed(2);
+const TEXT_PATTERN_MODEL = 'trentmkelly/slop-detector-mini-2';
+const TEXT_PATTERN_DATASET = 'slop-detector-mini-2';
+const TEXT_PATTERN_CAVEAT =
+  'Statistical text-pattern score; unreliable on short posts and biased against non-native English writing.';
 
 export function attachBreakdown(placeholder: HTMLElement, breakdown: ScoreBreakdown): void {
   const toggle = document.createElement('button');
@@ -29,6 +33,9 @@ export function attachBreakdown(placeholder: HTMLElement, breakdown: ScoreBreakd
       row.className = 'slopfilter-breakdown-row';
       row.dataset.testid = rowTestId;
       row.textContent = `${contribution.layerId}: score ${value(contribution.score)} · weight ${value(contribution.weight)} · contribution ${value(contribution.weighted)}`;
+      if (contribution.layerId === 'text-pattern') {
+        row.textContent += ` · model ${TEXT_PATTERN_MODEL} · dataset ${TEXT_PATTERN_DATASET} · ${TEXT_PATTERN_CAVEAT}`;
+      }
       panel.append(row);
     }
 

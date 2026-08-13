@@ -104,7 +104,9 @@ test('account menu opens above surrounding content, closes on Escape and outside
   await page.goto('/');
   await page.waitForTimeout(200);
 
-  const trigger = page.getByRole('button', { name: 'Account options' }).last();
+  const article = page.locator('article[data-testid="tweet"]').first();
+  const trigger = article.getByRole('button', { name: 'Account options' });
+  await article.hover();
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
@@ -121,4 +123,62 @@ test('account menu opens above surrounding content, closes on Escape and outside
 
   const focusedAfterOutside = await page.evaluate(() => document.activeElement?.textContent);
   expect(focusedAfterOutside).toContain('Account options');
+});
+
+test('collapsed-row controls stay in flow without covering the recovery actions', async ({
+  context,
+}) => {
+  const page = await context.newPage();
+  await page.goto('/?fixture=high-frequency');
+  const placeholder = page.getByTestId('slopfilter-placeholder').first();
+  await expect(placeholder).toBeVisible();
+
+  const boxes = await placeholder.evaluate((element) => {
+    const rect = (selector: string) => {
+      const node = element.querySelector<HTMLElement>(selector);
+      if (!node) throw new Error(`missing ${selector}`);
+      const box = node.getBoundingClientRect();
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+    };
+    return {
+      reason: rect('.slopfilter-reason'),
+      showAnyway: rect('.slopfilter-show-anyway'),
+      breakdown: rect('.slopfilter-breakdown-toggle'),
+      feedback: rect('[data-testid="slopfilter-feedback"]'),
+    };
+  });
+
+  for (const pair of [
+    [boxes.reason, boxes.feedback],
+    [boxes.showAnyway, boxes.feedback],
+    [boxes.breakdown, boxes.feedback],
+  ] as const) {
+    expect(pair[0].bottom <= pair[1].top || pair[1].bottom <= pair[0].top).toBe(true);
+  }
+});
+
+test('feed controls wrap inside a narrow post with touch-sized targets', async ({ context }) => {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+  const article = page.locator('article[data-testid="tweet"]').first();
+  const controls = article.getByTestId('slopfilter-feedback');
+  await expect(controls).toBeVisible();
+
+  const layout = await article.evaluate((element) => {
+    const group = element.querySelector<HTMLElement>('[data-testid="slopfilter-feedback"]');
+    if (!group) throw new Error('feedback controls missing');
+    const articleBox = element.getBoundingClientRect();
+    const groupBox = group.getBoundingClientRect();
+    return {
+      contained: groupBox.left >= articleBox.left && groupBox.right <= articleBox.right,
+      buttonHeights: Array.from(
+        group.querySelectorAll(':scope > button'),
+        (button) => button.getBoundingClientRect().height,
+      ),
+    };
+  });
+
+  expect(layout.contained).toBe(true);
+  expect(Math.min(...layout.buttonHeights)).toBeGreaterThanOrEqual(40);
 });

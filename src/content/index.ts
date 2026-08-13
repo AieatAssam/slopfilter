@@ -7,16 +7,23 @@ import { createTimelineObserver, type TimelineObserverHandle } from '@/content/o
 import type { Post, PostEngagement } from '@/core/post';
 import { scorePost } from '@/core/scoring/pipeline';
 import type { ScoreBreakdown, SignalResult } from '@/core/scoring/types';
-import { behaviouralThresholds } from '@/core/scoring/weights';
+import {
+  behaviouralThresholds,
+  CONTENT_FORMAT_DEFAULTS,
+  REPETITION_DEFAULTS,
+} from '@/core/scoring/weights';
 import {
   deriveAuthorActivity,
   deriveAuthorActivityFromCache,
   scoreBehavioural,
 } from '@/core/signals/behavioural';
+import { combineContentType, scoreContentFormat } from '@/core/signals/contentType';
+import { type RepetitionCorpusEntry, scoreRepetition, simhash64 } from '@/core/signals/repetition';
 import { logger } from '@/shared/logger';
 import { isExtensionMessage } from '@/shared/messages';
 import { applyAccountOverride, getAccountState } from '@/storage/accounts';
 import { recordSightings, updateAuthorProfile } from '@/storage/authorActivity';
+import { addCorpusEntry, listCorpusEntries } from '@/storage/embeddings';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -26,8 +33,20 @@ import {
 import { applyThemeTokens, observeTheme, themeForPlatform } from './themes';
 
 const seenPosts = new Map<string, Post>();
+const seenElements = new Map<string, HTMLElement>();
 const lastBreakdowns = new Map<string, ScoreBreakdown>();
 const payloadEngagement = new Map<string, PostEngagement>();
+const scoreGenerations = new Map<string, number>();
+const recordedStatsPosts = new Set<string>();
+const pendingStatsPosts = new Set<string>();
+let rescoreAuthors: ((handles: readonly string[]) => void) | null = null;
+
+// SF-219: the recent-post corpus the repetition signal compares against. It holds vectors and
+// hashes only, never post text, and is persisted to IndexedDB with the same cap-and-evict policy as
+// the downvote store. The Map keyed by postId mirrors the store so re-scoring a post never
+// double-feeds it within a session.
+const repetitionCorpus = new Map<string, RepetitionCorpusEntry>();
+let repetitionCorpusLoad: Promise<void> | null = null;
 
 // payload_clock: fixture account ages are anchored to FIXTURE_NOW, so any signal that consumes
 // account age must take `now` as an argument and tests must pass FIXTURE_NOW. A signal calling
@@ -52,7 +71,7 @@ let selfTestTimer: number | null = null;
 let requestSequence = 0;
 let _themeDisconnect: (() => void) | null = null;
 
-// SF-216: exact engagement from the HomeTimeline payload supersedes the compact-count DOM parse.
+// SF-216: exact engagement from intercepted X payloads supersedes the compact-count DOM parse.
 // Payload numbers are plain integers; keep them keyed by post id so a post scored after the relay
 // arrives prefers the exact value. The map holds only numbers, never post text.
 const preferExactEngagement = (post: Post): Post => {
@@ -99,6 +118,7 @@ const handlePayloadRelay = async (event: MessageEvent) => {
     // reads the attribute can rely on the activity cache already holding the payload stats.
     await Promise.all(writes);
     document.documentElement.dataset.slopfilterPayloadSeen = 'true';
+    rescoreAuthors?.(event.data.authors.map((author) => author.handle));
   } catch {
     // Failing to set the flag must not break anything; the payload already passed through.
   }
@@ -116,24 +136,119 @@ const notifyBatchScored = () => {
   }
 };
 
-const requestModelSignals = async (posts: readonly Post[]) => {
-  if (posts.length === 0) return new Map<string, readonly SignalResult[]>();
+const requestModelSignals = async (
+  posts: readonly Post[],
+): Promise<{
+  signalsByPost: Map<string, readonly SignalResult[]>;
+  embeddingsByPost: Map<string, Float32Array | null>;
+}> => {
+  if (posts.length === 0) {
+    return { signalsByPost: new Map(), embeddingsByPost: new Map() };
+  }
   try {
     const simulateModelFailure =
       __SLOPFILTER_TEST_BUILD__ && new URL(location.href).searchParams.has('model-failure');
+    const fixtureEmbeddings =
+      __SLOPFILTER_TEST_BUILD__ && new URL(location.href).searchParams.has('fixture-embeddings');
+    const fixtureTextPatternMax =
+      __SLOPFILTER_TEST_BUILD__ && new URL(location.href).searchParams.has('text-pattern-max');
     const response = await chrome.runtime.sendMessage({
       type: 'score-batch-request',
       requestId: `content-${requestSequence++}`,
       posts,
+      textPatternEnabled: settings.enabledLayers['text-pattern'],
       ...(simulateModelFailure ? { simulateModelFailure: true } : {}),
+      ...(fixtureEmbeddings ? { fixtureEmbeddings: true } : {}),
+      ...(fixtureTextPatternMax ? { fixtureTextPatternMax: true } : {}),
     });
     if (!isExtensionMessage(response) || response.type !== 'score-batch-response') {
-      return new Map<string, readonly SignalResult[]>();
+      return { signalsByPost: new Map(), embeddingsByPost: new Map() };
     }
-    return new Map(response.results.map((result) => [result.postId, result.signals]));
+    return {
+      signalsByPost: new Map(response.results.map((result) => [result.postId, result.signals])),
+      embeddingsByPost: new Map(
+        response.results.map((result) => [
+          result.postId,
+          result.embedding && result.embedding.length > 0
+            ? Float32Array.from(result.embedding)
+            : null,
+        ]),
+      ),
+    };
   } catch {
-    return new Map<string, readonly SignalResult[]>();
+    return { signalsByPost: new Map(), embeddingsByPost: new Map() };
   }
+};
+
+const loadRepetitionCorpus = () => {
+  if (repetitionCorpusLoad) return repetitionCorpusLoad;
+  repetitionCorpusLoad = (async () => {
+    try {
+      for (const entry of await listCorpusEntries()) {
+        repetitionCorpus.set(entry.postId, entry);
+      }
+    } catch {
+      // Fail open: an unreadable corpus just means the signal compares against an empty store.
+    }
+    // Test-build-only: the scoring budget is asserted with the corpus at its cap, so the bench can
+    // prefill to the cap deterministically without replaying hundreds of real posts. Deterministic,
+    // orthogonal vectors and unique hashes keep every entry a non-match.
+    const capParam = __SLOPFILTER_TEST_BUILD__
+      ? Number(new URL(location.href).searchParams.get('corpus-cap'))
+      : 0;
+    if (Number.isFinite(capParam) && capParam > repetitionCorpus.size) {
+      const dimension = 384;
+      let seed = 0;
+      while (repetitionCorpus.size < capParam) {
+        const postId = `bench-corpus-${seed}`;
+        const embedding = new Float32Array(dimension);
+        let hash = 0xcbf29ce484222325n;
+        for (let index = 0; index < seed; index += 1) {
+          hash = ((hash ^ BigInt(index)) * 0x100000001b3n) & 0xffffffffffffffffn;
+        }
+        for (let dimensionIndex = 0; dimensionIndex < dimension; dimensionIndex += 1) {
+          hash = ((hash ^ 0x9e3779b97f4a7c15n) * 0x100000001b3n) & 0xffffffffffffffffn;
+          embedding[dimensionIndex] = Number(hash % 1000000000n) / 1000000000;
+        }
+        const norm =
+          Math.sqrt(Array.from(embedding).reduce((sum, value) => sum + value * value, 0)) || 1;
+        for (let dimensionIndex = 0; dimensionIndex < dimension; dimensionIndex += 1) {
+          const value = embedding[dimensionIndex];
+          if (value === undefined) continue;
+          embedding[dimensionIndex] = value / norm;
+        }
+        repetitionCorpus.set(postId, {
+          postId,
+          handle: `@bench-corpus-${seed}`,
+          embedding,
+          simhash: BigInt(seed),
+          observedAt: seed,
+        });
+        seed += 1;
+      }
+    }
+  })();
+  return repetitionCorpusLoad;
+};
+
+// Feed a scored post into the corpus and persist it. The store evicts oldest-first once it exceeds
+// the documented cap; the in-memory Map evicts the same way so the two never drift far apart.
+const addToRepetitionCorpus = (entry: RepetitionCorpusEntry) => {
+  repetitionCorpus.set(entry.postId, entry);
+  const cap = REPETITION_DEFAULTS.corpusCap;
+  while (repetitionCorpus.size > cap) {
+    let oldestId: string | null = null;
+    let oldestAt = Number.POSITIVE_INFINITY;
+    for (const [id, candidate] of repetitionCorpus) {
+      if (candidate.observedAt < oldestAt) {
+        oldestAt = candidate.observedAt;
+        oldestId = id;
+      }
+    }
+    if (oldestId === null) break;
+    repetitionCorpus.delete(oldestId);
+  }
+  void addCorpusEntry(entry, cap).catch(() => undefined);
 };
 
 const sendSelfTestResult = (ok: boolean, failedSelectorIds: readonly string[]) => {
@@ -164,13 +279,14 @@ const pauseFiltering = (failedSelectorIds: readonly string[] = []) => {
 };
 
 let profileStats: ProfileStats | null = null;
-let profileStatsRead = false;
+let profileStatsPath = '';
 
-// SF-215: sightings persist across sessions; scoring reads the cache. Opportunistic profile stats are
-// read once per profile navigation and never on the timeline, so a feed pass adds no DOM reads.
+// SF-215: sightings persist across sessions; scoring reads the cache. Recheck after SPA navigation
+// and keep retrying a route until its profile header has rendered.
 const captureProfileStats = (): ProfileStats | null => {
-  if (profileStatsRead) return profileStats;
-  profileStatsRead = true;
+  const path = location.pathname;
+  if (profileStatsPath === path && profileStats) return profileStats;
+  profileStatsPath = path;
   try {
     const profile = xAdapter.readProfileStats?.(document) ?? null;
     profileStats =
@@ -212,7 +328,18 @@ const recordBatch = async (
   return result;
 };
 
-const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]) => {
+const scoreBatch = async (
+  batch: readonly { element: HTMLElement; post: Post }[],
+  recordVisit = true,
+) => {
+  const generations = new Map(
+    batch.map(({ post }) => {
+      const generation = (scoreGenerations.get(post.id) ?? 0) + 1;
+      scoreGenerations.set(post.id, generation);
+      return [post.id, generation] as const;
+    }),
+  );
+  for (const { element } of batch) delete element.dataset.slopfilterModelProcessed;
   try {
     const stored = await chrome.storage.local.get('exclusions');
     const exclusions = new Set(
@@ -223,21 +350,60 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
     const modelResultsPromise = requestModelSignals(batch.map(({ post }) => post));
     const renderBatch = async (
       modelResults: ReadonlyMap<string, readonly SignalResult[]>,
+      embeddingsByPost: ReadonlyMap<string, Float32Array | null>,
       activityByHandle: Map<string, ReturnType<typeof deriveAuthorActivityFromCache>> | null,
       recordStats: boolean,
     ) => {
-      const stats: { hidden: boolean; reasons: readonly string[] }[] = [];
+      const stats: { postId: string; hidden: boolean; reasons: readonly string[] }[] = [];
       for (const { element, post: rawPost } of batch) {
         const post = preferExactEngagement(rawPost);
-        if (!recordStats) element.dataset.slopfilterModelProcessed = 'true';
         seenPosts.set(post.id, post);
+        seenElements.set(post.id, element);
         const activity =
           activityByHandle?.get(post.author.handle) ??
           deriveAuthorActivity([...seenPosts.values()], post.author.handle);
-        const signal = scoreBehavioural(post, activity, behaviouralThresholds(settings));
-        const signals = [signal, ...(modelResults.get(post.id) ?? [])].filter(
-          (result) => settings.enabledLayers[result.layerId],
+        const behaviouralSignal = scoreBehavioural(post, activity, behaviouralThresholds(settings));
+        // SF-220: the content-type layer is structural-plus-model. The structural score is always
+        // available (no model, no download) and is combined with the centroid result when one
+        // exists, taking the stronger of the two so a loaded model never dilutes a confident
+        // structural fire. Keeping one contribution avoids double-weighting the layer in scorePost.
+        const contentFormatSignal = scoreContentFormat(post.text, CONTENT_FORMAT_DEFAULTS);
+        const modelSignals = modelResults.get(post.id) ?? [];
+        const modelContentType = modelSignals.find((result) => result.layerId === 'content-type');
+        const contentTypeSignal = modelContentType
+          ? combineContentType(contentFormatSignal, modelContentType)
+          : contentFormatSignal;
+        // SF-219: near-duplicate scoring against the corpus this script has already observed. The
+        // embedder vector arrives with the batch (computed for taste); the simhash gate and length
+        // floor decide whether any embedding work is worth it. A post joins the corpus only once it
+        // has a vector, so corpus entries always carry an embedding.
+        const textLength = post.text.length;
+        const embedding = embeddingsByPost.get(post.id) ?? null;
+        const simhash = simhash64(post.text);
+        const repetitionSignal = scoreRepetition(
+          { handle: post.author.handle, embedding, simhash, textLength },
+          [...repetitionCorpus.values()].filter((entry) => entry.postId !== post.id),
+          REPETITION_DEFAULTS,
         );
+        if (
+          embedding &&
+          textLength >= REPETITION_DEFAULTS.minTextLength &&
+          !repetitionCorpus.has(post.id)
+        ) {
+          addToRepetitionCorpus({
+            postId: post.id,
+            handle: post.author.handle,
+            embedding,
+            simhash,
+            observedAt: Date.now(),
+          });
+        }
+        const signals = [
+          behaviouralSignal,
+          contentTypeSignal,
+          repetitionSignal,
+          ...modelSignals.filter((result) => result.layerId !== 'content-type'),
+        ].filter((result) => settings.enabledLayers[result.layerId]);
         const breakdown =
           post.isAd && settings.hideAds
             ? {
@@ -254,12 +420,14 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
         const overridden = exclusions.has(post.id)
           ? { ...breakdown, hidden: false, reasons: [] }
           : applyAccountOverride(post, breakdown, await getAccountState(post.author.handle));
+        if (scoreGenerations.get(post.id) !== generations.get(post.id)) continue;
         const previous = lastBreakdowns.get(post.id);
         const decisionChanged = !previous || previous.hidden !== overridden.hidden;
         lastBreakdowns.set(post.id, overridden);
         const theme = themeForPlatform(xAdapter.platform);
         const feedbackOptions = {
           enabledLayers: settings.enabledLayers,
+          onAccountStateChanged: () => rescoreAuthors?.([post.author.handle]),
           getBreakdown: () =>
             lastBreakdowns.get(post.id) ?? {
               compositeScore: 0,
@@ -279,10 +447,10 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
           });
         };
         const restoreAndAttachFeedback = () => {
+          scoreGenerations.set(post.id, (scoreGenerations.get(post.id) ?? 0) + 1);
           restorePost(element);
           attachVisibleFeedback();
         };
-        stats.push({ hidden: overridden.hidden, reasons: overridden.reasons });
         if (decisionChanged) {
           if (overridden.hidden) {
             collapsePost(element, overridden, theme, restoreAndAttachFeedback);
@@ -300,21 +468,34 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
             attachVisibleFeedback();
           }
         }
+        if (!recordStats) element.dataset.slopfilterModelProcessed = 'true';
+        if (!recordedStatsPosts.has(post.id) && !pendingStatsPosts.has(post.id)) {
+          pendingStatsPosts.add(post.id);
+          stats.push({ postId: post.id, hidden: overridden.hidden, reasons: overridden.reasons });
+        }
       }
-      if (!recordStats) return;
+      if (stats.length === 0) return;
       try {
-        const response = chrome.runtime.sendMessage({ type: 'record-stats-batch', entries: stats });
-        void response.catch(() => undefined);
+        const saved = await chrome.runtime.sendMessage({
+          type: 'record-stats-batch',
+          entries: stats.map(({ hidden, reasons }) => ({ hidden, reasons })),
+        });
+        if (saved === true) {
+          for (const { postId } of stats) recordedStatsPosts.add(postId);
+        }
       } catch {
         // Stats are optional; a missing service worker must not affect filtering.
+      } finally {
+        for (const { postId } of stats) pendingStatsPosts.delete(postId);
       }
     };
-    await renderBatch(new Map(), null, true);
+    await loadRepetitionCorpus();
+    await renderBatch(new Map(), new Map(), null, recordVisit);
     const activityPromise = recordBatch(batch);
     void Promise.all([activityPromise, modelResultsPromise]).then(
-      async ([activityByHandle, modelResults]) => {
+      async ([activityByHandle, { signalsByPost, embeddingsByPost }]) => {
         try {
-          await renderBatch(modelResults, activityByHandle, false);
+          await renderBatch(signalsByPost, embeddingsByPost, activityByHandle, false);
         } catch {
           // A re-score failure is non-fatal; the first pass already rendered.
         }
@@ -326,13 +507,37 @@ const scoreBatch = async (batch: readonly { element: HTMLElement; post: Post }[]
   }
 };
 
+rescoreAuthors = (handles) => {
+  const wanted = new Set(handles);
+  const batch = [...seenPosts.values()]
+    .filter((post) => wanted.has(post.author.handle))
+    .map((post) => ({ element: seenElements.get(post.id), post }))
+    .filter(
+      (entry): entry is { element: HTMLElement; post: Post } => entry.element?.isConnected === true,
+    );
+  if (batch.length > 0) void scoreBatch(batch, false);
+};
+
 const startAfterSelfTest = () => {
-  const attempt = () => {
-    const result = xAdapter.selfTest(document);
-    if (!result.ok) return result;
+  const attachAndStart = () => {
     clearSelfTestWait();
     sendSelfTestResult(true, []);
     watchTimeline();
+  };
+  const attempt = () => {
+    const result = xAdapter.selfTest(document);
+    if (result.ok) {
+      attachAndStart();
+      return result;
+    }
+    // A non-timeline route (Explore, Notifications, a profile) resolves the feed shell but
+    // none of the post-level selectors. That is a wait for posts, not a markup break, so proceed to
+    // watch the timeline; the feed-level contract staying healthy is the break signal.
+    const feed = xAdapter.selfTestFeed(document);
+    if (feed.ok) {
+      attachAndStart();
+      return { ok: true, failedSelectorIds: [] };
+    }
     return result;
   };
 
@@ -367,11 +572,11 @@ const startAfterSelfTest = () => {
 
 const attachTimeline = () => {
   if (paused || timelineObserver) return;
-  const result = xAdapter.selfTest(document);
-  if (!result.ok) {
-    pauseFiltering(result.failedSelectorIds);
-    return;
-  }
+  // Attaching must not gate on the full required-selector contract. X is a SPA: navigating
+  // away from the home feed (Explore, Notifications, a profile) re-renders the column so the
+  // post-level selectors stop resolving, and pausing there kills filtering for the rest of the
+  // session because nothing ever re-attaches. A missing timeline container is a wait, not a break:
+  // the page observer stays alive and re-attaches when a feed route comes back.
   const container = xAdapter.findTimelineContainer(document);
   if (!container) return;
   timelineContainer = container;
@@ -420,6 +625,7 @@ const start = async () => {
     void loadSettings()
       .then((nextSettings) => {
         settings = nextSettings;
+        rescoreAuthors?.([...new Set([...seenPosts.values()].map((post) => post.author.handle))]);
       })
       .catch(() => undefined);
   });

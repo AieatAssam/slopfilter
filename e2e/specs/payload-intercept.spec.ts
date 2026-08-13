@@ -16,8 +16,9 @@ const openInspectorFor = async (
 ): Promise<import('@playwright/test').Locator> => {
   const target = article(page, postId);
   await expect(target.getByTestId('slopfilter-inspector-trigger')).toBeVisible();
+  await target.hover();
   await target.getByTestId('slopfilter-inspector-trigger').click();
-  const inspector = page.getByTestId('slopfilter-inspector');
+  const inspector = page.getByTestId('slopfilter-inspector').last();
   await expect(inspector).toBeVisible();
   return inspector;
 };
@@ -68,6 +69,37 @@ test('intercepted author account age and post count reach the author record and 
   const inspector = await openInspectorFor(page, '1900000000000010696');
   await expect(inspector).toContainText('account only');
   await expect(inspector).toContainText('day across the account lifetime');
+});
+
+test('payload profile data re-scores a post already visible in the feed', async ({ page }) => {
+  await page.goto(fixtureNowUrl());
+  await expect(page.getByLabel('Timeline: Your Home Timeline')).toBeVisible();
+
+  await appendEphemeralPost(page, {
+    id: '1900000000000099999',
+    authorHandle: '@account08',
+    text: 'visible before the account payload arrives',
+    postedAt: '2026-08-10T08:00:00.000Z',
+  });
+  await waitForScoringSettled(page);
+
+  const before = await openInspectorFor(page, '1900000000000099999');
+  await expect(before).toContainText('accountAgeDays: null');
+  await page.getByTestId('slopfilter-inspector-close').click();
+
+  await fetchHomeTimeline(page);
+  await expect(page.locator('html')).toHaveAttribute('data-slopfilter-payload-seen', 'true');
+  await expect
+    .poll(
+      async () => {
+        const inspector = await openInspectorFor(page, '1900000000000099999');
+        const text = await inspector.innerText();
+        await page.getByTestId('slopfilter-inspector-close').last().click();
+        return text;
+      },
+      { timeout: 10_000 },
+    )
+    .toContain('accountAgeDays: 5.00');
 });
 
 test('payload account creation and post count feed the account-cohort sub-signal', async ({

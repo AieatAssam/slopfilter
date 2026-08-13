@@ -64,7 +64,11 @@ const readProvenance = async (post: Post): Promise<ProvenanceResult> => {
 export interface InferencePipelines {
   scoreBatch: (
     posts: readonly Post[],
-  ) => Promise<readonly { postId: string; signals: readonly SignalResult[] }[]>;
+    textPatternEnabled?: boolean,
+  ) => Promise<
+    readonly { postId: string; signals: readonly SignalResult[]; embedding: readonly number[] }[]
+  >;
+  loadTextPattern?: () => Promise<boolean>;
   embed: (text: string) => Promise<Float32Array>;
   downvote: (postId: string, text: string) => Promise<boolean>;
 }
@@ -82,10 +86,53 @@ export interface InferenceHost {
   getStatus: () => ModelStatus;
   scoreBatch: (
     posts: readonly Post[],
-  ) => Promise<readonly { postId: string; signals: readonly SignalResult[] }[]>;
+    textPatternEnabled?: boolean,
+  ) => Promise<
+    readonly { postId: string; signals: readonly SignalResult[]; embedding: readonly number[] }[]
+  >;
+  loadTextPattern: () => Promise<boolean>;
   embed: (text: string) => Promise<Float32Array | null>;
   downvote: (postId: string, text: string) => Promise<boolean>;
 }
+
+export // Test-build-only: a deterministic unit vector derived from post text, so SF-219's corpus feeding and
+// cosine path run end to end without downloading a model. Identical text produces an identical vector
+// (cosine 1.0); distinct text produces near-orthogonal vectors (cosine ~0).
+const fixtureEmbedding = (text: string): number[] => {
+  const dim = 128;
+  let hash = 0xcbf29ce484222325n;
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash ^ BigInt(text.charCodeAt(index))) * 0x100000001b3n) & 0xffffffffffffffffn;
+  }
+  const raw: number[] = [];
+  for (let dimension = 0; dimension < dim; dimension += 1) {
+    hash = ((hash ^ 0x9e3779b97f4a7c15n) * 0x100000001b3n) & 0xffffffffffffffffn;
+    const unit = Number(hash % 1000000000n) / 1000000000;
+    raw.push(unit * 2 - 1);
+  }
+  const norm = Math.sqrt(raw.reduce((sum, value) => sum + value * value, 0)) || 1;
+  return raw.map((value) => value / norm);
+};
+
+const fixtureScoreBatchResponse = (posts: readonly Post[], textPatternMax = false) =>
+  posts.map((post) => ({
+    postId: post.id,
+    signals: textPatternMax
+      ? [
+          {
+            layerId: 'text-pattern' as const,
+            ok: true,
+            score: 1,
+            reason: null,
+            detail: {
+              status: 'scored' as const,
+              values: { human: 0, llm: 1, characterCount: post.text.length },
+            },
+          },
+        ]
+      : [],
+    embedding: fixtureEmbedding(post.text),
+  }));
 
 export const createInferenceHost = ({ load, onStatus }: InferenceHostOptions): InferenceHost => {
   let status: ModelStatus = { state: 'idle', progress: 0, error: null };
@@ -159,14 +206,21 @@ export const createInferenceHost = ({ load, onStatus }: InferenceHostOptions): I
     start,
     retry,
     getStatus: () => status,
-    async scoreBatch(posts) {
+    async scoreBatch(posts, textPatternEnabled) {
       start();
+      if (!pipelines && loading) await loading.catch(() => undefined);
       if (!pipelines) return [];
       try {
-        return await pipelines.scoreBatch(posts);
+        return await pipelines.scoreBatch(posts, textPatternEnabled);
       } catch {
         return [];
       }
+    },
+    async loadTextPattern() {
+      start();
+      if (!pipelines && loading) await loading.catch(() => undefined);
+      if (!pipelines?.loadTextPattern) return false;
+      return pipelines.loadTextPattern();
     },
     async embed(text) {
       start();
@@ -205,6 +259,7 @@ const createWorkerPipelines = (
       >,
     ) => void
   >();
+  const optionalPending = new Map<string, (ok: boolean) => void>();
   let sequence = 0;
   let resolveReady: (() => void) | undefined;
   let rejectReady: ((error: Error) => void) | undefined;
@@ -225,6 +280,11 @@ const createWorkerPipelines = (
     }
     if (message.type === 'failed') {
       rejectReady?.(new Error(message.error));
+      return;
+    }
+    if (message.type === 'text-pattern-ready' || message.type === 'text-pattern-failed') {
+      optionalPending.get(message.requestId)?.(message.type === 'text-pattern-ready');
+      optionalPending.delete(message.requestId);
       return;
     }
     if (
@@ -259,9 +319,14 @@ const createWorkerPipelines = (
     });
 
   return ready.then(() => ({
-    scoreBatch: async (posts) => {
+    scoreBatch: async (posts, textPatternEnabled = false) => {
       const response = await request<Extract<WorkerResponse, { type: 'score-batch-response' }>>(
-        { type: 'score-batch', requestId: `batch-${sequence++}`, posts },
+        {
+          type: 'score-batch',
+          requestId: `batch-${sequence++}`,
+          posts,
+          ...(textPatternEnabled ? { textPatternEnabled: true } : {}),
+        },
         'score-batch-response',
       );
       const provenance = await Promise.all(posts.map(readProvenance));
@@ -274,6 +339,12 @@ const createWorkerPipelines = (
         ],
       }));
     },
+    loadTextPattern: () =>
+      new Promise((resolve) => {
+        const requestId = `text-pattern-${sequence++}`;
+        optionalPending.set(requestId, resolve);
+        worker.postMessage({ type: 'load-text-pattern', requestId } satisfies WorkerRequest);
+      }),
     embed: async (text) => {
       const response = await request<Extract<WorkerResponse, { type: 'embed-response' }>>(
         { type: 'embed', requestId: `embed-${sequence++}`, text },
@@ -310,11 +381,28 @@ const handleRuntimeMessage = (
 ): boolean => {
   if (message.type === 'score-batch-request') {
     if (__SLOPFILTER_TEST_BUILD__) simulateModelFailure = message.simulateModelFailure === true;
+    if (
+      __SLOPFILTER_TEST_BUILD__ &&
+      (message.fixtureEmbeddings === true || message.fixtureTextPatternMax === true)
+    ) {
+      sendResponse({
+        type: 'score-batch-response',
+        requestId: message.requestId,
+        results: fixtureScoreBatchResponse(message.posts, message.fixtureTextPatternMax === true),
+      });
+      return true;
+    }
     void host
-      .scoreBatch(message.posts)
+      .scoreBatch(message.posts, message.textPatternEnabled)
       .then((results) =>
         sendResponse({ type: 'score-batch-response', requestId: message.requestId, results }),
       );
+    return true;
+  }
+  if (message.type === 'text-pattern-download') {
+    void host
+      .loadTextPattern()
+      .then((ok) => sendResponse({ type: 'text-pattern-download-complete', ok }));
     return true;
   }
   if (message.type === 'embed-request') {

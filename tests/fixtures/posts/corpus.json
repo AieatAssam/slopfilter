@@ -1,0 +1,2131 @@
+{
+  "meta": {
+    "title": "SF-221 labelled calibration corpus",
+    "description": "Hand-labelled ordinary/slop rows drawn only from already-authorised synthetic sources: the golden DOM fixtures and the payload fixture. No live capture. Scores are provisional under HD-005.",
+    "now": "2026-08-08T12:00:00.000Z"
+  },
+  "rows": [
+    {
+      "id": "slop-reply-1",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "growthpilot",
+        "cadenceMinutes": 18
+      },
+      "text": "Reply YES and I will send you the 12 habits that changed my life. Repost so more people see this.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account01 bait copy: promise-then-repost is the high-volume engagement-bait profile the frequency signal exists for (variant 1 of 6)."
+    },
+    {
+      "id": "slop-reply-2",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "growthpilot",
+        "cadenceMinutes": 18
+      },
+      "text": "Reply YES and I will send you the 12 habits that changed my life. Repost this so your friends see it too.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account01 bait copy: promise-then-repost is the high-volume engagement-bait profile the frequency signal exists for (variant 2 of 6)."
+    },
+    {
+      "id": "slop-reply-3",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "growthpilot",
+        "cadenceMinutes": 18
+      },
+      "text": "Reply YES for the list of 12 habits that changed my life. Repost so more people see this.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account01 bait copy: promise-then-repost is the high-volume engagement-bait profile the frequency signal exists for (variant 3 of 6)."
+    },
+    {
+      "id": "slop-reply-4",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "growthpilot",
+        "cadenceMinutes": 18
+      },
+      "text": "Reply YES and I will send you the 12 habits. Repost so more people see this before it closes.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account01 bait copy: promise-then-repost is the high-volume engagement-bait profile the frequency signal exists for (variant 4 of 6)."
+    },
+    {
+      "id": "slop-reply-5",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "growthpilot",
+        "cadenceMinutes": 18
+      },
+      "text": "Reply YES to get the 12 habits that changed my life. Repost and share so more people see this.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account01 bait copy: promise-then-repost is the high-volume engagement-bait profile the frequency signal exists for (variant 5 of 6)."
+    },
+    {
+      "id": "slop-reply-6",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "growthpilot",
+        "cadenceMinutes": 18
+      },
+      "text": "Reply YES and I will send you 12 habits that changed my life. Repost so more people see this one.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account01 bait copy: promise-then-repost is the high-volume engagement-bait profile the frequency signal exists for (variant 6 of 6)."
+    },
+    {
+      "id": "slop-giveaway-1",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "GIVEAWAY: 5000 USDT to one winner. follow, like, repost and comment your wallet. Airdrop closes tonight.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Giveaway bait (payload account02 shape): all-caps openers and CTA prompts repeated around the clock (variant 1 of 6)."
+    },
+    {
+      "id": "slop-giveaway-2",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "GIVEAWAY: 5000 USDT to one random winner. follow, like, repost and comment your wallet. Ends tonight.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Giveaway bait (payload account02 shape): all-caps openers and CTA prompts repeated around the clock (variant 2 of 6)."
+    },
+    {
+      "id": "slop-giveaway-3",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "GIVEAWAY: 5000 USDT to the winner. follow, like, repost and comment your wallet. Airdrop ends in a few hours.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Giveaway bait (payload account02 shape): all-caps openers and CTA prompts repeated around the clock (variant 3 of 6)."
+    },
+    {
+      "id": "slop-giveaway-4",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "GIVEAWAY: 5000 USDT to one lucky winner. follow, like, repost and comment your wallet. HURRY, tonight only.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Giveaway bait (payload account02 shape): all-caps openers and CTA prompts repeated around the clock (variant 4 of 6)."
+    },
+    {
+      "id": "slop-giveaway-5",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "GIVEAWAY: 5000 USDT and one winner gets it all. follow, like, repost and comment your wallet. Closes tonight.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Giveaway bait (payload account02 shape): all-caps openers and CTA prompts repeated around the clock (variant 5 of 6)."
+    },
+    {
+      "id": "slop-giveaway-6",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "GIVEAWAY: 5000 USDT to one winner, drawn at midnight. follow, like, repost and comment your wallet.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Giveaway bait (payload account02 shape): all-caps openers and CTA prompts repeated around the clock (variant 6 of 6)."
+    },
+    {
+      "id": "slop-mindset-1",
+      "source": "derived:payload:account03",
+      "author": {
+        "handle": "mindsetdaily",
+        "cadenceMinutes": 18
+      },
+      "text": "Success is not luck. It is mindset, discipline and the grind nobody sees. Motivation is a choice you make daily. Follow for daily motivation.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Templated motivational filler (payload account03): same claims re-cast each time plus a follow nudge (variant 1 of 6)."
+    },
+    {
+      "id": "slop-mindset-2",
+      "source": "derived:payload:account03",
+      "author": {
+        "handle": "mindsetdaily",
+        "cadenceMinutes": 18
+      },
+      "text": "Success is not luck, it is mindset and discipline. The grind nobody sees. Motivation is a daily choice. Follow for daily notes.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Templated motivational filler (payload account03): same claims re-cast each time plus a follow nudge (variant 2 of 6)."
+    },
+    {
+      "id": "slop-mindset-3",
+      "source": "derived:payload:account03",
+      "author": {
+        "handle": "mindsetdaily",
+        "cadenceMinutes": 18
+      },
+      "text": "Success is not luck. Mindset, discipline and the unseen grind. Motivation is a choice you make every day. Follow along daily.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Templated motivational filler (payload account03): same claims re-cast each time plus a follow nudge (variant 3 of 6)."
+    },
+    {
+      "id": "slop-mindset-4",
+      "source": "derived:payload:account03",
+      "author": {
+        "handle": "mindsetdaily",
+        "cadenceMinutes": 18
+      },
+      "text": "Success is not luck, it is mindset and the grind nobody sees. Motivation is a daily choice you make. Follow for more of this.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Templated motivational filler (payload account03): same claims re-cast each time plus a follow nudge (variant 4 of 6)."
+    },
+    {
+      "id": "slop-mindset-5",
+      "source": "derived:payload:account03",
+      "author": {
+        "handle": "mindsetdaily",
+        "cadenceMinutes": 18
+      },
+      "text": "Success is not luck. It is discipline, mindset, and the grind nobody sees. Motivation is a choice daily. Follow for daily words.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Templated motivational filler (payload account03): same claims re-cast each time plus a follow nudge (variant 5 of 6)."
+    },
+    {
+      "id": "slop-mindset-6",
+      "source": "derived:payload:account03",
+      "author": {
+        "handle": "mindsetdaily",
+        "cadenceMinutes": 18
+      },
+      "text": "Success is not luck, it is mindset and discipline and the grind nobody sees. Motivation is your choice every day.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Templated motivational filler (payload account03): same claims re-cast each time plus a follow nudge (variant 6 of 6)."
+    },
+    {
+      "id": "slop-trend-1",
+      "source": "derived:payload:account06",
+      "author": {
+        "handle": "trendcycler",
+        "cadenceMinutes": 18
+      },
+      "text": "This changes everything for anyone building in public this year.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Vague trend-recycling claim (payload account06): enormous reach, near-zero interaction, recycled wording (variant 1 of 6)."
+    },
+    {
+      "id": "slop-trend-2",
+      "source": "derived:payload:account06",
+      "author": {
+        "handle": "trendcycler",
+        "cadenceMinutes": 18
+      },
+      "text": "This changes everything for anyone building in public this year — share it widely.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Vague trend-recycling claim (payload account06): enormous reach, near-zero interaction, recycled wording (variant 2 of 6)."
+    },
+    {
+      "id": "slop-trend-3",
+      "source": "derived:payload:account06",
+      "author": {
+        "handle": "trendcycler",
+        "cadenceMinutes": 18
+      },
+      "text": "This changes everything for anyone working in public this year.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Vague trend-recycling claim (payload account06): enormous reach, near-zero interaction, recycled wording (variant 3 of 6)."
+    },
+    {
+      "id": "slop-trend-4",
+      "source": "derived:payload:account06",
+      "author": {
+        "handle": "trendcycler",
+        "cadenceMinutes": 18
+      },
+      "text": "Honestly this changes everything for people building in public right now.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Vague trend-recycling claim (payload account06): enormous reach, near-zero interaction, recycled wording (variant 4 of 6)."
+    },
+    {
+      "id": "slop-trend-5",
+      "source": "derived:payload:account06",
+      "author": {
+        "handle": "trendcycler",
+        "cadenceMinutes": 18
+      },
+      "text": "This changes everything for anyone building in public this year, be sure to share.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Vague trend-recycling claim (payload account06): enormous reach, near-zero interaction, recycled wording (variant 5 of 6)."
+    },
+    {
+      "id": "slop-trend-6",
+      "source": "derived:payload:account06",
+      "author": {
+        "handle": "trendcycler",
+        "cadenceMinutes": 18
+      },
+      "text": "This changes everything for anyone building products in public this year.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Vague trend-recycling claim (payload account06): enormous reach, near-zero interaction, recycled wording (variant 6 of 6)."
+    },
+    {
+      "id": "slop-clip-1",
+      "source": "derived:payload:account16",
+      "author": {
+        "handle": "clipreposter",
+        "cadenceMinutes": 18
+      },
+      "text": "Watch until the end. Repost if this made you smile.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reaction-bait clip template (payload account16): repost prompt with no content (variant 1 of 6)."
+    },
+    {
+      "id": "slop-clip-2",
+      "source": "derived:payload:account16",
+      "author": {
+        "handle": "clipreposter",
+        "cadenceMinutes": 18
+      },
+      "text": "Watch until the end — the last second makes it. Repost if it made you smile.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reaction-bait clip template (payload account16): repost prompt with no content (variant 2 of 6)."
+    },
+    {
+      "id": "slop-clip-3",
+      "source": "derived:payload:account16",
+      "author": {
+        "handle": "clipreposter",
+        "cadenceMinutes": 18
+      },
+      "text": "Watch until the end. Really. Repost if this made you smile.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reaction-bait clip template (payload account16): repost prompt with no content (variant 3 of 6)."
+    },
+    {
+      "id": "slop-clip-4",
+      "source": "derived:payload:account16",
+      "author": {
+        "handle": "clipreposter",
+        "cadenceMinutes": 18
+      },
+      "text": "Watch until the end and you will not regret it. Repost if this made you smile.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reaction-bait clip template (payload account16): repost prompt with no content (variant 4 of 6)."
+    },
+    {
+      "id": "slop-clip-5",
+      "source": "derived:payload:account16",
+      "author": {
+        "handle": "clipreposter",
+        "cadenceMinutes": 18
+      },
+      "text": "Watch until the end. If this made you smile, repost it.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reaction-bait clip template (payload account16): repost prompt with no content (variant 5 of 6)."
+    },
+    {
+      "id": "slop-clip-6",
+      "source": "derived:payload:account16",
+      "author": {
+        "handle": "clipreposter",
+        "cadenceMinutes": 18
+      },
+      "text": "Watch until the end. Repost if this one made you smile.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reaction-bait clip template (payload account16): repost prompt with no content (variant 6 of 6)."
+    },
+    {
+      "id": "slop-hashtag-1",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "satsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "Bitcoin is pumping tonight. #bitcoin #crypto #altcoins #bullrun #hold #hodl #sats — repost if bullish.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Hashtag-stuffed crypto bait: seven tags per line plus a repost prompt, repeated hourly (variant 1 of 6)."
+    },
+    {
+      "id": "slop-hashtag-2",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "satsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "Ethereum ready to move. #bitcoin #crypto #altcoins #bullrun #hold #hodl #sats — repost if you agree.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Hashtag-stuffed crypto bait: seven tags per line plus a repost prompt, repeated hourly (variant 2 of 6)."
+    },
+    {
+      "id": "slop-hashtag-3",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "satsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "Altseason coming. #bitcoin #crypto #altcoins #bullrun #hold #hodl #sats — repost before it is too late.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Hashtag-stuffed crypto bait: seven tags per line plus a repost prompt, repeated hourly (variant 3 of 6)."
+    },
+    {
+      "id": "slop-hashtag-4",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "satsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "Sats stacking quietly. #bitcoin #crypto #altcoins #bullrun #hold #hodl #sats — repost if you hold.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Hashtag-stuffed crypto bait: seven tags per line plus a repost prompt, repeated hourly (variant 4 of 6)."
+    },
+    {
+      "id": "slop-hashtag-5",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "satsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "Smart money is buying. #bitcoin #crypto #altcoins #bullrun #hold #hodl #sats — repost the signal.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Hashtag-stuffed crypto bait: seven tags per line plus a repost prompt, repeated hourly (variant 5 of 6)."
+    },
+    {
+      "id": "slop-hashtag-6",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "satsignals",
+        "cadenceMinutes": 18
+      },
+      "text": "The rally is early. #bitcoin #crypto #altcoins #bullrun #hold #hodl #sats — repost to spread it.",
+      "engagement": {
+        "replies": 60,
+        "reposts": 30,
+        "likes": 520,
+        "views": 30000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Hashtag-stuffed crypto bait: seven tags per line plus a repost prompt, repeated hourly (variant 6 of 6)."
+    },
+    {
+      "id": "slop-viral-reply",
+      "source": "derived:payload:account01",
+      "author": {
+        "handle": "viralreply"
+      },
+      "text": "Reply YES and I will send you the full guide. Like and repost for the link.",
+      "engagement": {
+        "replies": 0,
+        "reposts": 1,
+        "likes": 4,
+        "views": 1200000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reach-to-interaction bait (derived:payload:account01): a million views and a handful of interactions is the ratio signature."
+    },
+    {
+      "id": "slop-flashsale",
+      "source": "derived:payload:account19",
+      "author": {
+        "handle": "flashsale"
+      },
+      "text": "Final hour of the flash sale. Comment SECRET to unlock the code.",
+      "engagement": {
+        "replies": 0,
+        "reposts": 1,
+        "likes": 4,
+        "views": 1200000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reach-to-interaction bait (derived:payload:account19): a million views and a handful of interactions is the ratio signature."
+    },
+    {
+      "id": "slop-airdrop",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "airdropbox"
+      },
+      "text": "Airdrop for the first 500 wallets. Follow the pinned post and comment your address.",
+      "engagement": {
+        "replies": 0,
+        "reposts": 1,
+        "likes": 4,
+        "views": 1200000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reach-to-interaction bait (derived:payload:account02): a million views and a handful of interactions is the ratio signature."
+    },
+    {
+      "id": "slop-mining",
+      "source": "derived:payload:account02",
+      "author": {
+        "handle": "minepool"
+      },
+      "text": "Join the mining pool now. Repost and follow for the dashboard invite.",
+      "engagement": {
+        "replies": 0,
+        "reposts": 1,
+        "likes": 4,
+        "views": 1200000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Reach-to-interaction bait (derived:payload:account02): a million views and a handful of interactions is the ratio signature."
+    },
+    {
+      "id": "slop-giveaway-hidden",
+      "source": "payload:account02",
+      "author": {
+        "handle": "account02b",
+        "accountCreatedAt": "2026-05-01T00:00:00.000Z",
+        "profilePostCount": 9800
+      },
+      "text": "GIVEAWAY: 5000 USDT to one winner. Follow, like, repost and comment your wallet. Crypto airdrop closes tonight.",
+      "engagement": {
+        "replies": 2,
+        "reposts": 0,
+        "likes": 5,
+        "views": 96000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Young account posting near 100/day (payload account02 profile) with bait copy and no real interaction: cohort plus ratio fire together."
+    },
+    {
+      "id": "slop-giveaway-visible",
+      "source": "payload:account02",
+      "author": {
+        "handle": "account02",
+        "accountCreatedAt": "2026-05-01T00:00:00.000Z",
+        "profilePostCount": 9800
+      },
+      "text": "GIVEAWAY: 5000 USDT to one winner. Follow, like, repost and comment your wallet. Crypto airdrop closes tonight.",
+      "engagement": {
+        "replies": 411,
+        "reposts": 2,
+        "likes": 8,
+        "views": 96400
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "The real payload account02 numbers: 411 replies are meaningful engagement, so the ratio floor blocks and the post stays visible — an honest measured miss."
+    },
+    {
+      "id": "slop-mindset-visible",
+      "source": "payload:account03",
+      "author": {
+        "handle": "account03"
+      },
+      "text": "Success is not luck. It is mindset, discipline and the grind nobody sees. Motivation is a choice you make daily.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 240,
+        "views": 61000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account03 verbatim: motivational filler with decent engagement and one post, so no signal fires and it stays visible — a documented miss."
+    },
+    {
+      "id": "slop-trend-visible",
+      "source": "payload:account06",
+      "author": {
+        "handle": "account06"
+      },
+      "text": "This changes everything for anyone building in public this year.",
+      "engagement": {
+        "replies": 0,
+        "reposts": 1,
+        "likes": 12,
+        "views": 2140000
+      },
+      "label": "slop",
+      "hardNegative": false,
+      "rationale": "Payload account06 verbatim: the ratio signal fires on 2.1M views with 13 interactions but alone cannot cross the threshold, so it stays visible."
+    },
+    {
+      "id": "hn-terse-1",
+      "source": "dom:x:timeline-baseline",
+      "author": {
+        "handle": "tersepost01"
+      },
+      "text": "Synthetic post body 01.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Golden DOM baseline post 1: a short ordinary update; brevity alone must never hide it."
+    },
+    {
+      "id": "hn-terse-2",
+      "source": "dom:x:timeline-baseline",
+      "author": {
+        "handle": "tersepost02"
+      },
+      "text": "Synthetic post body 02.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Golden DOM baseline post 2: a short ordinary update; brevity alone must never hide it."
+    },
+    {
+      "id": "hn-terse-3",
+      "source": "dom:x:timeline-baseline",
+      "author": {
+        "handle": "tersepost03"
+      },
+      "text": "Synthetic post body 03.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Golden DOM baseline post 3: a short ordinary update; brevity alone must never hide it."
+    },
+    {
+      "id": "hn-terse-4",
+      "source": "dom:x:timeline-baseline",
+      "author": {
+        "handle": "tersepost04"
+      },
+      "text": "Synthetic post body 04.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Golden DOM baseline post 4: a short ordinary update; brevity alone must never hide it."
+    },
+    {
+      "id": "hn-terse-5",
+      "source": "dom:x:timeline-baseline",
+      "author": {
+        "handle": "tersepost05"
+      },
+      "text": "Synthetic post body 05.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Golden DOM baseline post 5: a short ordinary update; brevity alone must never hide it."
+    },
+    {
+      "id": "hn-terse-6",
+      "source": "dom:x:timeline-baseline",
+      "author": {
+        "handle": "tersepost06"
+      },
+      "text": "Synthetic post body 06.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Golden DOM baseline post 6: a short ordinary update; brevity alone must never hide it."
+    },
+    {
+      "id": "hn-terse-derived-1",
+      "source": "derived:payload:account09",
+      "author": {
+        "handle": "workshopusers"
+      },
+      "text": "Dropped the workshop loaner off at the shop first thing. Wiring goes in this evening.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Terse everyday update derived from the workshop-fixture copy: short, factual, nothing bait shaped."
+    },
+    {
+      "id": "hn-terse-derived-2",
+      "source": "derived:payload:account18",
+      "author": {
+        "handle": "gardenplot"
+      },
+      "text": "The radish bed needs a watering before I go away again. Second sowing was patchy.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "One-line garden note derived from the allotment copy: sparse but ordinary."
+    },
+    {
+      "id": "hn-esl-estuary",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "eslbirds"
+      },
+      "text": "Today I go to river in morning for take photos of birds. I wait long time, keep three good picture.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native English phrasing of the estuary copy: imperfect grammar must not look like slop."
+    },
+    {
+      "id": "hn-esl-garden",
+      "source": "derived:payload:account18",
+      "author": {
+        "handle": "eslradish"
+      },
+      "text": "My wife she make dinner, me I plant radish in garden. Some seed did not grow, soil is dry.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native phrasing of the allotment copy; biasing against it would be exactly the documented failure mode."
+    },
+    {
+      "id": "hn-esl-workshop",
+      "source": "derived:payload:account09",
+      "author": {
+        "handle": "eslwiring"
+      },
+      "text": "I finish wiring in workshop after four weekend. Was much delay but now light working.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native re-telling of the workshop post; rough syntax, ordinary content."
+    },
+    {
+      "id": "hn-esl-whale",
+      "source": "derived:payload:account07",
+      "author": {
+        "handle": "eslwhale"
+      },
+      "text": "Last year we measure whale, we see same whale again after nine year. This is good news for us.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native retelling of the whale survey; the amateur tone hides no bait."
+    },
+    {
+      "id": "hn-esl-birds",
+      "source": "derived:payload:account14",
+      "author": {
+        "handle": "eslmudflat"
+      },
+      "text": "Birds they come to shore when tide go out, and eat for two hour on mud. I write about this in forum.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native account of the mudflat thread; structural detectors must not fire on wording quality."
+    },
+    {
+      "id": "hn-esl-transit",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "esltransit"
+      },
+      "text": "North train is late because problem at station. It come maybe fifteen minute later.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native passenger update on the transit delay; ordinary complaint."
+    },
+    {
+      "id": "hn-esl-market",
+      "source": "derived:payload:account18",
+      "author": {
+        "handle": "eslmarket"
+      },
+      "text": "I buy vegetables in market, my grandmother she teach me how cook. Taste like home.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native market visit story derived from the allotment universe; banal content."
+    },
+    {
+      "id": "hn-esl-photo",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "eslphoto"
+      },
+      "text": "Photo camera battery finish, but I capture three photo of bird before. Nice day.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Non-native photography note; grammar roughness is not a slop signal."
+    },
+    {
+      "id": "hn-latin-garden",
+      "source": "derived:payload:account18",
+      "author": {
+        "handle": "cjkgarden"
+      },
+      "text": "今天我种了两排萝卜种子，地里有点干，浇水之后才发芽。",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "CJK allotment diary: a non-Latin script post must score no structural bait features."
+    },
+    {
+      "id": "hn-latin-estuary",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "cjkmud"
+      },
+      "text": "今天去河边等潮汐，拍了四百张照片，只留下三张。明年想再来一次。",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "CJK estuary post derived from the photography copy; detectors must not default-hide other scripts."
+    },
+    {
+      "id": "hn-latin-transit",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "devatransit"
+      },
+      "text": "उत्तर दिशा की तीसरी लाइन पंद्रह मिनट देर से चल रही है। अगली जानकारी २:३० बजे।",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Devanagari transit alert; a factual warning in another script is ordinary content."
+    },
+    {
+      "id": "hn-latin-workshop",
+      "source": "derived:payload:account09",
+      "author": {
+        "handle": "cyrwork"
+      },
+      "text": "Наконец доделал мастерскую, четыре выходных ушли на проводку. Свет теперь работает.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Cyrillic workshop progress note; non-Latin script must not trip the lexical gate."
+    },
+    {
+      "id": "hn-latin-whale",
+      "source": "derived:payload:account07",
+      "author": {
+        "handle": "arabwhale"
+      },
+      "text": "سجلنا رؤية الحوت نفسه بعد تسع سنوات في ثلاث رحلات استكشافية. النتائج في الخيط أدناه.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Arabic whale-survey note; script bias against it is the reported detector failure."
+    },
+    {
+      "id": "hn-latin-allotment",
+      "source": "derived:payload:account18",
+      "author": {
+        "handle": "grkplot"
+      },
+      "text": "Οι ραπάνια της δεύτερης σποράς βγήκαν άνισα, μάλλον ξεράθηκε το χώμα όσο έλειπα.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Greek allotment line; a radish update in another alphabet stays ordinary."
+    },
+    {
+      "id": "hn-latin-kitchen",
+      "source": "derived:payload:account18",
+      "author": {
+        "handle": "thaikitchen"
+      },
+      "text": "เช้านี้ไปตลาดซื้อผักสดกลับมาทำกับข้าวกับย่า รสชาติเหมือนบ้านเลยครับ",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Thai market-cooking post; everyday content written in Thai."
+    },
+    {
+      "id": "hn-latin-migratory",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "kormud"
+      },
+      "text": "서해안 갯벌에서 철새 사진을 찍었어요. 네 시간 기다려서 세 장 걸렸습니다.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Korean mudflat-photography post; ordinary observational content."
+    },
+    {
+      "id": "hn-quote-whale",
+      "source": "payload:account15",
+      "author": {
+        "handle": "account15"
+      },
+      "text": "This matches what the survey data showed last year.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 8,
+        "likes": 60,
+        "views": 14000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Quote-post commentary from payload account15: the quoted body must not be scored as the poster's own copy."
+    },
+    {
+      "id": "hn-quote-sport",
+      "source": "derived:payload:account15",
+      "author": {
+        "handle": "sportquote"
+      },
+      "text": "That call was spot on when you read the figures behind it.",
+      "engagement": {
+        "replies": 5,
+        "reposts": 3,
+        "likes": 75,
+        "views": 9000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Quote-post over a match result; commentary only."
+    },
+    {
+      "id": "hn-quote-news",
+      "source": "derived:payload:account15",
+      "author": {
+        "handle": "newsquote"
+      },
+      "text": "Notably, that photo is the same cliff face from last winter's report.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 2,
+        "likes": 60,
+        "views": 7000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Quote-post over a news photo; the borrow is theirs, not slop."
+    },
+    {
+      "id": "hn-quote-recipe",
+      "source": "derived:payload:account15",
+      "author": {
+        "handle": "recipequote"
+      },
+      "text": "Trying this recipe tonight with the ingredients they list.",
+      "engagement": {
+        "replies": 3,
+        "reposts": 1,
+        "likes": 45,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Quote-post over a recipe; ordinary kitchen commentary."
+    },
+    {
+      "id": "hn-news-transit",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "account04"
+      },
+      "text": "Northbound line 3 is running 15 minutes behind following an earlier signal fault at Central. Next update at 14:30.",
+      "engagement": {
+        "replies": 21,
+        "reposts": 76,
+        "likes": 190,
+        "views": 88000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Payload account04 verbatim: breaking-news wording with strong repost volume must stay visible."
+    },
+    {
+      "id": "hn-news-bridge",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "citydesk"
+      },
+      "text": "Breaking: the bridge on Fresh Street is closed for resurfacing tonight, with diversions via Market Row from 7pm.",
+      "engagement": {
+        "replies": 30,
+        "reposts": 95,
+        "likes": 210,
+        "views": 42000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Breaking-news opener with the volume journalists give a real incident."
+    },
+    {
+      "id": "hn-news-reopen",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "borough1"
+      },
+      "text": "Update: High Street reopens at noon; the earlier burst main has been repaired and crews are clearing the site.",
+      "engagement": {
+        "replies": 18,
+        "reposts": 61,
+        "likes": 150,
+        "views": 31000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Follow-up bulletin: high reposts are legitimate when the incident is real."
+    },
+    {
+      "id": "hn-news-weather",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "coastguard"
+      },
+      "text": "A severe weather warning is in force for coastal districts until midnight; the harbour ferry is suspended.",
+      "engagement": {
+        "replies": 34,
+        "reposts": 120,
+        "likes": 240,
+        "views": 56000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Weather warning: urgent, terse, high-volume style that must not read as bait."
+    },
+    {
+      "id": "hn-news-school",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "schoolservice"
+      },
+      "text": "Two schools in the north of the district will stay closed tomorrow while heating is repaired overnight.",
+      "engagement": {
+        "replies": 14,
+        "reposts": 42,
+        "likes": 108,
+        "views": 19000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "School closure notice: official wording, no engagement bait anywhere."
+    },
+    {
+      "id": "hn-news-airport",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "halldesk"
+      },
+      "text": "Arrivals at the airport are delayed by up to 90 minutes this evening because of the earlier security alert.",
+      "engagement": {
+        "replies": 19,
+        "reposts": 55,
+        "likes": 131,
+        "views": 24000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Travel disruption bulletin with legitimately high reposts."
+    },
+    {
+      "id": "hn-news-energy",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "regulator"
+      },
+      "text": "The caps on domestic energy bills rise next month by the amount the regulator announced this morning.",
+      "engagement": {
+        "replies": 22,
+        "reposts": 70,
+        "likes": 174,
+        "views": 33000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Regulator announcement: dry official notice, heavily reposted by people affected."
+    },
+    {
+      "id": "hn-news-road",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "crewalert"
+      },
+      "text": "Fire crews have cleared the site and the road is expected to reopen within the hour; no injuries were reported.",
+      "engagement": {
+        "replies": 25,
+        "reposts": 68,
+        "likes": 163,
+        "views": 29000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Incident all-clear: factual update carrying the engagement a real event draws."
+    },
+    {
+      "id": "hn-feed-city-1",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "citynewsfeed",
+        "cadenceMinutes": 480
+      },
+      "text": "City Road Report: Market Row is closed for resurfacing between 7pm and 5am; use the diversion.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "High-volume legit news handle: a daily road report is terse, repetitive, and exactly what a volume signal would wrongly hide."
+    },
+    {
+      "id": "hn-feed-city-2",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "citynewsfeed",
+        "cadenceMinutes": 480
+      },
+      "text": "Stock markets: index closed up 0.4 per cent, industrials led the gainers and energy lagged.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Legit high-volume news account posting daily digests; cadence is its normal schedule, not slop."
+    },
+    {
+      "id": "hn-feed-city-3",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "citynewsfeed",
+        "cadenceMinutes": 480
+      },
+      "text": "Council result: the riverside planning application was approved at this afternoon's sitting.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Daily council bulletin from a high-volume legit feed."
+    },
+    {
+      "id": "hn-feed-city-4",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "citynewsfeed",
+        "cadenceMinutes": 480
+      },
+      "text": "Overnight: rail maintenance closes platform two from midnight to 4am on the central branch.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Routine evening service note from the same busy city desk."
+    },
+    {
+      "id": "hn-feed-sport-1",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "sportswire",
+        "cadenceMinutes": 480
+      },
+      "text": "Half time: Graysfield 1-0, goal from a 23rd-minute corner, possession 58 per cent to the home side.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "High-volume sports feed: scores every few hours is the trade, not spam."
+    },
+    {
+      "id": "hn-feed-sport-2",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "sportswire",
+        "cadenceMinutes": 480
+      },
+      "text": "Full time: Graysfield 2-1, the winner arriving in the 89th minute from a rebound.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Result ticker entry from a busy sports wire."
+    },
+    {
+      "id": "hn-feed-sport-3",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "sportswire",
+        "cadenceMinutes": 480
+      },
+      "text": "Team news: the captain returns for the weekend fixture; knee recovery has gone faster than expected.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Routine team bulletin from the sports desk."
+    },
+    {
+      "id": "hn-feed-sport-4",
+      "source": "derived:payload:account04",
+      "author": {
+        "handle": "sportswire",
+        "cadenceMinutes": 480
+      },
+      "text": "Transfer confirmed: midfield signing on a three-year deal, subject to a medical.",
+      "engagement": {
+        "replies": 12,
+        "reposts": 33,
+        "likes": 220,
+        "views": 45000
+      },
+      "label": "ordinary",
+      "hardNegative": true,
+      "rationale": "Standard transfer announcement; news rhythm, not bait rhythm."
+    },
+    {
+      "id": "ord-account05",
+      "source": "payload:account05",
+      "author": {
+        "handle": "account05"
+      },
+      "text": "Spent the morning at the estuary waiting for the tide. Three frames worth keeping out of four hundred.",
+      "engagement": {
+        "replies": 9,
+        "reposts": 6,
+        "likes": 107,
+        "views": 5822
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account05 verbatim: an ordinary, engaged photography post."
+    },
+    {
+      "id": "ord-account07",
+      "source": "payload:account07",
+      "author": {
+        "handle": "account07"
+      },
+      "text": "Our team recorded the same individual whale on three separate surveys nine years apart. Full write-up in the thread below.",
+      "engagement": {
+        "replies": 380,
+        "reposts": 4120,
+        "likes": 25958,
+        "views": 3594208
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account07 verbatim: genuinely popular science thread with huge absolute engagement."
+    },
+    {
+      "id": "ord-account08",
+      "source": "payload:account08",
+      "author": {
+        "handle": "account08"
+      },
+      "text": "Testing the water. First week on here and already enjoying it.",
+      "engagement": {
+        "replies": 1,
+        "reposts": 0,
+        "likes": 2,
+        "views": 340
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account08 verbatim: new-account hello; a weak ratio fires mildly but must not hide it."
+    },
+    {
+      "id": "ord-account09",
+      "source": "payload:account09",
+      "author": {
+        "handle": "account09"
+      },
+      "text": "Finally finished rewiring the workshop. Took four weekends longer than planned.",
+      "engagement": {
+        "replies": 6,
+        "reposts": 2,
+        "likes": 44,
+        "views": 3100
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account09 verbatim: ordinary workshop completion, decent engagement."
+    },
+    {
+      "id": "ord-account10",
+      "source": "payload:account10",
+      "author": {
+        "handle": "account10"
+      },
+      "text": "A perfectly ordinary post from an account whose post count is absent from the payload.",
+      "engagement": {
+        "replies": 2,
+        "reposts": 1,
+        "likes": 18,
+        "views": 2400
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account10 verbatim: ordinary post with missing profile data; must fail open."
+    },
+    {
+      "id": "ord-account11",
+      "source": "payload:account11",
+      "author": {
+        "handle": "account11"
+      },
+      "text": "An account whose creation date is missing from the payload entirely.",
+      "engagement": {
+        "replies": 0,
+        "reposts": 0,
+        "likes": 7,
+        "views": 810
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account11 verbatim: no creation date means no cohort signal; ordinary."
+    },
+    {
+      "id": "ord-account12",
+      "source": "payload:account12",
+      "author": {
+        "handle": "account12"
+      },
+      "text": "An account whose creation date is present but not a date this parser understands.",
+      "engagement": {
+        "replies": 1,
+        "reposts": 0,
+        "likes": 3,
+        "views": 700
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account12 verbatim: unparseable date must fail open, not guess."
+    },
+    {
+      "id": "ord-account13",
+      "source": "payload:account13",
+      "author": {
+        "handle": "account13"
+      },
+      "text": "A post whose view count is missing, which the ratio signal must treat as unknown.",
+      "engagement": {
+        "replies": 3,
+        "reposts": 2,
+        "likes": 15,
+        "views": null
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account13 verbatim: no view count means no ratio; ordinary."
+    },
+    {
+      "id": "ord-account14",
+      "source": "payload:account14",
+      "author": {
+        "handle": "account14"
+      },
+      "text": "A thread on why estuary tides matter for migratory birds, and what four hundred mornings of observation actually show.",
+      "engagement": {
+        "replies": 40,
+        "reposts": 120,
+        "likes": 900,
+        "views": 120000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account14 verbatim: long-form legit thread with solid engagement strength."
+    },
+    {
+      "id": "ord-account18",
+      "source": "payload:account18",
+      "author": {
+        "handle": "account18"
+      },
+      "text": "The second sowing of radishes came up unevenly, probably because the bed dried out while I was away.",
+      "engagement": {
+        "replies": 5,
+        "reposts": 1,
+        "likes": 31,
+        "views": 2000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Payload account18 verbatim: benign allotment note that must not trip any gate."
+    },
+    {
+      "id": "ord-estuary-walk",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "estuarywalker"
+      },
+      "text": "Morning walk along the estuary, tide nearly full, the gulls were working the surf line.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Ordinary estuary observation derived from the photography copy."
+    },
+    {
+      "id": "ord-birdbook",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "birdreader"
+      },
+      "text": "Decent book on coastal birds; the chapter on mudflat feeding is the best part.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Book note derived from the mudflat-thread universe."
+    },
+    {
+      "id": "ord-workshop-level",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "workshoplevel"
+      },
+      "text": "New drill press stand finally level, which took embarrassingly long.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Workshop progress note derived from the rewiring copy."
+    },
+    {
+      "id": "ord-radish-rounds",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "plotfarmer"
+      },
+      "text": "Radishes: first sowing bolted, second is patchy but the third looks set.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Crop update derived from the allotment copy."
+    },
+    {
+      "id": "ord-tide-tables",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "tidetable"
+      },
+      "text": "Checked the tide tables for next weekend; low water is mid-afternoon, perfect for the estuary.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Planning note derived from the estuary copy."
+    },
+    {
+      "id": "ord-winter-light",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "workshopwinter"
+      },
+      "text": "The wiring in the workshop is done, faint light in the far corner, ready for winter.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Winter-ready note derived from the workshop copy."
+    },
+    {
+      "id": "ord-leaf-cutter",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "garagefix"
+      },
+      "text": "Leaf cutter is back from the shop and it starts first pull now.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Repair note in the workshop universe."
+    },
+    {
+      "id": "ord-whale-cam",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "inshorecam"
+      },
+      "text": "Whale cam loop: same humpback showed up on the inshore camera twice this week.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Observation derived from the whale-survey copy."
+    },
+    {
+      "id": "ord-survey-log",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "seasurvey"
+      },
+      "text": "Survey log: three encounters, one netted; the cod stayed quiet all weekend.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Field log derived from the marine copy."
+    },
+    {
+      "id": "ord-mud-pattern",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "mudwatcher"
+      },
+      "text": "The birds moved off the mud an hour before high water, which fits the usual pattern.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Behaviour note derived from the mudflat thread."
+    },
+    {
+      "id": "ord-fig-cutting",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "figpot"
+      },
+      "text": "Potted the fig cutting today; rooting hormone, warm spot, we will see by spring.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Garden note in the allotment universe."
+    },
+    {
+      "id": "ord-fence-panel",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "fencefix"
+      },
+      "text": "Replaced the fence panel the storm took; the posts were fine, which was lucky.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Household repair note in the garden universe."
+    },
+    {
+      "id": "ord-homedelivery",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "deliverynote"
+      },
+      "text": "Home delivery note says Tuesday; the order is two bags of potting mix and a rake.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Everyday logistics note."
+    },
+    {
+      "id": "ord-repair-quote",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "quotehope"
+      },
+      "text": "Waiting on the repair quote; if it comes in over budget I will do the job at Christmas.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Workshop economics note."
+    },
+    {
+      "id": "ord-pathlights",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "eveningwalk"
+      },
+      "text": "The riverpath lights stay on later now, which makes the evening walks much easier.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Neighbourhood observation."
+    },
+    {
+      "id": "ord-volunteer-shift",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "stationflag"
+      },
+      "text": "Volunteer shift at the station tomorrow morning, flagging timetable changes during the works.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Transit-volunteer note derived from the service copy."
+    },
+    {
+      "id": "ord-splice-cable",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "crimper"
+      },
+      "text": "Splicing the new cable tonight; crimping is still the fiddly part.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Workshop task note."
+    },
+    {
+      "id": "ord-compost-bin",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "composter"
+      },
+      "text": "The compost bin is full again; second one finally paid for itself.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Garden chore note."
+    },
+    {
+      "id": "ord-estuary-cafe",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "caferegular"
+      },
+      "text": "Coffee at the estuary cafe after the walk; the counter changed hands, still good.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Cafe note in the estuary universe."
+    },
+    {
+      "id": "ord-photo-prints",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "darkroom"
+      },
+      "text": "Collected the prints from the darkroom; the three keepers from the tide walk are in frame.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Photography follow-up derived from account05."
+    },
+    {
+      "id": "ord-ferry-back",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "ferrynews"
+      },
+      "text": "Morning ferry is back on the full schedule after the weekend closure.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Service restoration note in the transit universe."
+    },
+    {
+      "id": "ord-wiring-course",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "shedvig"
+      },
+      "text": "Half-day course this Saturday on wiring a shed; useful before the mower shed rewire.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Workshop-course note."
+    },
+    {
+      "id": "ord-greenhouse-hinge",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "greenhouse"
+      },
+      "text": "Checked the greenhouse vents, one hinge is gone, fixing it at the weekend.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Garden maintenance note."
+    },
+    {
+      "id": "ord-no-views-again",
+      "source": "derived:payload:account05",
+      "author": {
+        "handle": "noviews2"
+      },
+      "text": "No view count here either, so the ratio signal has nothing to divide.",
+      "engagement": {
+        "replies": 4,
+        "reposts": 6,
+        "likes": 90,
+        "views": 4000
+      },
+      "label": "ordinary",
+      "hardNegative": false,
+      "rationale": "Companion no-data row to account13; ordinary regardless."
+    }
+  ]
+}

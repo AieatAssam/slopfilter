@@ -6,6 +6,8 @@ const dialogTestId = 'slopfilter-inspector';
 const rowTestId = 'slopfilter-inspector-row';
 const factsTestId = 'slopfilter-inspector-facts';
 const totalsTestId = 'slopfilter-inspector-totals';
+const TEXT_PATTERN_CAVEAT =
+  'Statistical text-pattern score; unreliable on short posts and biased against non-native English writing.';
 
 const renderValue = (value: number | string | boolean | null): string => {
   if (typeof value === 'string') return value;
@@ -44,6 +46,11 @@ const layerRow = (
   ];
   if (contribution?.reason) parts.push(contribution.reason);
   if (contribution?.detail?.values) parts.push(fieldText(contribution.detail.values));
+  if (layerId === 'text-pattern')
+    parts.push(
+      'model trentmkelly/slop-detector-mini-2 · dataset slop-detector-mini-2 · ' +
+        TEXT_PATTERN_CAVEAT,
+    );
   row.textContent = parts.join(' · ');
   row.dataset.layer = layerId;
   row.dataset.status = status;
@@ -114,10 +121,12 @@ export const openInspector = (post: Post, options: InspectorOptions): void => {
 
   dialog.append(title, facts, rows, totals, close);
   document.body.append(dialog);
+  dialog.addEventListener('close', () => dialog.remove(), { once: true });
   if (typeof dialog.showModal === 'function') {
     dialog.showModal();
     close.addEventListener('click', () => dialog.close());
   } else {
     dialog.setAttribute('open', '');
+    close.addEventListener('click', () => dialog.remove());
   }
 };

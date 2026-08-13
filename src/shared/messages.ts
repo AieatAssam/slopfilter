@@ -18,11 +18,22 @@ export type ExtensionMessage =
       requestId: string;
       posts: readonly Post[];
       simulateModelFailure?: boolean;
+      textPatternEnabled?: boolean;
+      fixtureTextPatternMax?: boolean;
+      // Test-build-only: when the models also fail, fabricate deterministic embeddings from post text
+      // so SF-219's corpus and cosine path can be exercised end to end without any model download.
+      fixtureEmbeddings?: boolean;
     }
   | {
       type: 'score-batch-response';
       requestId: string;
-      results: readonly { postId: string; signals: readonly SignalResult[] }[];
+      results: readonly {
+        postId: string;
+        signals: readonly SignalResult[];
+        // SF-219: the post embedding computed by the embedder, already produced for the taste layer.
+        // Empty when the embedder was unavailable. Empty array, never a sparse or partial vector.
+        embedding: readonly number[];
+      }[];
     }
   | { type: 'embed-request'; requestId: string; text: string }
   | { type: 'embed-response'; requestId: string; vector: readonly number[] | null }
@@ -30,6 +41,8 @@ export type ExtensionMessage =
   | { type: 'model-status-request' }
   | { type: 'model-status'; status: ModelStatus }
   | { type: 'model-retry' }
+  | { type: 'text-pattern-download' }
+  | { type: 'text-pattern-download-complete'; ok: boolean }
   | { type: 'downvote-post'; postId: string; text: string }
   | { type: 'wrong-call'; postId: string; firedLayerIds: readonly string[] }
   | {
@@ -50,6 +63,8 @@ const messageTypes = [
   'model-status-request',
   'model-status',
   'model-retry',
+  'text-pattern-download',
+  'text-pattern-download-complete',
   'downvote-post',
   'wrong-call',
   'record-stats-batch',

@@ -1,19 +1,16 @@
 import type {
   FeatureExtractionPipeline,
   ImageClassificationPipeline,
-  ZeroShotClassificationPipeline,
+  TextClassificationPipeline,
 } from '@huggingface/transformers';
 import type { Post } from '@/core/post';
 import type { SignalResult } from '@/core/scoring/types';
-import {
-  CONTENT_TYPE_LABELS,
-  scoreContentType,
-  shouldClassifyContent,
-} from '@/core/signals/contentType';
+import { TEXT_PATTERN_DEFAULTS } from '@/core/scoring/weights';
+import { CONTENT_TYPE_PROTOTYPES, scoreContentCentroid } from '@/core/signals/contentType';
 import { MAX_IMAGES_PER_POST, scoreImageForensics } from '@/core/signals/imageForensics';
 import { recomputeCentroids, scoreTaste } from '@/core/signals/taste';
+import { scoreTextPattern, type TextPatternOutput } from '@/core/signals/textPattern';
 import { addEmbedding, listEmbeddings, loadCentroids, saveCentroids } from '@/storage/embeddings';
-import type { InferenceBackend } from './models';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
 // Transformers.js 4.2's WASM loader still reads window during module initialisation.
@@ -45,11 +42,13 @@ type WorkerScope = {
 };
 
 const scope = globalThis as unknown as WorkerScope;
-let classifier: ZeroShotClassificationPipeline | null = null;
 let embedder: FeatureExtractionPipeline | null = null;
 let imageForensicsModel: ImageClassificationPipeline | null = null;
-let centroids: Float32Array[] = [];
+let textPatternModel: TextClassificationPipeline | null = null;
+let contentCentroids: Float32Array[] = [];
+let tasteCentroids: Float32Array[] = [];
 let loadPromise: Promise<void> | null = null;
+let textPatternLoadPromise: Promise<void> | null = null;
 
 const post = (message: WorkerResponse) => scope.postMessage(message);
 
@@ -57,19 +56,26 @@ const loadModels = async () => {
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
     const { loadPipeline, MODEL_IDS, selectBackend } = await modelModule;
-    const backend: InferenceBackend = selectBackend(
-      MODEL_IDS.classifier.id,
-      typeof navigator === 'undefined' ? {} : navigator,
-    );
-    classifier = await loadPipeline('classifier', backend, (_kind, progress) => {
-      post({ type: 'progress', progress: progress * 0.35 });
-    });
     embedder = await loadPipeline(
       'embedder',
       selectBackend(MODEL_IDS.embedder.id),
       (_kind, progress) => {
-        post({ type: 'progress', progress: 35 + progress * 0.25 });
+        post({ type: 'progress', progress: progress * 0.6 });
       },
+    );
+    contentCentroids = await Promise.all(
+      CONTENT_TYPE_PROTOTYPES.map(async (prototype) => {
+        const vectors = await Promise.all(prototype.examples.map(({ text }) => embed(text)));
+        const centroid = new Float32Array(vectors[0]?.length ?? 0);
+        for (const vector of vectors) {
+          for (let index = 0; index < centroid.length; index += 1)
+            centroid[index] = (centroid[index] ?? 0) + (vector[index] ?? 0);
+        }
+        const norm = Math.sqrt(centroid.reduce((sum, value) => sum + value * value, 0)) || 1;
+        for (let index = 0; index < centroid.length; index += 1)
+          centroid[index] = (centroid[index] ?? 0) / norm;
+        return centroid;
+      }),
     );
     imageForensicsModel = await loadPipeline(
       'imageForensics',
@@ -78,7 +84,7 @@ const loadModels = async () => {
         post({ type: 'progress', progress: 60 + progress * 0.4 });
       },
     );
-    centroids = (await loadCentroids().catch(() => null)) ?? [];
+    tasteCentroids = (await loadCentroids().catch(() => null)) ?? [];
     post({ type: 'progress', progress: 100 });
     post({ type: 'ready' });
   })().catch((error: unknown) => {
@@ -107,13 +113,38 @@ const analyseImages = async (postData: Post) => {
   }
 };
 
-const classify = async (postData: Post) => {
-  if (!classifier) return scoreContentType({ labels: [], scores: [] }, { unavailable: true });
-  if (!shouldClassifyContent(postData.text)) {
-    return scoreContentType({ labels: [], scores: [] }, { gated: true });
+const loadTextPattern = async (): Promise<void> => {
+  if (textPatternModel) return;
+  if (textPatternLoadPromise) return textPatternLoadPromise;
+  textPatternLoadPromise = (async () => {
+    const { loadTextPatternPipeline, selectBackend, OPTIONAL_MODEL_IDS } = await modelModule;
+    textPatternModel = await loadTextPatternPipeline(
+      selectBackend(OPTIONAL_MODEL_IDS.textPattern.id),
+      (_kind, progress) => post({ type: 'progress', progress: 100 + progress }),
+    );
+  })().catch((error: unknown) => {
+    textPatternLoadPromise = null;
+    throw error;
+  });
+  return textPatternLoadPromise;
+};
+
+const classifyTextPattern = async (postData: Post): Promise<SignalResult> => {
+  if (!textPatternModel) return scoreTextPattern(null, postData.text, TEXT_PATTERN_DEFAULTS);
+  if (postData.text.length < TEXT_PATTERN_DEFAULTS.minChars)
+    return scoreTextPattern(null, postData.text, TEXT_PATTERN_DEFAULTS);
+  try {
+    const raw = await textPatternModel(postData.text, { top_k: 2 });
+    const outputs = Array.isArray(raw) ? raw : [raw];
+    const values: TextPatternOutput = { human: 0, llm: 0 };
+    for (const output of outputs) {
+      if (output.label === 'human') values.human = output.score;
+      if (output.label === 'llm') values.llm = output.score;
+    }
+    return scoreTextPattern(values, postData.text, TEXT_PATTERN_DEFAULTS);
+  } catch {
+    return scoreTextPattern(null, postData.text, TEXT_PATTERN_DEFAULTS);
   }
-  const output = await classifier(postData.text, [...CONTENT_TYPE_LABELS]);
-  return scoreContentType(output);
 };
 
 const embed = async (text: string): Promise<Float32Array> => {
@@ -128,24 +159,29 @@ const recordDownvote = async (postId: string, text: string): Promise<void> => {
   const embeddings = await listEmbeddings();
   // ponytail: one centroid keeps feedback cheap and deterministic; split clusters only when real
   // feedback volume proves that a more complex taste model improves results.
-  centroids = recomputeCentroids(
+  tasteCentroids = recomputeCentroids(
     embeddings.map((record) => record.vector),
     1,
     0,
   );
-  await saveCentroids(centroids);
+  await saveCentroids(tasteCentroids);
 };
 
-const scorePost = async (postData: Post) => {
-  const signals: SignalResult[] = [await classify(postData)];
+const scorePost = async (postData: Post, textPatternEnabled: boolean) => {
+  const signals: SignalResult[] = [];
+  let embedding: number[] = [];
   try {
     const vector = await embed(postData.text);
-    signals.push(scoreTaste(vector, centroids, 0.8));
+    embedding = [...vector];
+    signals.push(scoreContentCentroid(vector, contentCentroids));
+    signals.push(scoreTaste(vector, tasteCentroids, 0.8));
   } catch {
+    signals.push(scoreContentCentroid(null, contentCentroids));
     signals.push({ layerId: 'taste', ok: false, score: 0, reason: null });
   }
+  if (textPatternEnabled) signals.push(await classifyTextPattern(postData));
   signals.push(await analyseImages(postData));
-  return { postId: postData.id, signals };
+  return { postId: postData.id, signals, embedding };
 };
 
 scope.onmessage = (event) => {
@@ -154,10 +190,23 @@ scope.onmessage = (event) => {
     void loadModels().catch(() => undefined);
     return;
   }
-  if (request.type === 'score-batch') {
-    void Promise.all(request.posts.map(scorePost)).then((results) =>
-      post({ type: 'score-batch-response', requestId: request.requestId, results }),
+  if (request.type === 'load-text-pattern') {
+    void loadTextPattern().then(
+      () => post({ type: 'text-pattern-ready', requestId: request.requestId }),
+      () => post({ type: 'text-pattern-failed', requestId: request.requestId }),
     );
+    return;
+  }
+  if (request.type === 'score-batch') {
+    void (request.textPatternEnabled ? loadTextPattern().catch(() => undefined) : Promise.resolve())
+      .then(() =>
+        Promise.all(
+          request.posts.map((postData) => scorePost(postData, request.textPatternEnabled === true)),
+        ),
+      )
+      .then((results) =>
+        post({ type: 'score-batch-response', requestId: request.requestId, results }),
+      );
     return;
   }
   if (request.type === 'embed') {

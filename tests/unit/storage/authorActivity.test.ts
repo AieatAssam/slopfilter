@@ -90,6 +90,20 @@ describe('author activity store', () => {
     expect(record?.profilePostCount).toBe(40);
   });
 
+  test('preserves cached profile stats when a later profile is partial', async () => {
+    await recordSightings('@account01', [{ postId: 'post-1', timestamp: 1000 }], {
+      joinDate: 500,
+      postCount: 40,
+    });
+    const record = await recordSightings('@account01', [{ postId: 'post-2', timestamp: 1200 }], {
+      joinDate: null,
+      postCount: null,
+    });
+
+    expect(record?.profileJoinDate).toBe(500);
+    expect(record?.profilePostCount).toBe(40);
+  });
+
   test('rejects an empty handle', () => {
     expect(() => recordSightings('   ', [{ postId: 'post-1', timestamp: 1000 }])).toThrow(
       'account handle is required',
