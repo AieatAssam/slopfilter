@@ -37,6 +37,7 @@ beforeEach(() => {
     '--slopfilter-text-muted',
     '--slopfilter-border',
     '--slopfilter-accent',
+    '--slopfilter-on-accent',
   ]) {
     document.documentElement.style.removeProperty(name);
   }
@@ -55,6 +56,16 @@ describe('readThemeTokens', () => {
     expect(tokens.accent).toBe('rgb(29, 155, 240)');
     expect(tokens.border).toBe('rgb(239, 243, 244)');
     expect(tokens.textMuted).toContain('color-mix');
+    expect(tokens.onAccent).toBe('rgb(15, 20, 25)');
+  });
+
+  test('picks white on-accent text for a black surface accent', () => {
+    setBody('rgb(0, 0, 0)', 'rgb(247, 249, 249)');
+    addAccentProbe('rgb(0, 0, 0)');
+
+    const tokens = readThemeTokens(document);
+
+    expect(tokens.onAccent).toBe('rgb(255, 255, 255)');
   });
 
   test('samples probe values on a lights-out theme', () => {
@@ -108,6 +119,18 @@ describe('applyThemeTokens', () => {
     expect(style.getPropertyValue('--slopfilter-surface')).toBe('rgb(21, 32, 43)');
     expect(style.getPropertyValue('--slopfilter-text')).toBe('rgb(247, 249, 249)');
     expect(style.getPropertyValue('--slopfilter-accent')).toBe('rgb(29, 155, 240)');
+    expect(style.getPropertyValue('--slopfilter-on-accent')).toBe('rgb(15, 20, 25)');
+  });
+
+  test('writes white on-accent for a dark accent', () => {
+    setBody('rgb(0, 0, 0)', 'rgb(247, 249, 249)');
+    addAccentProbe('rgb(0, 0, 0)');
+
+    applyThemeTokens(document);
+
+    expect(document.documentElement.style.getPropertyValue('--slopfilter-on-accent')).toBe(
+      'rgb(255, 255, 255)',
+    );
   });
 });
 

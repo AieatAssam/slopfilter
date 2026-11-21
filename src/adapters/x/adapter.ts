@@ -37,6 +37,21 @@ const countFrom = (element: Element | null): number | null => {
 
 const textOf = (element: Element | null): string => element?.textContent?.trim() ?? '';
 
+// Post text keeps emoji: X renders them as <img alt="🧵">, which textContent drops. Used for
+// post-text only; other fields keep textOf.
+const postTextOf = (element: Element): string => {
+  let text = '';
+  const walk = (node: Node) => {
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue ?? '';
+      else if (child instanceof HTMLImageElement) text += child.alt ?? '';
+      else if (child instanceof Element) walk(child);
+    }
+  };
+  walk(element);
+  return text.trim();
+};
+
 const entryMatches = (root: ParentNode, id: string): Element[] => allMatches(root, getEntry(id));
 
 const hasAdLabel = (root: ParentNode): boolean =>
@@ -106,7 +121,8 @@ export const xAdapter: PlatformAdapter = {
       const permalinkElement = firstMatch(element, getEntry('post-permalink'));
       const href = permalinkElement?.getAttribute('href') ?? '';
       const statusMatch = href.match(/\/status\/([^/?]+)/);
-      const text = textOf(firstMatch(element, getEntry('post-text')));
+      const textElement = firstMatch(element, getEntry('post-text'));
+      const text = textElement ? postTextOf(textElement) : '';
       if (!handle || !text || !statusMatch?.[1]) return null;
 
       const author: PostAuthor = {

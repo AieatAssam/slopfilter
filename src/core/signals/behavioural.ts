@@ -21,6 +21,8 @@ export interface AuthorActivity {
   // payload did not carry them, and the cohort signal must fail open.
   accountCreatedAt: number | null;
   profilePostCount: number | null;
+  followers?: number | null;
+  following?: number | null;
 }
 
 // SF-217: configures the graded account-cohort sub-signal. The cutoff is the account-creation date
@@ -50,6 +52,9 @@ export interface AuthorActivityCacheInput {
   posts: Readonly<Record<string, number>>;
   profileJoinDate: number | null;
   profilePostCount: number | null;
+  // HD-005 followChurn: follower and following counts from the payload. Null on the DOM-only path.
+  followers?: number | null;
+  following?: number | null;
 }
 
 const DAY_MS = 86_400_000;
@@ -107,6 +112,8 @@ const activityFromTimestamps = (
     accountAgeDays,
     accountCreatedAt: profile.joinDate,
     profilePostCount: profile.postCount,
+    followers: null,
+    following: null,
   };
 };
 
@@ -163,6 +170,8 @@ export function deriveAuthorActivityFromCache(
     accountAgeDays,
     accountCreatedAt: input.profileJoinDate,
     profilePostCount: input.profilePostCount,
+    followers: input.followers ?? null,
+    following: input.following ?? null,
   };
 }
 
@@ -231,9 +240,10 @@ export function scoreAccountCohort(stats: AuthorActivity, config: CohortConfig):
   );
 
   const span = config.volumeCeilingPerDay - config.volumeFloorPerDay;
+  // Concave ramp: the first posts/day above the floor carry the most evidence.
   const volume =
     span > 0
-      ? clamped((chosen.rate - config.volumeFloorPerDay) / span)
+      ? Math.sqrt(clamped((chosen.rate - config.volumeFloorPerDay) / span))
       : chosen.rate >= config.volumeFloorPerDay
         ? 1
         : 0;
@@ -270,23 +280,85 @@ export function scoreAccountCohort(stats: AuthorActivity, config: CohortConfig):
   };
 }
 
+// HD-005 replyHeavy: a post drawing many replies but few likes is a reply-bait shape. Needs at
+// least 30 replies so a small post cannot fire, and reads only the per-post engagement counts.
+const REPLY_HEAVY_MIN_REPLIES = 30;
+
+interface SubSignal {
+  score: number;
+  reason: string;
+  values: Record<string, number | string | boolean | null>;
+}
+
+const scoreReplyHeavy = (post: Post): SubSignal | null => {
+  const replies = post.engagement.replies;
+  const likes = post.engagement.likes;
+  if (replies === null || likes === null || replies < REPLY_HEAVY_MIN_REPLIES) return null;
+  const ratio = replies / Math.max(likes, 1);
+  return {
+    score: 0.45 * clamped((ratio - 1) / 1.5),
+    reason: `${replies} replies against ${likes} likes`,
+    values: { replyToLikeRatio: round3(ratio) },
+  };
+};
+
+// HD-005 followChurn: an account following thousands of accounts while followed by far fewer is
+// the follow-for-follow shape. Ordinary accounts below 2,000 following never reach the ramp.
+const FOLLOW_CHURN_MIN_FOLLOWING = 2000;
+
+const scoreFollowChurn = (activity: AuthorActivity): SubSignal | null => {
+  const followers = activity.followers ?? null;
+  const following = activity.following ?? null;
+  if (followers === null || following === null || following < FOLLOW_CHURN_MIN_FOLLOWING) {
+    return null;
+  }
+  const score =
+    0.5 *
+    clamped((following - FOLLOW_CHURN_MIN_FOLLOWING) / 3000) *
+    clamped((following / Math.max(followers, 1) - 0.5) / 1.0);
+  return {
+    score,
+    reason: `follows ${following.toLocaleString('en-US')} accounts, followed by ${followers.toLocaleString('en-US')}`,
+    values: {},
+  };
+};
+
 export function scoreBehavioural(
   post: Post,
   activity: AuthorActivity | null,
   thresholds: BehaviouralThresholds,
 ): SignalResult {
+  const replyHeavy = scoreReplyHeavy(post);
   if (!activity) {
+    // Reply-heavy needs no account history, so it still fires on a DOM-only post.
+    if (!replyHeavy || replyHeavy.score <= 0) {
+      return {
+        layerId: 'behavioural',
+        ok: true,
+        score: 0,
+        reason: null,
+        detail: {
+          status: 'no-data',
+          values: {
+            postsPerDay: null,
+            observedPostCount: 0,
+            observationWindowHours: null,
+          },
+        },
+      };
+    }
     return {
       layerId: 'behavioural',
       ok: true,
-      score: 0,
-      reason: null,
+      score: replyHeavy.score,
+      reason: replyHeavy.reason,
       detail: {
-        status: 'no-data',
+        status: 'scored',
         values: {
           postsPerDay: null,
           observedPostCount: 0,
           observationWindowHours: null,
+          ...replyHeavy.values,
         },
       },
     };
@@ -346,6 +418,17 @@ export function scoreBehavioural(
     reasons.push('high views with weak absolute engagement');
   }
 
+  if (replyHeavy && replyHeavy.score > 0) {
+    scores.push(replyHeavy.score);
+    reasons.push(replyHeavy.reason);
+  }
+
+  const followChurn = scoreFollowChurn(activity);
+  if (followChurn && followChurn.score > 0) {
+    scores.push(followChurn.score);
+    reasons.push(followChurn.reason);
+  }
+
   const values: Record<string, number | string | boolean | null> = {
     postsPerDay: recentRate,
     observedPostCount: activity.observedPostCount,
@@ -357,6 +440,9 @@ export function scoreBehavioural(
     engagementRatio: ratio,
     engagementStrength: engagementStrength(post),
     ...(cohortResult.detail?.values ?? {}),
+    ...(replyHeavy?.values ?? {}),
+    followers: activity.followers ?? null,
+    following: activity.following ?? null,
   };
   const score = scores.length === 0 ? 0 : clamped(Math.max(...scores));
   return {

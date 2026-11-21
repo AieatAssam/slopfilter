@@ -21,7 +21,9 @@ export const DEFAULT_THRESHOLDS: BehaviouralThresholds = {
     volumeCeilingPerDay: 100,
     minAccountAgeDays: 14,
     minPostCount: 100,
-    weight: 0.5,
+    // Provisional HD-005: the max (0.9 × 0.6 = 0.54) stays below the 0.60 hide threshold, so cohort
+    // alone never hides a post.
+    weight: 0.9,
   },
 };
 
@@ -81,6 +83,12 @@ export const CONTENT_FORMAT_DEFAULTS: ContentFormatConfig = {
     hookThenList: 0.25,
     allCapsOpener: 0.15,
     linkShortener: 0.2,
+    // Provisional HD-005: a single stock hook is a moderate fire (0.125 composite).
+    viralHook: 0.25,
+    // Provisional HD-005: a keyword-for-send offer is a strong, specific shape on its own.
+    keywordExchange: 0.35,
+    // Provisional HD-005: urgency only counts beside a request, so it stays a modest contributor.
+    urgencyWithAsk: 0.2,
   }),
   scoreCap: 0.85,
 };

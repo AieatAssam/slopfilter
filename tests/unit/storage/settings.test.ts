@@ -4,6 +4,7 @@ import {
   DEFAULT_SETTINGS,
   LEGACY_DEFAULT_WEIGHTS,
   loadSettings,
+  onSettingsChanged,
   saveSettings,
   THRESHOLD_MAX,
   THRESHOLD_MIN,
@@ -165,5 +166,43 @@ describe('settings', () => {
     await expect(loadSettings()).resolves.toMatchObject({
       weights: DEFAULT_SETTINGS.weights,
     });
+  });
+});
+
+describe('onSettingsChanged', () => {
+  const fireChange = (changes: Record<string, unknown>, areaName = 'local') => {
+    const listener = vi.mocked(chrome.storage.onChanged.addListener).mock.calls[0]?.[0] as (
+      changes: Record<string, unknown>,
+      areaName: string,
+    ) => void;
+    listener(changes, areaName);
+  };
+
+  test('ignores unrelated keys such as onboardingShown', () => {
+    const callback = vi.fn();
+    onSettingsChanged(callback);
+
+    fireChange({ onboardingShown: { newValue: true } });
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  test('fires for scoring settings and account states', () => {
+    const callback = vi.fn();
+    onSettingsChanged(callback);
+
+    fireChange({ hideThreshold: { newValue: 0.5 } });
+    fireChange({ accountStates: { newValue: {} } });
+
+    expect(callback).toHaveBeenCalledTimes(2);
+  });
+
+  test('ignores changes from a non-local storage area', () => {
+    const callback = vi.fn();
+    onSettingsChanged(callback);
+
+    fireChange({ hideThreshold: { newValue: 0.5 } }, 'sync');
+
+    expect(callback).not.toHaveBeenCalled();
   });
 });

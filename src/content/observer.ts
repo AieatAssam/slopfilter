@@ -35,17 +35,20 @@ export function createTimelineObserver(options: TimelineObserverOptions): Timeli
     const batch: { element: HTMLElement; post: Post }[] = [];
     for (const element of pending) {
       pending.delete(element);
-      element.dataset.slopfilterProcessed = 'true';
       try {
         const post = options.adapter.extractPost(element);
-        if (post) batch.push({ element, post });
+        // Lazily hydrated posts return null until ready; leave them unmarked so a later mutation retries.
+        if (post) {
+          element.dataset.slopfilterProcessed = 'true';
+          batch.push({ element, post });
+        }
       } catch {
         // A malformed post must not abort the rest of the batch.
       }
     }
     if (batch.length === 0) return;
     try {
-      void options.onBatch(batch);
+      void Promise.resolve(options.onBatch(batch)).catch(() => undefined);
     } catch {
       // A scoring failure must not escape the observer microtask.
     }

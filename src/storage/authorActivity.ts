@@ -19,6 +19,10 @@ export interface AuthorActivityRecord {
   profilePostCount: number | null;
   // SF-216: when an intercepted X payload supplied the profile, keep the observation time.
   profileObservedAt: number | null;
+  // HD-005: follower and following counts from the intercepted payload. Missing on records written
+  // before this field existed; readers treat undefined as null, so no DB_VERSION bump is needed.
+  profileFollowers?: number | null;
+  profileFollowing?: number | null;
 }
 
 type TransactionSetup<T> = (transaction: IDBTransaction, setResult: (result: T) => void) => void;
@@ -92,6 +96,8 @@ const createRecord = (
   profileJoinDate: number | null,
   profilePostCount: number | null,
   profileObservedAt: number | null = null,
+  profileFollowers: number | null = null,
+  profileFollowing: number | null = null,
 ): AuthorActivityRecord => {
   const timestamps = Object.values(posts);
   return {
@@ -102,6 +108,8 @@ const createRecord = (
     profileJoinDate,
     profilePostCount,
     profileObservedAt,
+    profileFollowers,
+    profileFollowing,
   };
 };
 
@@ -176,6 +184,8 @@ export const recordSightings = (
           joined,
           postCount,
           existing?.profileObservedAt ?? null,
+          existing?.profileFollowers ?? null,
+          existing?.profileFollowing ?? null,
         );
         const putRequest = store.put(record);
         putRequest.onsuccess = () => pruneAuthorCap(store, setResult, record);
@@ -201,7 +211,12 @@ export const getActivity = (handle: string): Promise<AuthorActivityRecord | null
 // in the payload contract are persisted; the raw response and post text never touch storage.
 export const updateAuthorProfile = (
   handle: string,
-  profile: { joinDate: number | null; postCount: number | null },
+  profile: {
+    joinDate: number | null;
+    postCount: number | null;
+    followers?: number | null;
+    following?: number | null;
+  },
   observedAt: number,
 ): Promise<AuthorActivityRecord | null> => {
   const key = handle.trim();
@@ -216,12 +231,16 @@ export const updateAuthorProfile = (
         const existing = (getRequest.result as AuthorActivityRecord | null) ?? null;
         const joinDate = profile.joinDate ?? existing?.profileJoinDate ?? null;
         const postCount = profile.postCount ?? existing?.profilePostCount ?? null;
+        const followers = profile.followers ?? existing?.profileFollowers ?? null;
+        const following = profile.following ?? existing?.profileFollowing ?? null;
         const record = createRecord(
           key,
           existing?.posts ?? {},
           joinDate,
           postCount,
           existing?.profileObservedAt ?? observedAt,
+          followers,
+          following,
         );
         const putRequest = store.put(record);
         putRequest.onsuccess = () => pruneAuthorCap(store, setResult, record);

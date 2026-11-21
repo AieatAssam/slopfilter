@@ -270,6 +270,21 @@ describe('scoreAccountCohort calibration', () => {
     expect(afterScore).toBeGreaterThan(0);
   });
 
+  test('just above the floor fires weakly: sqrt ramp gives sqrt(1/80) × 0.9', () => {
+    const weak = scoreAccountCohort(
+      activity({
+        accountAgeDays: 400,
+        accountCreatedAt: thresholds.cohort.cutoff + 500 * 86_400_000,
+        profilePostCount: 8_400,
+        lifetimePostsPerDay: 21,
+      }),
+      thresholds.cohort,
+    );
+
+    expect(weak.score).toBeCloseTo(Math.sqrt(1 / 80) * 0.9, 10);
+    expect(weak.score).toBeLessThan(0.2);
+  });
+
   test('a single maximal cohort fire does not on its own cross the hide threshold', () => {
     const maximal = scoreAccountCohort(
       activity({

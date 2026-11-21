@@ -178,7 +178,10 @@ export type ContentFormatFeatureId =
   | 'listRun'
   | 'hookThenList'
   | 'allCapsOpener'
-  | 'linkShortener';
+  | 'linkShortener'
+  | 'viralHook'
+  | 'keywordExchange'
+  | 'urgencyWithAsk';
 
 export interface ContentFormatConfig {
   hashtagThreshold: number;
@@ -190,32 +193,148 @@ export interface ContentFormatConfig {
   scoreCap: number;
 }
 
-// HD-005: the keyword data behind the call-to-action feature. Structural copy only: what the post
-// asks the reader to do, never a claim about who wrote it.
-const CALL_TO_ACTION_TRIGGERS = Object.freeze([
-  'like',
-  'repost',
-  'retweet',
-  'follow',
-  'comment',
-  'share',
-] as const);
+// HD-005: the phrase data behind the call-to-action feature. Structural copy only: what the post
+// asks the reader to do, never a claim about who wrote it. A bare verb never fires: each pattern
+// needs an imperative position (line or clause start) or an unambiguous object, and a preceding
+// subject or modal ("I like this", "we'll share with", "to follow up") suppresses it.
+type CallToActionVerb =
+  | 'like'
+  | 'repost'
+  | 'follow'
+  | 'comment'
+  | 'reply'
+  | 'share'
+  | 'tag'
+  | 'bookmark';
 
-const CTA_PLURAL: Readonly<Record<string, string>> = Object.freeze({
+const CTA_NOT_AFTER = String.raw`(?<!\b(?:i|i['\u2019]m|i['\u2019]ll|i['\u2019]d|you|you['\u2019]ll|you['\u2019]d|we|we['\u2019]ll|we['\u2019]d|they|he|she|it|who|people|to|will|would|could|can|might|gonna|don['\u2019]?t|didn['\u2019]?t|really|also|just|totally|should|must|may|shall|cannot|can['\u2019]t|won['\u2019]t|feels|looks|seems|sounds)\s+)`;
+const CTA_START = String.raw`(?:^|[\n.!?:;,\u2014\u2013|]|[\p{Extended_Pictographic}\uFE0F]|\b(?:please|pls)\b)\s*`;
+const CTA_VERB = '(?:like|repost|retweet|rt|follow|comment|reply|share)';
+
+const cta = (
+  verb: CallToActionVerb,
+  body: string,
+  start = false,
+  flags = 'iu',
+): { verb: CallToActionVerb; re: RegExp } => ({
+  verb,
+  re: new RegExp(`${start ? CTA_START : ''}${CTA_NOT_AFTER}${body}`, flags),
+});
+
+export const CALL_TO_ACTION_PATTERNS = Object.freeze([
+  cta('like', String.raw`\blike (?:this|my|our|the) (?:post|tweet|thread|video)\b`, true),
+  cta('like', String.raw`\b(?:hit|smash|drop|leave) (?:that |the |a )?like\b`),
+  cta(
+    'like',
+    String.raw`\blike(?: if\b| for (?:more|part)\b|\s*(?:,|&|\+|\/|and)\s*${CTA_VERB}\b)`,
+    true,
+  ),
+  cta(
+    'repost',
+    String.raw`\b(?:repost|retweet|rt)(?: (?:this|it|if|to|so|for|before|the|now|please)\b|\s*(?:,|&|\+|\/|and)\s*${CTA_VERB}\b)`,
+    true,
+  ),
+  cta('repost', String.raw`\b(?:repost|retweet|rt) (?:if|to spread|so (?:more|others|your))\b`),
+  cta('follow', String.raw`\bfollow (?:me|us|for|along)\b`),
+  cta('follow', String.raw`\bfollow(?: @\w|\s*(?:,|&|\+|\/|and)\s*${CTA_VERB}\b)`, true),
+  cta('follow', String.raw`\b(?:give|hit) (?:me |us )?a follow\b`),
+  cta(
+    'comment',
+    String.raw`\bcomment (?:below|your|yes|with|if|"|\u201C|'|\p{Extended_Pictographic})`,
+  ),
+  cta('comment', String.raw`\b(?:drop|leave) a comment\b`),
+  cta('comment', String.raw`\bcomment\s*(?:,|&|\+|\/|and)\s*${CTA_VERB}\b`, true),
+  cta(
+    'comment',
+    String.raw`\b(?:[Cc]omment|COMMENT|[Tt]ype|TYPE) ["\u201C']?[A-Z]{2,}\b`,
+    true,
+    'u',
+  ),
+  cta('reply', String.raw`\b(?:[Rr]eply|REPLY) ["\u201C']?[A-Z]{2,}\b`, true, 'u'),
+  cta('reply', String.raw`\breply (?:below|with|if)\b`, true),
+  cta('share', String.raw`\bshare (?:this|it|with|if|to)\b`, true),
+  cta('share', String.raw`\bshare (?:this )?with (?:a friend|your|someone|everyone)\b`),
+  cta(
+    'tag',
+    String.raw`\btag (?:someone|somebody|a (?:friend|mate|buddy)|\d+ (?:friends|people)|your (?:friends?|bestie|mates?))\b`,
+  ),
+  cta(
+    'bookmark',
+    String.raw`\b(?:bookmark (?:this|it|for)|save (?:this|it) for later|save this (?:post|thread))\b`,
+  ),
+]);
+
+const CTA_PLURAL: Readonly<Record<CallToActionVerb, string>> = Object.freeze({
   like: 'likes',
   repost: 'reposts',
-  retweet: 'retweets',
   follow: 'follows',
   comment: 'comments',
+  reply: 'replies',
   share: 'shares',
+  tag: 'tags',
+  bookmark: 'bookmarks',
 });
+
+// HD-005: stock hook and thread-bait phrasing. Observable copy only, never an authorship claim.
+export const VIRAL_HOOK_PATTERNS = Object.freeze([
+  { label: 'unpopular opinion', re: /^\s*(?:unpopular opinion|hot take)\b/iu },
+  { label: 'read that again', re: /\bread (?:that|this|it) again\b/iu },
+  {
+    label: '99% of people',
+    re: /\b9\d(?:\.\d+)?% of (?:people|you|us|everyone|creators|founders|investors|traders|developers|men|women)\b/iu,
+  },
+  {
+    label: 'most people don\u2019t know',
+    re: /\bmost people (?:don['\u2019]?t|do not|will never|never) (?:know|realize|realise|understand|get)\b/iu,
+  },
+  { label: 'thread', re: /\u{1F9F5}|\bthread\s*(?:\u{1F447}|\u2B07)/iu },
+  {
+    label: "here's why",
+    re: /\bhere['\u2019]?s (?:why|how|what)\s*(?::|\u{1F447}|\u2B07|\u{1F9F5})/iu,
+  },
+  { label: 'stop doing', re: /^\s*stop (?:doing|using|saying|trying|making|posting)\b/iu },
+  {
+    label: 'nobody talks about',
+    re: /\b(?:nobody|no one)(?: is)? (?:talking|talks) about\b|\b(?:nobody|no one) (?:tells|told) you\b/iu,
+  },
+  { label: 'let that sink in', re: /\blet that sink in\b/iu },
+  { label: 'this changes everything', re: /\bthis (?:changes|will change) everything\b/iu },
+  { label: 'wrong answers only', re: /\bwrong answers only\b/iu },
+  { label: 'without telling me', re: /\bwithout telling me\b/iu },
+  { label: "i'll go first", re: /\bi['\u2019]ll go first\b/iu },
+]);
 
 const HASHTAG_RE = /#[^\s#]+/g;
 const MENTION_RE = /@[^\s@]+/g;
 const URL_RE = /https?:\/\/[^\s]+/gi;
 const NUMBERED_ITEM_RE = /^\s*\d+[.)]\s+/u;
+// Extended_Pictographic, not Emoji: \p{Emoji} matches ASCII digits, so "3 eggs" was a bullet.
 const BULLET_ITEM_RE =
-  /^\s*(?:[\p{Emoji}\u2022\u25AA\u25CF\u2714\u2713\u2726\u271D\u25B8\u25C9\u2705\u2757\u26A0*-])\s+/u;
+  /^\s*(?:[\p{Extended_Pictographic}\u2022\u25AA\u25CF\u2714\u2713\u2726\u271D\u25B8\u25C9\u2705\u2757\u26A0*-])\s+/u;
+
+// HD-005: a keyword the reader must send back ("comment SHIP", "reply with 'GUIDE'") followed by
+// a first-person promise to send something. The verb is case-insensitive, so the ALL-CAPS keyword
+// is checked in code: a lowercase word such as "here" in "Reply here and I will share" never counts.
+const KEYWORD_ASK_RE =
+  /\b(?:comment|reply|type|drop|(?:dm|message|inbox)\s+me)(?:\s+with|\s+the\s+word)?\s+(?:["'\u201C\u2018][^"'\u201D\u2019]{2,24}["'\u201D\u2019]|([A-Z][A-Z0-9]{1,23})(?=\s*(?:and\b|&|below\b|to\b|[,.!:]|$)))/gi;
+const KEYWORD_EXCLUDED: ReadonlySet<string> = new Set(['STOP', 'HELP', 'UNSUBSCRIBE']);
+const KEYWORD_CAPS_RE = /^[A-Z][A-Z0-9]{1,23}$/;
+const KEYWORD_SEND_WINDOW = 120;
+const KEYWORD_SEND_PROMISE_RE =
+  /\b(?:i['\u2019]?ll|i\s+will|we['\u2019]?ll|we\s+will)\s+(?:send|dm|share|give|email|drop|message)\b/i;
+
+const URGENCY_PATTERNS: readonly RegExp[] = Object.freeze([
+  /\b(?:only|just)\s+\d+\s+(?:spots?|seats?|slots?|copies|places?)\s+(?:left|remaining|available)\b/i,
+  /\bfree for (?:the )?(?:next )?\d+\s+(?:hours?|days?|minutes?)\b/i,
+  /\b(?:first|next)\s+\d+\s+(?:people|followers|replies|comments)\s+to\s+(?:reply|comment|dm)\b/i,
+  /\b(?:ends|expires|closing|closes)\s+(?:tonight|today|at midnight|soon|in\s+\d+\s+hours?)\b/i,
+  /\blast chance\b/i,
+  /\bbefore i delete\b/i,
+  /\bwon['\u2019]t last\b/i,
+]);
+
+const OFFSITE_POINTER_RE =
+  /\blink\s+(?:is\s+)?(?:in|on)\s+(?:my|the|our)?\s*(?:bio|profile|replies|reply|comments?|first\s+comment)\b/i;
 
 interface FiredFormatFeature {
   id: ContentFormatFeatureId;
@@ -257,19 +376,64 @@ const isAllCapsLine = (line: string | null): boolean => {
   return line === line.toUpperCase() && line !== line.toLowerCase();
 };
 
+// Counts keyword asks that are followed, within the window, by a first-person send promise.
+const keywordExchangeCount = (text: string): number => {
+  let count = 0;
+  for (const ask of text.matchAll(KEYWORD_ASK_RE)) {
+    const keyword = ask[1];
+    if (
+      keyword !== undefined &&
+      (!KEYWORD_CAPS_RE.test(keyword) || KEYWORD_EXCLUDED.has(keyword))
+    ) {
+      continue;
+    }
+    const start = ask.index ?? 0;
+    if (KEYWORD_SEND_PROMISE_RE.test(text.slice(start, start + KEYWORD_SEND_WINDOW))) count += 1;
+  }
+  return count;
+};
+
 const detectContentFormat = (text: string, config: ContentFormatConfig): FiredFormatFeature[] => {
   const fired: FiredFormatFeature[] = [];
-  const lower = text.toLowerCase();
 
-  const cta = CALL_TO_ACTION_TRIGGERS.filter((word) => {
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp(`\\b${escaped}\\b`).test(lower);
-  });
-  if (cta.length > 0) {
+  const verbs = [
+    ...new Set(CALL_TO_ACTION_PATTERNS.filter(({ re }) => re.test(text)).map(({ verb }) => verb)),
+  ];
+  if (verbs.length > 0) {
     fired.push({
       id: 'callToAction',
-      count: cta.length,
-      reason: `asks for ${cta.map((word) => CTA_PLURAL[word] ?? `${word}s`).join(' and ')}`,
+      count: verbs.length,
+      reason: `asks for ${verbs.map((verb) => CTA_PLURAL[verb]).join(' and ')}`,
+    });
+  }
+
+  const hooks = VIRAL_HOOK_PATTERNS.filter(({ re }) => re.test(text));
+  if (hooks.length > 0) {
+    fired.push({
+      id: 'viralHook',
+      count: hooks.length,
+      reason: `stock hook phrasing (${hooks.map(({ label }) => label).join(', ')})`,
+    });
+  }
+
+  const keywordAsks = keywordExchangeCount(text);
+  if (keywordAsks > 0) {
+    fired.push({
+      id: 'keywordExchange',
+      count: keywordAsks,
+      reason: 'offers to send something for a keyword reply',
+    });
+  }
+
+  const offSitePointer = OFFSITE_POINTER_RE.test(text);
+  if (
+    URGENCY_PATTERNS.some((re) => re.test(text)) &&
+    (verbs.length > 0 || keywordAsks > 0 || offSitePointer)
+  ) {
+    fired.push({
+      id: 'urgencyWithAsk',
+      count: 1,
+      reason: 'deadline or limited-quantity wording beside a request',
     });
   }
 

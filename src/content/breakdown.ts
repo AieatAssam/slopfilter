@@ -16,6 +16,8 @@ export function attachBreakdown(placeholder: HTMLElement, breakdown: ScoreBreakd
   toggle.textContent = 'Why was this hidden?';
   toggle.dataset.testid = 'slopfilter-breakdown-toggle';
   toggle.setAttribute('aria-expanded', 'false');
+  const panelId = `slopfilter-breakdown-${crypto.randomUUID()}`;
+  toggle.setAttribute('aria-controls', panelId);
 
   toggle.addEventListener('click', () => {
     const existing = placeholder.querySelector(`[data-testid="${panelTestId}"]`);
@@ -27,6 +29,7 @@ export function attachBreakdown(placeholder: HTMLElement, breakdown: ScoreBreakd
 
     const panel = document.createElement('div');
     panel.className = 'slopfilter-breakdown-panel';
+    panel.id = panelId;
     panel.dataset.testid = panelTestId;
     for (const contribution of breakdown.contributions) {
       const row = document.createElement('div');

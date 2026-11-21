@@ -202,3 +202,28 @@ test('only one info tip bubble is open at a time', async ({ context, extensionId
   await expect(taste).toHaveAttribute('aria-expanded', 'true');
   await options.close();
 });
+
+test('settings reset buttons keep a 32px touch target', async ({ context, extensionId }) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  const box = await options.getByRole('button', { name: 'Reset weight' }).first().boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(32);
+  await options.close();
+});
+
+test('the import control shows a visible focus outline when focused', async ({
+  context,
+  extensionId,
+}) => {
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+
+  const importInput = options.getByLabel('Import settings');
+  await importInput.focus();
+  const outlineStyle = await importInput.evaluate(
+    (element) => getComputedStyle(element.closest('label') ?? element).outlineStyle,
+  );
+  expect(outlineStyle).not.toBe('none');
+  await options.close();
+});

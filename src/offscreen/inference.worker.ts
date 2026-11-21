@@ -95,12 +95,17 @@ const loadModels = async () => {
   return loadPromise;
 };
 
-const analyseImages = async (postData: Post) => {
+// Image forensics shares one budget per batch. Once it is spent, remaining posts report ok:false so a
+// slow ViT pass can never push the whole batch past the offscreen deadline and drop the text results.
+const IMAGE_BATCH_BUDGET_MS = 3_500;
+
+const analyseImages = async (postData: Post, deadline: number) => {
   if (postData.imageUrls.length === 0) return scoreImageForensics({ ok: true, scores: [] });
   if (!imageForensicsModel) return scoreImageForensics({ ok: false, scores: [] });
   try {
     const scores: number[] = [];
     for (const imageUrl of postData.imageUrls.slice(0, MAX_IMAGES_PER_POST)) {
+      if (Date.now() > deadline) return scoreImageForensics({ ok: false, scores: [] });
       const output = await imageForensicsModel(imageUrl, { top_k: 1 });
       const score = output[0]?.score;
       if (typeof score !== 'number' || !Number.isFinite(score))
@@ -153,6 +158,29 @@ const embed = async (text: string): Promise<Float32Array> => {
   return Float32Array.from(output.data as ArrayLike<number>);
 };
 
+// One vectorized MiniLM call per batch instead of N concurrent WASM invocations. Empty texts get no
+// vector, and a failed call yields nulls, so both take the same fail-open path as a missing embedding.
+const embedBatch = async (texts: readonly string[]): Promise<(Float32Array | null)[]> => {
+  const vectors: (Float32Array | null)[] = texts.map(() => null);
+  const rows = texts.flatMap((text, index) => (text.length > 0 ? [index] : []));
+  if (rows.length === 0 || !embedder) return vectors;
+  try {
+    const output = await embedder(
+      rows.map((index) => texts[index] ?? ''),
+      { pooling: 'mean', normalize: true },
+    );
+    const flat = Float32Array.from(output.data as ArrayLike<number>);
+    const dim = flat.length / rows.length;
+    if (!Number.isInteger(dim)) throw new Error('unexpected embedding shape');
+    rows.forEach((textIndex, row) => {
+      vectors[textIndex] = flat.slice(row * dim, (row + 1) * dim);
+    });
+  } catch {
+    return texts.map(() => null);
+  }
+  return vectors;
+};
+
 const recordDownvote = async (postId: string, text: string): Promise<void> => {
   const vector = await embed(text);
   await addEmbedding({ postId, vector, createdAt: Date.now() });
@@ -167,21 +195,38 @@ const recordDownvote = async (postId: string, text: string): Promise<void> => {
   await saveCentroids(tasteCentroids);
 };
 
-const scorePost = async (postData: Post, textPatternEnabled: boolean) => {
+const scorePost = async (
+  postData: Post,
+  vector: Float32Array | null,
+  textPatternEnabled: boolean,
+  imageDeadline: number,
+) => {
   const signals: SignalResult[] = [];
   let embedding: number[] = [];
-  try {
-    const vector = await embed(postData.text);
+  if (vector) {
     embedding = [...vector];
     signals.push(scoreContentCentroid(vector, contentCentroids));
     signals.push(scoreTaste(vector, tasteCentroids, 0.8));
-  } catch {
+  } else {
     signals.push(scoreContentCentroid(null, contentCentroids));
     signals.push({ layerId: 'taste', ok: false, score: 0, reason: null });
   }
   if (textPatternEnabled) signals.push(await classifyTextPattern(postData));
-  signals.push(await analyseImages(postData));
+  signals.push(await analyseImages(postData, imageDeadline));
   return { postId: postData.id, signals, embedding };
+};
+
+// Posts run one at a time so the WASM models never overlap inside this worker.
+const scoreBatchPosts = async (posts: readonly Post[], textPatternEnabled: boolean) => {
+  const vectors = await embedBatch(posts.map((postData) => postData.text));
+  const imageDeadline = Date.now() + IMAGE_BATCH_BUDGET_MS;
+  const results = [];
+  for (const [index, postData] of posts.entries()) {
+    results.push(
+      await scorePost(postData, vectors[index] ?? null, textPatternEnabled, imageDeadline),
+    );
+  }
+  return results;
 };
 
 scope.onmessage = (event) => {
@@ -199,11 +244,8 @@ scope.onmessage = (event) => {
   }
   if (request.type === 'score-batch') {
     void (request.textPatternEnabled ? loadTextPattern().catch(() => undefined) : Promise.resolve())
-      .then(() =>
-        Promise.all(
-          request.posts.map((postData) => scorePost(postData, request.textPatternEnabled === true)),
-        ),
-      )
+      .then(() => scoreBatchPosts(request.posts, request.textPatternEnabled === true))
+      .catch(() => [])
       .then((results) =>
         post({ type: 'score-batch-response', requestId: request.requestId, results }),
       );

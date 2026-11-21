@@ -111,6 +111,38 @@ describe('createTimelineObserver', () => {
     handle.stop();
   });
 
+  test('retries an element whose first extractPost returned null', async () => {
+    const flaky = document.createElement('article');
+    let flakyAttempts = 0;
+    const extractPost = vi.fn((element: Element) => {
+      if (element !== flaky) return post;
+      flakyAttempts += 1;
+      return flakyAttempts === 1 ? null : post;
+    });
+    const container = document.createElement('div');
+    document.body.append(container);
+    const onBatch = vi.fn();
+    const handle = createTimelineObserver({
+      adapter: adapterFor(extractPost),
+      container,
+      shouldFilter: () => true,
+      onBatch,
+    });
+    container.append(flaky);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(onBatch).not.toHaveBeenCalled();
+
+    addPosts(container, 1);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(onBatch).toHaveBeenCalledOnce();
+    expect(onBatch.mock.calls[0]?.[0]).toContainEqual({ element: flaky, post });
+    expect(flaky.dataset.slopfilterProcessed).toBe('true');
+    handle.stop();
+  });
+
   test('disconnects cleanly and stops emitting batches after stop()', async () => {
     const { container, handle, onBatch } = setup();
     handle.stop();

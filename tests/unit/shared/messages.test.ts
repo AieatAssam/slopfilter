@@ -49,6 +49,8 @@ const variantName = (message: ExtensionMessage): string => {
       return message.type;
     case 'record-wrong-call':
       return message.type;
+    case 'model-ready':
+      return message.type;
     default: {
       const exhaustive: never = message;
       return exhaustive;
@@ -80,6 +82,7 @@ describe('ExtensionMessage', () => {
       { type: 'wrong-call', postId: post.id, firedLayerIds: [] },
       { type: 'record-stats-batch', entries: [] },
       { type: 'record-wrong-call', reasonIds: [] },
+      { type: 'model-ready', model: 'base', epoch: 'instance:1' },
     ];
 
     expect(messages.map(variantName)).toEqual(messages.map(({ type }) => type));

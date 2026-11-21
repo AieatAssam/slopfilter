@@ -15,6 +15,18 @@ test('popup presents model state and weekly stats as separate readable cards', a
     'min-height',
     '36px',
   );
+  await expect(page.getByTestId('slopfilter-popup-status')).toHaveAttribute(
+    'data-state',
+    /^(on|paused|idle)$/,
+  );
+  await expect(page.getByTestId('slopfilter-stats-seen')).toHaveCSS(
+    'flex-direction',
+    'column-reverse',
+  );
+  await expect(page.getByTestId('slopfilter-stats-seen-value')).toHaveCSS(
+    'font-variant-numeric',
+    'tabular-nums',
+  );
   await page.close();
 });
 
@@ -33,6 +45,14 @@ test('onboarding and privacy pages share the readable extension layout', async (
   await expect(onboarding.locator('.sf-page-card')).toHaveCount(2);
   await expect(onboarding.getByRole('heading', { name: 'Verify it yourself' })).toBeVisible();
   await onboarding.close();
+
+  const landing = await context.newPage();
+  await landing.goto(`chrome-extension://${extensionId}/ui/onboarding/onboarding.html`);
+  await expect(landing.getByRole('link', { name: 'Open your X timeline' })).toHaveAttribute(
+    'href',
+    'https://x.com/home',
+  );
+  await landing.close();
 });
 
 test('settings keeps the primary threshold and signal controls visually grouped', async ({

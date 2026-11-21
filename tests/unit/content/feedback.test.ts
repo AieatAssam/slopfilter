@@ -209,8 +209,8 @@ describe('feedback controls', () => {
     expect(menu.getAttribute('popover')).toBe('auto');
     expect(menu.id).toBeTruthy();
     expect(trigger.getAttribute('popovertarget')).toBe(menu.id);
-    expect(menu.getAttribute('role')).toBe('menu');
-    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    expect(menu.hasAttribute('role')).toBe(false);
+    expect(trigger.hasAttribute('aria-haspopup')).toBe(false);
   });
 
   test('aria-expanded tracks a popover toggle event', () => {

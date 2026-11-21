@@ -130,13 +130,11 @@ export const attachFeedbackControls = (
   });
 
   const accountOptions = addButton('Account options');
-  accountOptions.setAttribute('aria-haspopup', 'menu');
   accountOptions.setAttribute('aria-expanded', 'false');
   const menuId = `slopfilter-menu-${post.id}`;
   const menu = document.createElement('div');
   menu.className = 'slopfilter-account-menu';
   menu.id = menuId;
-  menu.setAttribute('role', 'menu');
   menu.setAttribute('popover', 'auto');
   accountOptions.setAttribute('popovertarget', menuId);
   menu.addEventListener('toggle', (event) => {
@@ -171,7 +169,11 @@ export const attachFeedbackControls = (
   if (options.onWrongCall) {
     const wrongCall = addButton('This was wrong');
     wrongCall.addEventListener('click', () => {
-      handleWrongCall(post, options.breakdown, options.onWrongCall ?? (() => undefined));
+      handleWrongCall(
+        post,
+        options.getBreakdown?.() ?? options.breakdown,
+        options.onWrongCall ?? (() => undefined),
+      );
     });
     controls.append(wrongCall);
   }

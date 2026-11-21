@@ -203,3 +203,73 @@ test('the visible cluster remains interactive and does not intercept the native 
   await expect(cluster).toHaveCSS('opacity', '1');
   await expect(cluster).toHaveCSS('pointer-events', 'auto');
 });
+
+test('injected clusters stay inside their article, clear the caret and stay compact across four widths', async ({
+  context,
+}) => {
+  const viewports = [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+    { width: 768, height: 1024 },
+    { width: 375, height: 812 },
+  ];
+
+  for (const viewport of viewports) {
+    const page = await context.newPage();
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await mountGolden(page);
+    const ids = await goldenVariantIds(page);
+    await restoreVariants(page, ids);
+    await page.evaluate((targets) => {
+      for (const target of targets) {
+        const article = document.getElementById(target);
+        if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${target}`);
+        const caret = document.createElement('button');
+        caret.type = 'button';
+        caret.dataset.slopfilterCaretProbe = 'true';
+        caret.setAttribute('aria-label', 'More');
+        caret.style.cssText =
+          'position:absolute;top:60px;right:16px;width:20px;height:20px;display:block';
+        article.appendChild(caret);
+      }
+    }, ids);
+    for (const id of ids) await attachFeedback(page, id);
+
+    const clusters = await page.evaluate(
+      ({ targets, width }) =>
+        targets.flatMap((id) => {
+          const article = document.getElementById(id);
+          if (!(article instanceof HTMLElement)) throw new Error(`article missing: ${id}`);
+          const caret = article.querySelector('[data-slopfilter-caret-probe]');
+          if (!(caret instanceof HTMLElement)) throw new Error(`caret probe missing: ${id}`);
+          const caretRect = caret.getBoundingClientRect();
+          const articleRect = article.getBoundingClientRect();
+          return Array.from(
+            article.querySelectorAll<HTMLElement>('[data-testid="slopfilter-feedback"]'),
+          )
+            .map((cluster) => cluster.getBoundingClientRect())
+            .filter((rect) => rect.width > 0 && rect.height > 0)
+            .map((rect) => ({
+              contained: rect.left >= articleRect.left - 1 && rect.right <= articleRect.right + 1,
+              compact: width < 768 || rect.height <= 48,
+              clearsCaret: !(
+                rect.left < caretRect.right &&
+                rect.right > caretRect.left &&
+                rect.top < caretRect.bottom &&
+                rect.bottom > caretRect.top
+              ),
+            }));
+        }),
+      { targets: ids, width: viewport.width },
+    );
+
+    expect(clusters.length).toBeGreaterThan(0);
+    for (const cluster of clusters) {
+      expect(cluster.contained, `${viewport.width}px cluster inside article`).toBe(true);
+      expect(cluster.compact, `${viewport.width}px cluster height`).toBe(true);
+      expect(cluster.clearsCaret, `${viewport.width}px cluster clears caret`).toBe(true);
+    }
+    await page.close();
+  }
+});

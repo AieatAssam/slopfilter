@@ -38,7 +38,7 @@ export const COHORT_ROWS: readonly CohortRow[] = [
     chosenSource: 'lifetime',
     derivation:
       '200-day account at a 60/day lifetime rate. Created long after the cutoff so recency is 1; ' +
-      'volume (60-20)/80 = 0.5; 0.5 * 1 * weight 0.5 = 0.25, a strong fire.',
+      'volume sqrt((60-20)/80) = 0.707; 0.707 * 1 * weight 0.9 = 0.636, a strong fire.',
     stats: stats({
       accountAgeDays: 200,
       accountCreatedAt: cutoff + 500 * DAY,
@@ -62,12 +62,12 @@ export const COHORT_ROWS: readonly CohortRow[] = [
   },
   {
     id: 'mid-volume-recent-rate-fires-weakly',
-    outcome: 'weak',
+    outcome: 'strong',
     chosenSource: 'recent',
     derivation:
       '985-day account whose lifetime 14.5/day is below the floor, but the SF-215 recent rate of ' +
-      '30/day is the higher and is chosen: volume (30-20)/80 = 0.125, recency 1, so 0.125 * 0.5 = ' +
-      '0.0625 fires weakly.',
+      '30/day is the higher and is chosen: volume sqrt((30-20)/80) = 0.354, recency 1, so 0.354 * ' +
+      '0.9 = 0.318 is a strong fire.',
     stats: stats({
       accountAgeDays: 985,
       accountCreatedAt: cutoff + 200 * DAY,
@@ -123,12 +123,26 @@ export const COHORT_ROWS: readonly CohortRow[] = [
     }),
   },
   {
-    id: 'cutoff-ramp-one-day-before',
+    id: 'just-above-floor-fires-weakly',
     outcome: 'weak',
     chosenSource: 'lifetime',
     derivation:
+      '400-day account at a 21/day lifetime rate, one posting-rate step above the 20/day floor. ' +
+      'Volume sqrt((21-20)/80) = 0.112, recency 1, so 0.112 * weight 0.9 = 0.101 fires weakly.',
+    stats: stats({
+      accountAgeDays: 400,
+      accountCreatedAt: cutoff + 500 * DAY,
+      profilePostCount: 8_400,
+      lifetimePostsPerDay: 21,
+    }),
+  },
+  {
+    id: 'cutoff-ramp-one-day-before',
+    outcome: 'strong',
+    chosenSource: 'lifetime',
+    derivation:
       'Created one day before the cutoff: the recency ramp is 1 - 1/180 = 0.9944. Volume ' +
-      '(40-20)/80 = 0.25, so 0.25 * 0.9944 * weight 0.5 = 0.124 fires weakly.',
+      'sqrt((40-20)/80) = 0.5, so 0.5 * 0.9944 * weight 0.9 = 0.447 is a strong fire.',
     stats: stats({
       accountAgeDays: 1_500,
       accountCreatedAt: cutoff - DAY,
@@ -138,11 +152,11 @@ export const COHORT_ROWS: readonly CohortRow[] = [
   },
   {
     id: 'cutoff-ramp-one-day-after',
-    outcome: 'weak',
+    outcome: 'strong',
     chosenSource: 'lifetime',
     derivation:
-      'Created one day after the cutoff: recency 1. Volume (40-20)/80 = 0.25, so 0.25 * 0.5 = ' +
-      '0.125, within the margin of the one-day-before row.',
+      'Created one day after the cutoff: recency 1. Volume sqrt((40-20)/80) = 0.5, so 0.5 * 0.9 = ' +
+      '0.45 is a strong fire, within 0.01 of the one-day-before row.',
     stats: stats({
       accountAgeDays: 1_500,
       accountCreatedAt: cutoff + DAY,

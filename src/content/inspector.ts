@@ -124,6 +124,10 @@ export const openInspector = (post: Post, options: InspectorOptions): void => {
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   if (typeof dialog.showModal === 'function') {
     dialog.showModal();
+    close.focus();
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
     close.addEventListener('click', () => dialog.close());
   } else {
     dialog.setAttribute('open', '');

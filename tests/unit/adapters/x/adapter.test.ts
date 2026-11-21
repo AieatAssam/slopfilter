@@ -135,3 +135,19 @@ describe('parseCompactCount', () => {
     expect(parseCompactCount(raw)).toBe(expected);
   });
 });
+
+describe('x adapter post text keeps emoji', () => {
+  test('reads an emoji rendered as an img alt inside the post text', () => {
+    document.body.innerHTML = `
+      <article data-testid="tweet">
+        <div data-testid="User-Name"><div dir="ltr">Account</div><div dir="ltr">@account</div></div>
+        <a href="/account/status/12345">permalink</a>
+        <div data-testid="tweetText"><span>Read this </span><img alt="🧵" /><span> now</span></div>
+      </article>
+    `;
+    const article = document.querySelector('article');
+    if (!article) throw new Error('article missing');
+
+    expect(xAdapter.extractPost(article)?.text).toBe('Read this 🧵 now');
+  });
+});

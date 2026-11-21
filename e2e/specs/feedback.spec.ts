@@ -42,6 +42,53 @@ test('show anyway restores the post with injected feedback controls', async ({ p
   await expect(post.getByRole('button', { name: 'Account options' })).toBeVisible();
 });
 
+test('show anyway is a non-signal: stays revealed across a rescore and is not excluded on reload', async ({
+  page,
+  context,
+  extensionId,
+}) => {
+  await page.goto('/?fixture=high-frequency');
+  await waitForScoringSettled(page);
+  const placeholder = page.getByTestId('slopfilter-placeholder').first();
+  const postId = await placeholder.evaluate((element) =>
+    element.previousElementSibling?.getAttribute('data-post-id'),
+  );
+  if (!postId) throw new Error('hidden post id missing');
+
+  await placeholder.getByRole('button', { name: 'Show anyway' }).click();
+  const post = page.locator(`article[data-post-id="${postId}"]`);
+  await expect(post).toBeVisible();
+  await expect(post.getByRole('button', { name: 'This was wrong' })).toBeVisible();
+
+  // A scoring-key storage write (empty exclusions list, no scoring effect) forces a rescore.
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/ui/options/options.html`);
+  const rescored = page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        window.addEventListener('slopfilter-batch-scored', () => resolve(), {
+          once: true,
+        }),
+      ),
+  );
+  await options.evaluate(() => chrome.storage.local.set({ exclusions: [] }));
+  await rescored;
+  await expect(post).toBeVisible();
+  await expect(
+    post.locator('xpath=following-sibling::*[1][@data-testid="slopfilter-placeholder"]'),
+  ).toHaveCount(0);
+  await options.close();
+
+  // Show anyway writes no exclusion, so a fresh load collapses the post again.
+  await page.reload();
+  await waitForScoringSettled(page);
+  await expect(
+    page
+      .locator(`article[data-post-id="${postId}"]`)
+      .locator('xpath=following-sibling::*[1][@data-testid="slopfilter-placeholder"]'),
+  ).toHaveCount(1);
+});
+
 test('the not-interested control is keyboard reachable', async ({ page }) => {
   await page.goto('/');
   const post = page.locator('article[data-testid="tweet"]').first();

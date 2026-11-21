@@ -8,8 +8,8 @@ describe('user-facing copy', () => {
     const pattern =
       /\b(ai[- ]?(generated|written|detect)|written by (an )?ai|synthetic|authored by)\b/i;
     for (const path of [
-      'src/ui/onboarding/onboarding.html',
-      'src/ui/privacy/privacy.html',
+      'public/ui/onboarding/onboarding.html',
+      'public/ui/privacy/privacy.html',
       'docs/store-listing.md',
     ]) {
       expect(read(path), path).not.toMatch(pattern);
@@ -17,7 +17,7 @@ describe('user-facing copy', () => {
   });
 
   test('privacy page names model and thumbnail requests and DevTools verification', () => {
-    const privacy = read('src/ui/privacy/privacy.html');
+    const privacy = read('public/ui/privacy/privacy.html');
 
     expect(privacy).toContain('huggingface.co');
     expect(privacy).toContain('pbs.twimg.com');
@@ -25,7 +25,7 @@ describe('user-facing copy', () => {
   });
 
   test('privacy page states there are no accounts and no analytics', () => {
-    const privacy = read('src/ui/privacy/privacy.html');
+    const privacy = read('public/ui/privacy/privacy.html');
 
     expect(privacy).toContain('no accounts');
     expect(privacy).toContain('analytics');

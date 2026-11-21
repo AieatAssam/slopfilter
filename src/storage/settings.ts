@@ -170,9 +170,19 @@ export async function saveSettings(partial: Partial<Settings>): Promise<void> {
   await chrome.storage.local.set(partial);
 }
 
+// Only keys that feed scoring re-trigger a rescore. Unrelated writes (onboardingShown, stats,
+// corpus, author-activity caches) must not wake every open timeline.
+const SCORING_KEYS: ReadonlySet<string> = new Set([
+  ...Object.keys(DEFAULT_SETTINGS),
+  'accountStates',
+  'exclusions',
+]);
+
 export function onSettingsChanged(callback: () => void): () => void {
-  const listener = (_changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
-    if (areaName === 'local') callback();
+  const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
+    if (areaName !== 'local') return;
+    if (!Object.keys(changes).some((key) => SCORING_KEYS.has(key))) return;
+    callback();
   };
   chrome.storage.onChanged.addListener(listener);
   return () => chrome.storage.onChanged.removeListener(listener);

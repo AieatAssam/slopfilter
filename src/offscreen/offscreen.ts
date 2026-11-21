@@ -23,6 +23,24 @@ const emptyProvenance = (imageCount: number): ProvenanceResult => ({
   unreadable: 0,
 });
 
+const unreadableProvenance = (imageCount: number): ProvenanceResult => ({
+  ...emptyProvenance(imageCount),
+  unreadable: imageCount,
+});
+
+// Provenance is best-effort: it must never hold a score batch past its deadline.
+const PROVENANCE_DEADLINE_MS = 2_500;
+
+const withinDeadline = <T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => {
+      timer = setTimeout(() => resolve(fallback), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+};
+
 const readProvenance = async (post: Post): Promise<ProvenanceResult> => {
   const urls = post.imageUrls;
   if (urls.length === 0) return emptyProvenance(0);
@@ -30,14 +48,14 @@ const readProvenance = async (post: Post): Promise<ProvenanceResult> => {
   try {
     sdk = await getC2pa();
   } catch {
-    return { ...emptyProvenance(urls.length), unreadable: urls.length };
+    return unreadableProvenance(urls.length);
   }
   const result = emptyProvenance(urls.length);
   for (const url of urls) {
     try {
       const response = await fetch(url, {
         cache: 'force-cache',
-        signal: AbortSignal.timeout(5_000),
+        signal: AbortSignal.timeout(PROVENANCE_DEADLINE_MS),
       });
       if (!response.ok) throw new Error(`image request failed: ${response.status}`);
       const blob = await response.blob();
@@ -69,13 +87,14 @@ export interface InferencePipelines {
     readonly { postId: string; signals: readonly SignalResult[]; embedding: readonly number[] }[]
   >;
   loadTextPattern?: () => Promise<boolean>;
-  embed: (text: string) => Promise<Float32Array>;
+  embed: (text: string) => Promise<Float32Array | null>;
   downvote: (postId: string, text: string) => Promise<boolean>;
 }
 
 export interface InferenceHostOptions {
   load: (onProgress: (progress: number) => void) => Promise<InferencePipelines>;
   onStatus?: (status: ModelStatus) => void;
+  onModelReady?: (model: 'base' | 'text-pattern', epoch: string) => void;
 }
 
 let simulateModelFailure = false;
@@ -134,16 +153,29 @@ const fixtureScoreBatchResponse = (posts: readonly Post[], textPatternMax = fals
     embedding: fixtureEmbedding(post.text),
   }));
 
-export const createInferenceHost = ({ load, onStatus }: InferenceHostOptions): InferenceHost => {
+export const createInferenceHost = ({
+  load,
+  onStatus,
+  onModelReady,
+}: InferenceHostOptions): InferenceHost => {
   let status: ModelStatus = { state: 'idle', progress: 0, error: null };
   let pipelines: InferencePipelines | null = null;
   let loading: Promise<void> | null = null;
   let attempt = 0;
   let stallTimer: ReturnType<typeof setTimeout> | null = null;
+  // Epochs are unique per announcement so content can tell a fresh model from one it already saw.
+  const instanceId = Date.now().toString(36);
+  let announcements = 0;
+  let textPatternAnnounced = false;
 
   const publish = (next: ModelStatus) => {
     status = next;
     onStatus?.(next);
+  };
+
+  const announce = (model: 'base' | 'text-pattern') => {
+    announcements += 1;
+    onModelReady?.(model, `${instanceId}:${announcements}`);
   };
 
   const clearStallTimer = () => {
@@ -169,7 +201,9 @@ export const createInferenceHost = ({ load, onStatus }: InferenceHostOptions): I
       .then((nextPipelines) => {
         if (currentAttempt !== attempt || status.state !== 'downloading') return;
         pipelines = nextPipelines;
+        textPatternAnnounced = false;
         publish({ state: 'ready', progress: 100, error: null });
+        announce('base');
       })
       .catch((error: unknown) => {
         if (currentAttempt !== attempt) return;
@@ -220,7 +254,12 @@ export const createInferenceHost = ({ load, onStatus }: InferenceHostOptions): I
       start();
       if (!pipelines && loading) await loading.catch(() => undefined);
       if (!pipelines?.loadTextPattern) return false;
-      return pipelines.loadTextPattern();
+      const ok = await pipelines.loadTextPattern();
+      if (ok && !textPatternAnnounced) {
+        textPatternAnnounced = true;
+        announce('text-pattern');
+      }
+      return ok;
     },
     async embed(text) {
       start();
@@ -244,6 +283,14 @@ export const createInferenceHost = ({ load, onStatus }: InferenceHostOptions): I
   };
 };
 
+// Deadlines per request kind. A score batch must come back quickly or fail open; the others get
+// longer budgets because a cold embed or a text-pattern model download can legitimately take longer.
+const SCORE_DEADLINE_MS = 10_000;
+const EMBED_DEADLINE_MS = 10_000;
+const TEXT_PATTERN_DEADLINE_MS = 90_000;
+
+type WorkerReply = Extract<WorkerResponse, { requestId: string }>;
+
 const createWorkerPipelines = (
   onProgress: (progress: number) => void,
 ): Promise<InferencePipelines> => {
@@ -252,14 +299,8 @@ const createWorkerPipelines = (
   });
   const pending = new Map<
     string,
-    (
-      response: Extract<
-        WorkerResponse,
-        { type: 'score-batch-response' | 'embed-response' | 'downvote-response' }
-      >,
-    ) => void
+    { resolve: (reply: WorkerReply | null) => void; timer: ReturnType<typeof setTimeout> }
   >();
-  const optionalPending = new Map<string, (ok: boolean) => void>();
   let sequence = 0;
   let resolveReady: (() => void) | undefined;
   let rejectReady: ((error: Error) => void) | undefined;
@@ -267,6 +308,30 @@ const createWorkerPipelines = (
     resolveReady = resolve;
     rejectReady = reject;
   });
+
+  // The single settlement path: clear the deadline and remove the entry before resolving, so a late
+  // or duplicate reply is a no-op and no promise is left dangling.
+  const settle = (requestId: string, reply: WorkerReply | null) => {
+    const entry = pending.get(requestId);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    pending.delete(requestId);
+    entry.resolve(reply);
+  };
+  const settleAll = () => {
+    for (const requestId of [...pending.keys()]) settle(requestId, null);
+  };
+
+  const request = (
+    requestId: string,
+    message: WorkerRequest,
+    deadlineMs: number,
+  ): Promise<WorkerReply | null> =>
+    new Promise((resolve) => {
+      const timer = setTimeout(() => settle(requestId, null), deadlineMs);
+      pending.set(requestId, { resolve, timer });
+      worker.postMessage(message);
+    });
 
   worker.addEventListener('message', (event: MessageEvent<WorkerResponse>) => {
     const message = event.data;
@@ -282,56 +347,47 @@ const createWorkerPipelines = (
       rejectReady?.(new Error(message.error));
       return;
     }
-    if (message.type === 'text-pattern-ready' || message.type === 'text-pattern-failed') {
-      optionalPending.get(message.requestId)?.(message.type === 'text-pattern-ready');
-      optionalPending.delete(message.requestId);
-      return;
-    }
-    if (
-      message.type !== 'score-batch-response' &&
-      message.type !== 'embed-response' &&
-      message.type !== 'downvote-response'
-    )
-      return;
-    pending.get(message.requestId)?.(message);
-    pending.delete(message.requestId);
+    if ('requestId' in message) settle(message.requestId, message);
   });
-  worker.addEventListener('error', (event) =>
-    rejectReady?.(new Error(event.message || 'inference worker failed')),
-  );
+  // A dead or unreadable worker must not leave callers waiting: reject a pending load and settle
+  // every in-flight request as empty so the content script fails open.
+  worker.addEventListener('error', (event) => {
+    rejectReady?.(new Error(event.message || 'inference worker failed'));
+    settleAll();
+  });
+  worker.addEventListener('messageerror', () => {
+    rejectReady?.(new Error('inference worker message could not be read'));
+    settleAll();
+  });
   worker.postMessage({ type: 'load' } satisfies WorkerRequest);
-
-  const request = <
-    T extends Extract<
-      WorkerResponse,
-      { type: 'score-batch-response' | 'embed-response' | 'downvote-response' }
-    >,
-  >(
-    message: WorkerRequest,
-    responseType: T['type'],
-  ): Promise<T> =>
-    new Promise((resolve) => {
-      const requestId = 'requestId' in message ? message.requestId : `worker-${sequence++}`;
-      pending.set(requestId, (response) => {
-        if (response.type === responseType) resolve(response as T);
-      });
-      worker.postMessage({ ...message, requestId } as WorkerRequest);
-    });
 
   return ready.then(() => ({
     scoreBatch: async (posts, textPatternEnabled = false) => {
-      const response = await request<Extract<WorkerResponse, { type: 'score-batch-response' }>>(
+      const requestId = `batch-${sequence++}`;
+      // Provenance runs alongside the worker request, so its bounded wait does not add to the total.
+      const provenancePromise = Promise.all(
+        posts.map((post) =>
+          withinDeadline(
+            readProvenance(post),
+            PROVENANCE_DEADLINE_MS,
+            unreadableProvenance(post.imageUrls.length),
+          ),
+        ),
+      );
+      const reply = await request(
+        requestId,
         {
           type: 'score-batch',
-          requestId: `batch-${sequence++}`,
+          requestId,
           posts,
           ...(textPatternEnabled ? { textPatternEnabled: true } : {}),
         },
-        'score-batch-response',
+        SCORE_DEADLINE_MS,
       );
-      const provenance = await Promise.all(posts.map(readProvenance));
+      const provenance = await provenancePromise;
+      if (reply?.type !== 'score-batch-response') return [];
       const byId = new Map(posts.map((post, index) => [post.id, provenance[index]]));
-      return response.results.map((result) => ({
+      return reply.results.map((result) => ({
         ...result,
         signals: [
           ...result.signals,
@@ -339,25 +395,28 @@ const createWorkerPipelines = (
         ],
       }));
     },
-    loadTextPattern: () =>
-      new Promise((resolve) => {
-        const requestId = `text-pattern-${sequence++}`;
-        optionalPending.set(requestId, resolve);
-        worker.postMessage({ type: 'load-text-pattern', requestId } satisfies WorkerRequest);
-      }),
-    embed: async (text) => {
-      const response = await request<Extract<WorkerResponse, { type: 'embed-response' }>>(
-        { type: 'embed', requestId: `embed-${sequence++}`, text },
-        'embed-response',
+    loadTextPattern: async () => {
+      const requestId = `text-pattern-${sequence++}`;
+      const reply = await request(
+        requestId,
+        { type: 'load-text-pattern', requestId },
+        TEXT_PATTERN_DEADLINE_MS,
       );
-      return Float32Array.from(response.vector);
+      return reply?.type === 'text-pattern-ready';
+    },
+    embed: async (text) => {
+      const requestId = `embed-${sequence++}`;
+      const reply = await request(requestId, { type: 'embed', requestId, text }, EMBED_DEADLINE_MS);
+      return reply?.type === 'embed-response' ? Float32Array.from(reply.vector) : null;
     },
     downvote: async (postId, text) => {
-      const response = await request<Extract<WorkerResponse, { type: 'downvote-response' }>>(
-        { type: 'downvote', requestId: `downvote-${sequence++}`, postId, text },
-        'downvote-response',
+      const requestId = `downvote-${sequence++}`;
+      const reply = await request(
+        requestId,
+        { type: 'downvote', requestId, postId, text },
+        EMBED_DEADLINE_MS,
       );
-      return response.ok;
+      return reply?.type === 'downvote-response' && reply.ok;
     },
   }));
 };
@@ -372,6 +431,10 @@ const host = createInferenceHost({
   onStatus: (status) => {
     if (typeof chrome === 'undefined') return;
     void chrome.runtime.sendMessage({ type: 'model-status', status }).catch(() => undefined);
+  },
+  onModelReady: (model, epoch) => {
+    if (typeof chrome === 'undefined') return;
+    void chrome.runtime.sendMessage({ type: 'model-ready', model, epoch }).catch(() => undefined);
   },
 });
 

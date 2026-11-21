@@ -7,6 +7,7 @@ import {
   getActivity,
   PER_AUTHOR_POST_CAP,
   recordSightings,
+  updateAuthorProfile,
 } from '@/storage/authorActivity';
 
 const resetDatabase = async () => {
@@ -120,5 +121,38 @@ describe('author activity store', () => {
 
   test('returns null for an unknown author', async () => {
     expect(await getActivity('@nobody')).toBeNull();
+  });
+
+  test('stores follower and following counts from the payload profile', async () => {
+    await updateAuthorProfile(
+      '@account01',
+      { joinDate: 500, postCount: 40, followers: 50, following: 6000 },
+      1000,
+    );
+    const record = await getActivity('@account01');
+
+    expect(record?.profileFollowers).toBe(50);
+    expect(record?.profileFollowing).toBe(6000);
+  });
+
+  test('keeps stored follower counts when a later write omits them', async () => {
+    await updateAuthorProfile(
+      '@account01',
+      { joinDate: 500, postCount: 40, followers: 50, following: 6000 },
+      1000,
+    );
+    await recordSightings('@account01', [{ postId: 'post-1', timestamp: 1200 }]);
+    await updateAuthorProfile('@account01', { joinDate: null, postCount: null }, 1300);
+    const record = await getActivity('@account01');
+
+    expect(record?.profileFollowers).toBe(50);
+    expect(record?.profileFollowing).toBe(6000);
+  });
+
+  test('defaults follower counts to null when the payload did not carry them', async () => {
+    const record = await recordSightings('@account01', [{ postId: 'post-1', timestamp: 1000 }]);
+
+    expect(record?.profileFollowers ?? null).toBeNull();
+    expect(record?.profileFollowing ?? null).toBeNull();
   });
 });

@@ -7,6 +7,8 @@ import {
 } from '@/storage/settings';
 import { exportConfig, importConfig } from '@/storage/settingsIo';
 
+const DEBOUNCE_MS = 200;
+
 const form = document.querySelector('form');
 const status = document.querySelector('[data-testid="slopfilter-settings-status"]');
 const input = (id: string): HTMLInputElement => {
@@ -15,11 +17,14 @@ const input = (id: string): HTMLInputElement => {
   return element;
 };
 
-const render = (settings: Settings) => {
-  const threshold = input('hide-threshold');
-  threshold.value = String(settings.hideThreshold);
+const syncThresholdOutput = () => {
   const output = document.getElementById('hide-threshold-value');
-  if (output) output.textContent = settings.hideThreshold.toFixed(2);
+  if (output) output.textContent = Number(input('hide-threshold').value).toFixed(2);
+};
+
+const render = (settings: Settings) => {
+  input('hide-threshold').value = String(settings.hideThreshold);
+  syncThresholdOutput();
   input('hide-ads').checked = settings.hideAds;
   input('cohort-cutoff').value = settings.cohortCutoff;
   input('cohort-volume-floor').value = String(settings.cohortVolumeFloor);
@@ -54,15 +59,52 @@ const setIoStatus = (message: string) => {
   if (ioStatus) ioStatus.textContent = message;
 };
 
-const persistCurrentSettings = () => {
-  void saveSettings(read())
-    .then(() => setStatus('Saved.'))
-    .catch(() => setStatus('Could not save settings.'));
+// Writes run one after another. Only the newest revision may publish its outcome,
+// so an older write finishing can never show "Saved." over a newer pending edit.
+let revision = 0;
+let queue: Promise<void> = Promise.resolve();
+const enqueue = (write: () => Promise<string>) => {
+  const rev = ++revision;
+  setStatus('Saving…');
+  queue = queue.then(write).then(
+    (message) => {
+      if (rev === revision) setStatus(message);
+    },
+    () => {
+      if (rev === revision) setStatus('Could not save settings.');
+    },
+  );
+};
+
+let dirty = false;
+let timer: ReturnType<typeof setTimeout> | undefined;
+const cancelPending = () => {
+  clearTimeout(timer);
+  timer = undefined;
+  dirty = false;
+};
+
+// Immediate write of whatever the form holds now.
+const flush = () => {
+  if (!dirty) return;
+  cancelPending();
+  const snapshot = read();
+  enqueue(() => saveSettings(snapshot).then(() => 'Saved.'));
+};
+
+// Called synchronously on every edit so "Saving…" is visible before the debounce fires.
+const scheduleSave = () => {
+  dirty = true;
+  revision++;
+  setStatus('Saving…');
+  clearTimeout(timer);
+  timer = setTimeout(flush, DEBOUNCE_MS);
 };
 
 const resetControl = (id: string) => {
   if (id === 'hide-threshold') {
     input(id).value = String(DEFAULT_SETTINGS.hideThreshold);
+    syncThresholdOutput();
   } else if (id === 'hide-ads') {
     input(id).checked = DEFAULT_SETTINGS.hideAds;
   } else if (id === 'cohort-cutoff') {
@@ -78,8 +120,8 @@ const resetControl = (id: string) => {
     const layerId = id.slice('enable-'.length) as keyof Settings['enabledLayers'];
     input(id).checked = DEFAULT_SETTINGS.enabledLayers[layerId];
   }
-  render(read());
-  persistCurrentSettings();
+  scheduleSave();
+  flush();
 };
 
 const wireInfoTips = () => {
@@ -145,7 +187,10 @@ const wireInfoTips = () => {
 
 const wireConfigIo = () => {
   document.getElementById('export-settings')?.addEventListener('click', () => {
-    void exportConfig()
+    flush();
+    // Wait for any queued write so the export reads what the user actually sees.
+    void queue
+      .then(() => exportConfig())
       .then((config) => {
         const url = URL.createObjectURL(
           new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' }),
@@ -161,19 +206,29 @@ const wireConfigIo = () => {
   });
 
   document.getElementById('import-settings')?.addEventListener('change', (event) => {
-    const input = event.currentTarget;
-    if (!(input instanceof HTMLInputElement) || !input.files?.[0]) return;
-    void input.files[0]
+    const fileInput = event.currentTarget;
+    if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.[0]) return;
+    // Cancel before the async read so a stale debounced write cannot land after the import.
+    cancelPending();
+    void fileInput.files[0]
       .text()
-      .then(importConfig)
-      .then(async (result) => {
-        if (!result.ok) {
-          setIoStatus(result.message);
-          return;
-        }
-        render(await loadSettings());
-        setIoStatus('Settings imported.');
-      })
+      .then((text) =>
+        enqueue(async () => {
+          try {
+            const result = await importConfig(text);
+            if (!result.ok) {
+              setIoStatus(result.message);
+              return 'Settings unchanged.';
+            }
+            render(await loadSettings());
+            setIoStatus('Settings imported.');
+            return 'Saved.';
+          } catch {
+            setIoStatus('Could not import settings.');
+            return 'Settings unchanged.';
+          }
+        }),
+      )
       .catch(() => setIoStatus('Could not import settings.'));
   });
 };
@@ -186,14 +241,19 @@ const start = async () => {
     setStatus('Using defaults.');
   }
 
-  const threshold = input('hide-threshold');
-  threshold.addEventListener('input', () => {
-    const output = document.getElementById('hide-threshold-value');
-    if (output) output.textContent = Number(threshold.value).toFixed(2);
+  form?.addEventListener('input', () => {
+    syncThresholdOutput();
+    scheduleSave();
   });
-  form?.addEventListener('change', () => {
-    persistCurrentSettings();
-    if (input('enable-text-pattern').checked) {
+  form?.addEventListener('change', (event) => {
+    flush();
+    const target = event.target;
+    // Only the checkbox itself being switched on starts the model download.
+    if (
+      target instanceof HTMLInputElement &&
+      target.id === 'enable-text-pattern' &&
+      target.checked
+    ) {
       void chrome.runtime
         .sendMessage({ type: 'text-pattern-download' })
         .then((response) => {
@@ -203,9 +263,8 @@ const start = async () => {
         .catch(() => setStatus('Could not download the optional text-pattern model.'));
     }
   });
-  form?.addEventListener('input', () => {
-    persistCurrentSettings();
-  });
+  form?.addEventListener('focusout', flush);
+  window.addEventListener('pagehide', flush);
   for (const reset of document.querySelectorAll<HTMLButtonElement>('[data-reset]')) {
     reset.addEventListener('click', () => resetControl(reset.dataset.reset ?? ''));
   }

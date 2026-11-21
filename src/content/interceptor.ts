@@ -128,3 +128,26 @@ XMLHttpRequest.prototype.send = function (
   }
   return rawSend.call(this, body);
 };
+
+// SPA navigation: X routes through the page's own history calls, which the isolated-world content
+// script never sees. Relay each one so the timeline watcher re-resolves without waiting for a DOM
+// mutation. The original call runs first; the relay itself can never throw into the page.
+const relayNavigation = () => {
+  try {
+    window.postMessage(
+      { source: 'slopfilter-interceptor', type: 'navigation', href: window.location.href },
+      window.location.origin,
+    );
+  } catch {
+    // A blocked relay only delays the re-resolve until the next DOM mutation.
+  }
+};
+
+for (const method of ['pushState', 'replaceState'] as const) {
+  const raw = History.prototype[method];
+  history[method] = function (this: History, ...args: Parameters<History['pushState']>) {
+    const result = raw.apply(this, args);
+    relayNavigation();
+    return result;
+  } as History['pushState'];
+}

@@ -49,7 +49,10 @@ export type ExtensionMessage =
       type: 'record-stats-batch';
       entries: readonly { hidden: boolean; reasons: readonly string[] }[];
     }
-  | { type: 'record-wrong-call'; reasonIds: readonly string[] };
+  | { type: 'record-wrong-call'; reasonIds: readonly string[] }
+  // Broadcast by the offscreen host once per loaded pipeline instance. Content re-scores posts
+  // that were scored before this model was available; `epoch` makes each announcement unique.
+  | { type: 'model-ready'; model: 'base' | 'text-pattern'; epoch: string };
 
 const messageTypes = [
   'selftest-result',
@@ -69,6 +72,7 @@ const messageTypes = [
   'wrong-call',
   'record-stats-batch',
   'record-wrong-call',
+  'model-ready',
 ] as const;
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

@@ -106,6 +106,7 @@ test('account menu opens above surrounding content, closes on Escape and outside
 
   const article = page.locator('article[data-testid="tweet"]').first();
   const trigger = article.getByRole('button', { name: 'Account options' });
+  await expect(trigger).not.toHaveAttribute('aria-haspopup');
   await article.hover();
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -132,6 +133,9 @@ test('collapsed-row controls stay in flow without covering the recovery actions'
   await page.goto('/?fixture=high-frequency');
   const placeholder = page.getByTestId('slopfilter-placeholder').first();
   await expect(placeholder).toBeVisible();
+
+  const showAnyBox = await placeholder.getByRole('button', { name: 'Show anyway' }).boundingBox();
+  expect(showAnyBox?.height ?? 0).toBeGreaterThanOrEqual(32);
 
   const boxes = await placeholder.evaluate((element) => {
     const rect = (selector: string) => {

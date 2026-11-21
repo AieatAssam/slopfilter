@@ -35,8 +35,13 @@ import { applyThemeTokens, observeTheme, themeForPlatform } from './themes';
 const seenPosts = new Map<string, Post>();
 const seenElements = new Map<string, HTMLElement>();
 const lastBreakdowns = new Map<string, ScoreBreakdown>();
+// Session-local only: a post the user chose to "Show anyway". Never persisted, not a signal, and
+// not cleared on rescore so a revealed post stays open while it is being read.
+const revealedPosts = new Set<string>();
 const payloadEngagement = new Map<string, PostEngagement>();
 const scoreGenerations = new Map<string, number>();
+// Global, never reset, so a generation cleared on navigation can never collide with a later one.
+let generationSequence = 0;
 const recordedStatsPosts = new Set<string>();
 const pendingStatsPosts = new Set<string>();
 let rescoreAuthors: ((handles: readonly string[]) => void) | null = null;
@@ -71,6 +76,38 @@ let selfTestTimer: number | null = null;
 let requestSequence = 0;
 let _themeDisconnect: (() => void) | null = null;
 let lastLocationHref = '';
+let lastSelfTestState: { ok: boolean; failedSelectorIds: string[] } | null = null;
+
+// Model-ready re-scoring. `currentModelEpoch` is the latest announced epoch; each post remembers the
+// epoch it was last scored under, so a newly loaded model re-scores only what predates it.
+const MODEL_SIGNAL_TIMEOUT_MS = 15_000;
+const RESCORE_CHUNK_SIZE = 10;
+let currentModelEpoch: string | null = null;
+const attemptedModelEpochs = new Set<string>();
+const scoredEpochByPost = new Map<string, string | null>();
+let modelRescoreChain: Promise<void> = Promise.resolve();
+
+// Resolves to null if the promise does not settle within `ms`, so a hung round trip fails open.
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+};
+
+// Drops posts whose DOM element has left the page so long scroll sessions do not grow the Maps.
+const pruneDisconnected = () => {
+  for (const [postId, element] of seenElements) {
+    if (element.isConnected) continue;
+    seenElements.delete(postId);
+    seenPosts.delete(postId);
+    lastBreakdowns.delete(postId);
+    scoredEpochByPost.delete(postId);
+  }
+};
 
 // SF-216: exact engagement from intercepted X payloads supersedes the compact-count DOM parse.
 // Payload numbers are plain integers; keep them keyed by post id so a post scored after the relay
@@ -100,7 +137,12 @@ const handlePayloadRelay = async (event: MessageEvent) => {
   const writes = event.data.authors.map((author) =>
     updateAuthorProfile(
       author.handle,
-      { joinDate: author.accountCreatedAt, postCount: author.totalPosts },
+      {
+        joinDate: author.accountCreatedAt,
+        postCount: author.totalPosts,
+        followers: author.followers,
+        following: author.following,
+      },
       observedAt,
     ).catch(() => null),
   );
@@ -137,12 +179,12 @@ const notifyBatchScored = () => {
   }
 };
 
-const requestModelSignals = async (
-  posts: readonly Post[],
-): Promise<{
+type ModelSignals = {
   signalsByPost: Map<string, readonly SignalResult[]>;
   embeddingsByPost: Map<string, Float32Array | null>;
-}> => {
+};
+
+const requestModelSignalsOnce = async (posts: readonly Post[]): Promise<ModelSignals> => {
   if (posts.length === 0) {
     return { signalsByPost: new Map(), embeddingsByPost: new Map() };
   }
@@ -153,15 +195,18 @@ const requestModelSignals = async (
       __SLOPFILTER_TEST_BUILD__ && new URL(location.href).searchParams.has('fixture-embeddings');
     const fixtureTextPatternMax =
       __SLOPFILTER_TEST_BUILD__ && new URL(location.href).searchParams.has('text-pattern-max');
-    const response = await chrome.runtime.sendMessage({
-      type: 'score-batch-request',
-      requestId: `content-${requestSequence++}`,
-      posts,
-      textPatternEnabled: settings.enabledLayers['text-pattern'],
-      ...(simulateModelFailure ? { simulateModelFailure: true } : {}),
-      ...(fixtureEmbeddings ? { fixtureEmbeddings: true } : {}),
-      ...(fixtureTextPatternMax ? { fixtureTextPatternMax: true } : {}),
-    });
+    const response = await withTimeout(
+      chrome.runtime.sendMessage({
+        type: 'score-batch-request',
+        requestId: `content-${requestSequence++}`,
+        posts,
+        textPatternEnabled: settings.enabledLayers['text-pattern'],
+        ...(simulateModelFailure ? { simulateModelFailure: true } : {}),
+        ...(fixtureEmbeddings ? { fixtureEmbeddings: true } : {}),
+        ...(fixtureTextPatternMax ? { fixtureTextPatternMax: true } : {}),
+      }),
+      MODEL_SIGNAL_TIMEOUT_MS,
+    );
     if (!isExtensionMessage(response) || response.type !== 'score-batch-response') {
       return { signalsByPost: new Map(), embeddingsByPost: new Map() };
     }
@@ -179,6 +224,19 @@ const requestModelSignals = async (
   } catch {
     return { signalsByPost: new Map(), embeddingsByPost: new Map() };
   }
+};
+
+// Single-flight: one score-batch-request in flight per tab, so a scroll burst queues here instead of
+// piling overlapping batches into the WASM worker. The timeout starts when a batch actually runs.
+// ponytail: FIFO with no coalescing; if bursts queue for too long, keep only the newest batch.
+let modelRequestChain: Promise<void> = Promise.resolve();
+const requestModelSignals = (posts: readonly Post[]): Promise<ModelSignals> => {
+  const next = modelRequestChain.then(() => requestModelSignalsOnce(posts));
+  modelRequestChain = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  return next;
 };
 
 const loadRepetitionCorpus = () => {
@@ -252,9 +310,17 @@ const addToRepetitionCorpus = (entry: RepetitionCorpusEntry) => {
   void addCorpusEntry(entry, cap).catch(() => undefined);
 };
 
+// Only a confirmed selector self-test failure may call this. Scoring, inference and corpus errors
+// fail open per batch and never reach here.
 const sendSelfTestResult = (ok: boolean, failedSelectorIds: readonly string[]) => {
+  // Latch the committed result so the popup reads what the page decided, not a fresh re-check.
+  lastSelfTestState = { ok, failedSelectorIds: [...failedSelectorIds] };
   try {
-    const response = chrome.runtime.sendMessage({ type: 'selftest-result', ok, failedSelectorIds });
+    const response = chrome.runtime.sendMessage({
+      type: 'selftest-result',
+      ok,
+      failedSelectorIds,
+    });
     void response.catch(() => undefined);
   } catch {
     // A missing service worker must not make the feed unsafe to process.
@@ -275,6 +341,7 @@ const pauseFiltering = (failedSelectorIds: readonly string[] = []) => {
   timelineObserver = null;
   pageObserver?.disconnect();
   pageObserver = null;
+  timelineContainer = null;
   sendSelfTestResult(false, failedSelectorIds);
   logger.warn('filtering paused');
 };
@@ -324,7 +391,19 @@ const recordBatch = async (
         ? { joinDate: profile.joinDate, postCount: profile.postCount }
         : undefined;
     const record = await recordSightings(handle, sightings, profileForHandle);
-    result.set(handle, record ? deriveAuthorActivityFromCache(record, now) : null);
+    result.set(
+      handle,
+      record
+        ? deriveAuthorActivityFromCache(
+            {
+              ...record,
+              followers: record.profileFollowers ?? null,
+              following: record.profileFollowing ?? null,
+            },
+            now,
+          )
+        : null,
+    );
   }
   return result;
 };
@@ -335,12 +414,14 @@ const scoreBatch = async (
 ) => {
   const generations = new Map(
     batch.map(({ post }) => {
-      const generation = (scoreGenerations.get(post.id) ?? 0) + 1;
+      const generation = ++generationSequence;
       scoreGenerations.set(post.id, generation);
       return [post.id, generation] as const;
     }),
   );
   for (const { element } of batch) delete element.dataset.slopfilterModelProcessed;
+  pruneDisconnected();
+  const epochAtStart = currentModelEpoch;
   try {
     const stored = await chrome.storage.local.get('exclusions');
     const exclusions = new Set(
@@ -355,7 +436,11 @@ const scoreBatch = async (
       activityByHandle: Map<string, ReturnType<typeof deriveAuthorActivityFromCache>> | null,
       recordStats: boolean,
     ) => {
-      const stats: { postId: string; hidden: boolean; reasons: readonly string[] }[] = [];
+      const stats: {
+        postId: string;
+        hidden: boolean;
+        reasons: readonly string[];
+      }[] = [];
       for (const { element, post: rawPost } of batch) {
         const post = preferExactEngagement(rawPost);
         seenPosts.set(post.id, post);
@@ -421,6 +506,7 @@ const scoreBatch = async (
         const overridden = exclusions.has(post.id)
           ? { ...breakdown, hidden: false, reasons: [] }
           : applyAccountOverride(post, breakdown, await getAccountState(post.author.handle));
+        const collapse = overridden.hidden && !revealedPosts.has(post.id);
         if (scoreGenerations.get(post.id) !== generations.get(post.id)) continue;
         const previous = lastBreakdowns.get(post.id);
         const isCollapsed = element.dataset.slopfilterCollapsed === 'true';
@@ -431,8 +517,8 @@ const scoreBatch = async (
         const decisionChanged =
           !previous ||
           previous.hidden !== overridden.hidden ||
-          overridden.hidden !== isCollapsed ||
-          (!overridden.hidden && !hasFeedback);
+          collapse !== isCollapsed ||
+          (!collapse && !hasFeedback);
         lastBreakdowns.set(post.id, overridden);
         const theme = themeForPlatform(xAdapter.platform);
         const feedbackOptions = {
@@ -451,20 +537,22 @@ const scoreBatch = async (
               requiredDelta: settings.hideThreshold,
             },
         } as const;
-        const attachVisibleFeedback = () => {
+        const attachVisibleFeedback = (onWrongCall?: () => void) => {
           attachFeedbackControls(element, post, {
             breakdown: overridden,
             theme,
+            ...(onWrongCall ? { onWrongCall } : {}),
             ...feedbackOptions,
           });
         };
         const restoreAndAttachFeedback = () => {
-          scoreGenerations.set(post.id, (scoreGenerations.get(post.id) ?? 0) + 1);
+          revealedPosts.add(post.id);
+          scoreGenerations.set(post.id, ++generationSequence);
           restorePost(element);
-          attachVisibleFeedback();
+          attachVisibleFeedback(restoreAndAttachFeedback);
         };
         if (decisionChanged) {
-          if (overridden.hidden) {
+          if (collapse) {
             collapsePost(element, overridden, theme, restoreAndAttachFeedback);
             const placeholder = element.nextElementSibling;
             if (placeholder instanceof HTMLElement) {
@@ -477,13 +565,17 @@ const scoreBatch = async (
             }
           } else {
             if (element.dataset.slopfilterCollapsed === 'true') restorePost(element);
-            attachVisibleFeedback();
+            attachVisibleFeedback(overridden.hidden ? restoreAndAttachFeedback : undefined);
           }
         }
         if (!recordStats) element.dataset.slopfilterModelProcessed = 'true';
         if (!recordedStatsPosts.has(post.id) && !pendingStatsPosts.has(post.id)) {
           pendingStatsPosts.add(post.id);
-          stats.push({ postId: post.id, hidden: overridden.hidden, reasons: overridden.reasons });
+          stats.push({
+            postId: post.id,
+            hidden: overridden.hidden,
+            reasons: overridden.reasons,
+          });
         }
       }
       if (stats.length === 0) return;
@@ -501,22 +593,54 @@ const scoreBatch = async (
         for (const { postId } of stats) pendingStatsPosts.delete(postId);
       }
     };
-    await loadRepetitionCorpus();
+    // A corpus read failure just means the repetition signal compares against an empty store.
+    await loadRepetitionCorpus().catch(() => undefined);
     await renderBatch(new Map(), new Map(), null, recordVisit);
-    const activityPromise = recordBatch(batch);
-    void Promise.all([activityPromise, modelResultsPromise]).then(
-      async ([activityByHandle, { signalsByPost, embeddingsByPost }]) => {
-        try {
-          await renderBatch(signalsByPost, embeddingsByPost, activityByHandle, false);
-        } catch {
-          // A re-score failure is non-fatal; the first pass already rendered.
-        }
-        notifyBatchScored();
-      },
-    );
+    // Pass 2 settles activity and model scoring independently, so one failure never suppresses
+    // the other. The batch-scored signal fires on every path, including a rejected pass 2.
+    const pass2 = (async () => {
+      const [activity, models] = await Promise.allSettled([
+        recordBatch(batch),
+        modelResultsPromise,
+      ]);
+      const activityByHandle = activity.status === 'fulfilled' ? activity.value : null;
+      const { signalsByPost, embeddingsByPost } =
+        models.status === 'fulfilled'
+          ? models.value
+          : { signalsByPost: new Map(), embeddingsByPost: new Map() };
+      // Record the epoch only when model results actually arrived; timed-out/empty batches stay
+      // eligible if a later model-ready announcement arrives.
+      if (epochAtStart !== null && (signalsByPost.size > 0 || embeddingsByPost.size > 0)) {
+        for (const { post } of batch) scoredEpochByPost.set(post.id, epochAtStart);
+      }
+      await renderBatch(signalsByPost, embeddingsByPost, activityByHandle, false);
+    })();
+    pass2.then(notifyBatchScored).catch(() => notifyBatchScored());
   } catch {
-    pauseFiltering();
+    // Fail open: a failed batch stays unfiltered and the next mutation retries it.
   }
+};
+
+const rescoreForEpoch = async (epoch: string) => {
+  const candidates = [...seenElements].flatMap(([postId, element]) => {
+    const post = seenPosts.get(postId);
+    if (!post || !element.isConnected || scoredEpochByPost.get(postId) === epoch) return [];
+    return [{ element, post }];
+  });
+  for (let index = 0; index < candidates.length; index += RESCORE_CHUNK_SIZE) {
+    if (paused) return;
+    await scoreBatch(candidates.slice(index, index + RESCORE_CHUNK_SIZE), false);
+  }
+};
+
+// Each epoch is handled once; the chain keeps rescoring single-flight so announcements never overlap.
+const handleModelReady = (model: 'base' | 'text-pattern', epoch: string) => {
+  if (attemptedModelEpochs.has(epoch)) return;
+  attemptedModelEpochs.add(epoch);
+  currentModelEpoch = epoch;
+  if (paused) return;
+  if (model === 'text-pattern' && !settings.enabledLayers['text-pattern']) return;
+  modelRescoreChain = modelRescoreChain.then(() => rescoreForEpoch(epoch)).catch(() => undefined);
 };
 
 rescoreAuthors = (handles) => {
@@ -570,7 +694,7 @@ const startAfterSelfTest = () => {
     try {
       attempt();
     } catch {
-      pauseFiltering();
+      // A throw here is not a confirmed selector failure; keep waiting for the timeout to decide.
     }
   });
   selfTestObserver.observe(root, { childList: true, subtree: true });
@@ -582,16 +706,33 @@ const startAfterSelfTest = () => {
   }, SELF_TEST_TIMEOUT_MS);
 };
 
-const attachTimeline = () => {
-  if (paused || timelineObserver) return;
-  // Attaching must not gate on the full required-selector contract. X is a SPA: navigating
-  // away from the home feed (Explore, Notifications, a profile) re-renders the column so the
-  // post-level selectors stop resolving, and pausing there kills filtering for the rest of the
-  // session because nothing ever re-attaches. A missing timeline container is a wait, not a break:
-  // the page observer stays alive and re-attaches when a feed route comes back.
+// The page-lifetime timeline watcher. It resolves the container on every trigger (MAIN-world
+// navigation relay, popstate, DOM mutation) and rebuilds only when the route changed, the container
+// is gone, or X mounted a different container element. A non-timeline route resolves to null and
+// leaves the watcher alive, so Home -> post detail -> Home re-attaches and scores every article.
+const resolveTimeline = () => {
+  if (paused) return;
+  const routeChanged = location.href !== lastLocationHref;
+  lastLocationHref = location.href;
+  // Adapter lookups never throw into the page; a miss is a wait, not a pause.
   const container = xAdapter.findTimelineContainer(document);
-  if (!container) return;
+  if (!routeChanged && container === timelineContainer) return;
+
+  timelineObserver?.stop();
+  timelineObserver = null;
   timelineContainer = container;
+  // Route-local state only. repetitionCorpus and recordedStatsPosts deliberately survive.
+  seenElements.clear();
+  seenPosts.clear();
+  lastBreakdowns.clear();
+  scoredEpochByPost.clear();
+  scoreGenerations.clear();
+  for (const element of document.querySelectorAll<HTMLElement>('[data-slopfilter-processed]')) {
+    delete element.dataset.slopfilterProcessed;
+    delete element.dataset.slopfilterModelProcessed;
+  }
+  applyThemeTokens(document);
+  if (!container) return;
   timelineObserver = createTimelineObserver({
     adapter: xAdapter,
     container,
@@ -600,57 +741,32 @@ const attachTimeline = () => {
   });
 };
 
-const refreshTimeline = () => {
-  if (paused) return;
-  lastLocationHref = location.href;
-  timelineObserver?.stop();
-  timelineObserver = null;
-  timelineContainer = null;
-  for (const element of document.querySelectorAll<HTMLElement>('[data-slopfilter-processed]')) {
-    delete element.dataset.slopfilterProcessed;
-    delete element.dataset.slopfilterModelProcessed;
-  }
-  attachTimeline();
-};
-
 const watchTimeline = () => {
-  attachTimeline();
-  lastLocationHref = location.href;
+  resolveTimeline();
   const root = document.documentElement;
   if (!root) return;
   pageObserver = new MutationObserver(() => {
     try {
-      if (paused) return;
-      if (location.href !== lastLocationHref) {
-        refreshTimeline();
-        return;
-      }
-      if (timelineObserver && timelineContainer?.isConnected) return;
-      timelineObserver?.stop();
-      timelineObserver = null;
-      timelineContainer = null;
-      attachTimeline();
+      resolveTimeline();
     } catch {
-      pauseFiltering();
+      // Fail open without pausing: the next page mutation re-resolves the timeline.
     }
   });
   pageObserver.observe(root, { childList: true, subtree: true });
+  window.addEventListener('popstate', resolveTimeline);
+};
 
-  const announceNavigation = () => window.dispatchEvent(new Event('slopfilter-navigation'));
-  const rawPushState = history.pushState.bind(history);
-  const rawReplaceState = history.replaceState.bind(history);
-  history.pushState = ((...args: Parameters<History['pushState']>) => {
-    const result = rawPushState(...args);
-    announceNavigation();
-    return result;
-  }) as History['pushState'];
-  history.replaceState = ((...args: Parameters<History['replaceState']>) => {
-    const result = rawReplaceState(...args);
-    announceNavigation();
-    return result;
-  }) as History['replaceState'];
-  window.addEventListener('popstate', refreshTimeline);
-  window.addEventListener('slopfilter-navigation', refreshTimeline);
+// Relay from the MAIN-world interceptor. Only the page's own window with the same origin counts.
+const handleNavigationRelay = (event: MessageEvent) => {
+  if (event.source !== window || event.origin !== window.location.origin) return;
+  const data = event.data as { source?: unknown; type?: unknown } | null;
+  if (data?.source !== 'slopfilter-interceptor' || data.type !== 'navigation') return;
+  if (pageObserver === null) return;
+  try {
+    resolveTimeline();
+  } catch {
+    // Fail open: the page mutation observer retries.
+  }
 };
 
 const start = async () => {
@@ -680,19 +796,27 @@ const start = async () => {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('message', handlePayloadRelay);
+  window.addEventListener('message', handleNavigationRelay);
 }
 
 if (typeof chrome !== 'undefined') {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!isExtensionMessage(message) || message.type !== 'get-selftest-state') return false;
-    const result = xAdapter.selfTest(document);
+    if (!isExtensionMessage(message)) return false;
+    if (message.type === 'model-ready') {
+      handleModelReady(message.model, message.epoch);
+      return false;
+    }
+    if (message.type !== 'get-selftest-state') return false;
+    // Return the latched result. A fresh selfTest only runs before the page has committed one.
+    const latched = lastSelfTestState ?? xAdapter.selfTest(document);
     sendResponse({
       type: 'selftest-result',
-      ok: result.ok,
-      failedSelectorIds: result.failedSelectorIds,
+      ok: latched.ok,
+      failedSelectorIds: latched.failedSelectorIds,
     });
     return true;
   });
 }
 
-void start().catch(() => pauseFiltering());
+// A start failure leaves the page unfiltered (fail open) without claiming a selector break.
+void start().catch(() => undefined);
